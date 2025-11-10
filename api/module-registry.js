@@ -31,8 +31,11 @@ export const ModuleRegistry = {
             { type: "task", name: "acceptability_judgment", config: { task_name: "wm", game_description: "one-card game you just completed" } },
             { type: "task", name: "open_text" },
             { type: "task", name: "delay_discounting" },
-            { type: "instructions", config: { text: "end_message" } }
-        ]
+            { type: "bonus" },
+            { type: "instructions", config: { text: "end_message" } },
+        ],
+        max_bonus: 5.0,
+        min_prop_bonus: 0.6
     },
     screening: {
         name: "Screening Module",
