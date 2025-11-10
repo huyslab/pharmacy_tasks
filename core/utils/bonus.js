@@ -66,12 +66,8 @@ function deepCopySessionState() {
  * @returns {number} Total bonus amount in GBP
  */
 
-<<<<<<< HEAD
-function computeTotalBonus() {
-=======
 function computeTotalBonus(module) {
 
->>>>>>> 9da104e (feat: work on bonus trial)
     // Maximum bonus amounts for each task type
     const max_bonus = {
         "pilt-to-test": 2.45,
