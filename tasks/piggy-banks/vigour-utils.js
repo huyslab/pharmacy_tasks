@@ -17,6 +17,7 @@ let trialState = {
   trialReward: 0,
   responseTime: [],
   pointerType: null,
+  pointerTypeCounts: {},
   viewportWidth: null,
   viewportHeight: null,
   viewportChanged: false
@@ -236,6 +237,10 @@ function piggyBankTrial(settings) {
       // Trial-specific data functions
       responseTime: () => { return trialState.responseTime },
       pointer_type: () => { return trialState.pointerType },
+      // Per-input-type press counts (e.g. {touch: 5, pen: 2}); pointer_mixed flags
+      // finger<->pencil switching within a trial (supports warnings / exclusion).
+      pointer_type_counts: () => { return trialState.pointerTypeCounts },
+      pointer_mixed: () => { return Object.keys(trialState.pointerTypeCounts).length > 1 },
       // Per-trial viewport geometry: drives piggy size; subsumes orientation and
       // captures dvh/toolbar changes. viewport_changed flags mid-trial rotation/resize.
       viewport_width: () => { return trialState.viewportWidth },
@@ -259,6 +264,7 @@ function piggyBankTrial(settings) {
         trialReward: 0,
         responseTime: [],
         pointerType: null,
+        pointerTypeCounts: {},
         viewportWidth: null,
         viewportHeight: null,
         viewportChanged: false
@@ -314,9 +320,12 @@ function piggyBankTrial(settings) {
         event.preventDefault();
         const now = performance.now();
 
+        const ptype = event.pointerType || 'unknown';
         if (trialState.pointerType === null) {
-          trialState.pointerType = event.pointerType || 'unknown';
+          trialState.pointerType = ptype; // modality the trial was started with
         }
+        // Count presses per input type to detect mixed/switched input within a trial
+        trialState.pointerTypeCounts[ptype] = (trialState.pointerTypeCounts[ptype] || 0) + 1;
 
         if (lastPressTime === null) {
           // First tap: record RT from trial start
