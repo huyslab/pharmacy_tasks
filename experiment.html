@@ -71,10 +71,41 @@
             text-align: left;
             margin: 1em 0;
         }
+
+        /* Portrait gate: block phone-landscape (short viewport); tablets (taller) are exempt */
+        #rotate-overlay { display: none; }
+        @media (orientation: landscape) and (max-height: 500px) {
+            #rotate-overlay {
+                display: flex;
+                position: fixed;
+                top: 0;
+                right: 0;
+                bottom: 0;
+                left: 0;
+                z-index: 100000;
+                background: #ffffff;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+                padding: 24px;
+                box-sizing: border-box;
+            }
+        }
+        #rotate-overlay p {
+            font-size: clamp(18px, 5vw, 24px);
+            color: #182b4b;
+            line-height: 1.4;
+            max-width: 90vw;
+            margin: 0;
+        }
     </style>
 </head>
 <body>
     <div id="display_element"></div>
+
+    <div id="rotate-overlay">
+        <p>Please rotate your device to <strong>portrait</strong> mode to continue.</p>
+    </div>
     
     <script type="module">
         // Import task registry functions
