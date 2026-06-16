@@ -230,9 +230,11 @@ export const TaskRegistry = {
     computeBonus: () => computeRelativePiggyTasksBonus('vigour_trial'), 
     defaultConfig: {
       task_name: "vigour",
+      preferredOrientation: "portrait",
     },
     configOptions: {
-      task_name: "The name of the task as it would appear in the bonus object. Default is 'vigour'."
+      task_name: "The name of the task as it would appear in the bonus object. Default is 'vigour'.",
+      preferredOrientation: "Preferred device orientation on phones ('portrait' or 'landscape'). On a phone held in the other orientation, a 'please rotate' overlay blocks the task until it is rotated; tablets and desktop are exempt. Default is 'portrait' for vigour."
     },
     requirements: {
       css: ['@tasks/piggy-banks/styles.css'],

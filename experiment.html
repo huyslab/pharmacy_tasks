@@ -72,24 +72,23 @@
             margin: 1em 0;
         }
 
-        /* Portrait gate: block phone-landscape (short viewport); tablets (taller) are exempt */
-        #rotate-overlay { display: none; }
-        @media (orientation: landscape) and (max-height: 500px) {
-            body.vigour-portrait-gate #rotate-overlay {
-                display: flex;
-                position: fixed;
-                top: 0;
-                right: 0;
-                bottom: 0;
-                left: 0;
-                z-index: 100000;
-                background: #ffffff;
-                align-items: center;
-                justify-content: center;
-                text-align: center;
-                padding: 24px;
-                box-sizing: border-box;
-            }
+        /* Orientation gate: on phones, block the wrong orientation for the active task; tablets/
+           desktop are exempt (larger min dimension). Driven by
+           <body data-preferred-orientation="portrait|landscape">, set per task by the registry. */
+        #rotate-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 100000;
+            background: #ffffff;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 24px;
+            box-sizing: border-box;
         }
         #rotate-overlay p {
             font-size: clamp(18px, 5vw, 24px);
@@ -97,6 +96,17 @@
             line-height: 1.4;
             max-width: 90vw;
             margin: 0;
+            display: none;
+        }
+        /* Portrait-preferred task on a phone held in landscape */
+        @media (orientation: landscape) and (max-height: 500px) {
+            body[data-preferred-orientation="portrait"] #rotate-overlay { display: flex; }
+            body[data-preferred-orientation="portrait"] #rotate-overlay .rotate-msg-portrait { display: block; }
+        }
+        /* Landscape-preferred task on a phone held in portrait */
+        @media (orientation: portrait) and (max-width: 500px) {
+            body[data-preferred-orientation="landscape"] #rotate-overlay { display: flex; }
+            body[data-preferred-orientation="landscape"] #rotate-overlay .rotate-msg-landscape { display: block; }
         }
     </style>
 </head>
@@ -104,7 +114,8 @@
     <div id="display_element"></div>
 
     <div id="rotate-overlay">
-        <p>Please rotate your device to <strong>portrait</strong> mode to continue.</p>
+        <p class="rotate-msg-portrait">Please rotate your device to <strong>portrait</strong> mode to continue.</p>
+        <p class="rotate-msg-landscape">Please rotate your device to <strong>landscape</strong> mode to continue.</p>
     </div>
     
     <script type="module">

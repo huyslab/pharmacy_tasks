@@ -72,7 +72,21 @@ export async function createTaskTimeline(taskName, config = {}) {
         }
     }
     
-    return task.createTimeline(mergedConfig);
+    // Build the task's timeline
+    const timeline = await task.createTimeline(mergedConfig);
+
+    // Gate the task to its preferred device orientation on phones. The overlay markup and CSS
+    // live in the experiment entry HTML, keyed off <body data-preferred-orientation="...">;
+    // vigour's wrong_orientation logging keys off the overlay's actual visibility.
+    const orientation = mergedConfig.preferredOrientation;
+    if (orientation === 'portrait' || orientation === 'landscape') {
+        return [{
+            timeline: Array.isArray(timeline) ? timeline : [timeline],
+            on_timeline_start: () => { document.body.setAttribute('data-preferred-orientation', orientation); },
+            on_timeline_finish: () => { document.body.removeAttribute('data-preferred-orientation'); }
+        }];
+    }
+    return timeline;
 }
 
 /**
