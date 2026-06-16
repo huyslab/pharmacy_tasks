@@ -16,7 +16,10 @@ let trialState = {
   trialPresses: 0,
   trialReward: 0,
   responseTime: [],
-  pointerType: null
+  pointerType: null,
+  viewportWidth: null,
+  viewportHeight: null,
+  viewportChanged: false
 };
 
 // Array of image paths to preload for the vigour task
@@ -233,6 +236,11 @@ function piggyBankTrial(settings) {
       // Trial-specific data functions
       responseTime: () => { return trialState.responseTime },
       pointer_type: () => { return trialState.pointerType },
+      // Per-trial viewport geometry: drives piggy size; subsumes orientation and
+      // captures dvh/toolbar changes. viewport_changed flags mid-trial rotation/resize.
+      viewport_width: () => { return trialState.viewportWidth },
+      viewport_height: () => { return trialState.viewportHeight },
+      viewport_changed: () => { return trialState.viewportChanged },
       trial_presses: () => { return trialState.trialPresses },
       trial_reward: () => { return trialState.trialReward },
       // Global task data
@@ -250,12 +258,19 @@ function piggyBankTrial(settings) {
         trialPresses: 0,
         trialReward: 0,
         responseTime: [],
-        pointerType: null
+        pointerType: null,
+        viewportWidth: null,
+        viewportHeight: null,
+        viewportChanged: false
       };
     },
     on_load: function () {
       const magnitude = jsPsych.evaluateTimelineVariable('magnitude');
       const ratio = jsPsych.evaluateTimelineVariable('ratio');
+
+      // Record the viewport geometry this trial was presented at
+      trialState.viewportWidth = window.innerWidth;
+      trialState.viewportHeight = window.innerHeight;
 
       // Add magnitudes and ratios to settings for piggy tails
       settings.magnitudes = magnitudes;
@@ -277,6 +292,7 @@ function piggyBankTrial(settings) {
       // Re-layout tails and coin overlay on viewport changes (orientation, mobile toolbar, resize).
       // Tails are positioned in px from the piggy's measured width, so they must be recomputed.
       vigourResizeHandler = () => {
+        trialState.viewportChanged = true; // geometry changed mid-trial (rotation or mobile toolbar)
         if (vigourResizeTimer) clearTimeout(vigourResizeTimer);
         vigourResizeTimer = setTimeout(() => {
           updatePiggyTails(magnitude, ratio, settings);
