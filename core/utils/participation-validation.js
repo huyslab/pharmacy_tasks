@@ -308,6 +308,8 @@ function showTemporaryWarning(message, duration = 800) {
         background-color: rgba(244, 206, 92, 0.9);
         padding: 15px 25px;
         border-radius: 8px;
+        width: min(92vw, 440px);
+        box-sizing: border-box;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         font-size: 24px;
         font-weight: 500;

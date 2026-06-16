@@ -411,7 +411,7 @@ function piggyBankTrial(settings) {
         jsPsych.data.addProperties({
           n_warnings: pen_up_to_now + 1
         });
-        showTemporaryWarning("Please tap with your finger, not a stylus", 800);
+        showTemporaryWarning("Please tap with your finger, not a stylus (e.g., Apple Pencil)", 800);
       }
     }
   }
