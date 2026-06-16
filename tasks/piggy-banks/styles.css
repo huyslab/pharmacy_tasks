@@ -8,6 +8,17 @@
   width: 100vw;
 }
 
+/* Suppress iOS long-press selection/callout/magnifier across the whole game surface.
+   user-select and -webkit-touch-callout inherit, so this covers the coin-drop area,
+   falling coins, containers, and tails — not just the piggy tap target. */
+.experiment-wrapper,
+#persist-coin-container {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
 #experiment-container {
   grid-row: 2;
   align-self: center;
@@ -133,7 +144,9 @@
 
 #instruction-text {
   font-size: clamp(15px, 4vw, 20px);
-  margin: clamp(1em, 3vw, 1.5em);
+  margin: clamp(1em, 3vw, 1.5em) auto;
+  max-width: min(700px, 90vw); /* keep text/images within the viewport on phones */
+  box-sizing: border-box;
   text-align: center;
   line-height: 1.4;
 }
@@ -163,13 +176,17 @@
 .instruct-coin-container {
   display: flex;
   justify-content: space-evenly;
-  margin: 20px 40px;
+  gap: 8px;
+  margin: 16px 0;
 }
 .instruct-coin {
   text-align: center;
+  flex: 1 1 0; /* three coins share the row and shrink to fit narrow screens */
+  min-width: 0;
+  max-width: 120px;
 }
 .instruct-coin img {
-  width: min(150px, 30vw);
+  width: 100%;
   height: auto;
 }
 .highlight-txt {
@@ -225,7 +242,7 @@
   }
 
   .instruct-coin-container {
-    margin: 10px 20px;
+    margin: 12px 0;
   }
 
   #instruction-text {

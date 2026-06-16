@@ -199,7 +199,7 @@ function logDeviceInfo() {
 const enterExperiment = {
     type: jsPsychFullscreen,
     fullscreen_mode: true,
-    message: '<p>The experiment will switch to full screen mode when you press the button below.</p>',
+    message: '<div style="max-width: min(600px, 88vw); margin: 0 auto; box-sizing: border-box;"><p>The experiment will switch to full screen mode when you press the button below.</p></div>',
     on_start: () => {
         // Save all URL parameters to jsPsych data for experiment tracking
         saveUrlParameters();
