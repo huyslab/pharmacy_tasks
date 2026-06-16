@@ -404,6 +404,15 @@ function piggyBankTrial(settings) {
         // console.log(jsPsych.data.get().last(1).select('n_warnings').values[0]);
         showTemporaryWarning("Didn't catch a response - moving on", 800);
       }
+
+      // Warn (and count like a missed response) if a stylus / Apple Pencil was used
+      if ((data.pointer_type_counts?.pen || 0) > 0) {
+        var pen_up_to_now = parseInt(jsPsych.data.get().last(1).select('n_warnings').values);
+        jsPsych.data.addProperties({
+          n_warnings: pen_up_to_now + 1
+        });
+        showTemporaryWarning("Please tap with your finger, not a stylus", 800);
+      }
     }
   }
 };
