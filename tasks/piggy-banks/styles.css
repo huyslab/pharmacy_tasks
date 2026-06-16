@@ -4,6 +4,7 @@
   justify-items: center;
   align-items: center;
   height: 100vh;
+  height: 100dvh; /* dynamic viewport height: avoids mobile URL-bar layout shift */
   width: 100vw;
 }
 
@@ -54,6 +55,11 @@
   bottom: 50%;
   cursor: pointer;
   touch-action: manipulation;
+  /* Prevent iOS selection/callout/magnifier and tap-highlight on rapid taps */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 #bg-container {
@@ -100,6 +106,14 @@
   height: 100%;
   width: auto;
   z-index: 2;
+}
+
+#piggy-bank {
+  /* Route taps to #piggy-container (the listener target) and block image callout/drag */
+  pointer-events: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .piggy-tail {

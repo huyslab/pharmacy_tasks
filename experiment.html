@@ -56,13 +56,14 @@
         #display_element {
             width: 100vw;
             height: 100vh;
+            height: 100dvh;
             display: flex;
             justify-content: center;
             align-items: center;
         }
-        
+
         .instructions p {
-            width: 700px;
+            max-width: min(700px, 92vw);
             text-align: left;
             margin: 1em 0;
         }

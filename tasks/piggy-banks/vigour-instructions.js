@@ -224,6 +224,12 @@ const startConfirmation = {
         finishOnce('r');
       });
     }
+
+    // Auto-advance in simulation mode: this trial has no timeout and ends only on a
+    // real tap/click, so dispatch a simulated tap on the piggy bank to begin the task.
+    if (window.simulating) {
+      simulatePointerTap(piggyContainer, 100);
+    }
   },
   on_finish: function (data) {
     // Set RNG seed for reproducible trial sequences

@@ -15,7 +15,8 @@ let taskTotalPresses = 0;
 let trialState = {
   trialPresses: 0,
   trialReward: 0,
-  responseTime: []
+  responseTime: [],
+  pointerType: null
 };
 
 // Array of image paths to preload for the vigour task
@@ -170,6 +171,7 @@ function setupPointerListener(callback) {
   const piggyContainer = document.getElementById('piggy-container');
   if (!piggyContainer) return null;
   const handler = function (event) {
+    if (!event.isPrimary) return; // ignore secondary touches (multi-touch contamination)
     event.preventDefault();
     callback(event);
   };
@@ -197,7 +199,7 @@ function cleanupPointerListener(handler, element) {
 function simulatePointerTap(element, delay) {
   setTimeout(() => {
     if (element) {
-      element.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+      element.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, isPrimary: true, pointerType: 'touch' }));
     }
   }, delay);
 }
@@ -207,6 +209,8 @@ let vigourTrialCounter = 0;
 let fsChangeHandler = null;
 let vigourPointerHandler = null;
 let vigourPiggyContainer = null;
+let vigourResizeHandler = null;
+let vigourResizeTimer = null;
 
 /**
  * Creates a single vigour trial with piggy bank shaking mechanics
@@ -228,6 +232,7 @@ function piggyBankTrial(settings) {
       trial_duration: jsPsych.timelineVariable('trialDuration'),
       // Trial-specific data functions
       responseTime: () => { return trialState.responseTime },
+      pointer_type: () => { return trialState.pointerType },
       trial_presses: () => { return trialState.trialPresses },
       trial_reward: () => { return trialState.trialReward },
       // Global task data
@@ -244,7 +249,8 @@ function piggyBankTrial(settings) {
       trialState = {
         trialPresses: 0,
         trialReward: 0,
-        responseTime: []
+        responseTime: [],
+        pointerType: null
       };
     },
     on_load: function () {
@@ -268,6 +274,18 @@ function piggyBankTrial(settings) {
       document.addEventListener('fullscreenchange', fsChangeHandler);
       document.addEventListener('webkitfullscreenchange', fsChangeHandler);
 
+      // Re-layout tails and coin overlay on viewport changes (orientation, mobile toolbar, resize).
+      // Tails are positioned in px from the piggy's measured width, so they must be recomputed.
+      vigourResizeHandler = () => {
+        if (vigourResizeTimer) clearTimeout(vigourResizeTimer);
+        vigourResizeTimer = setTimeout(() => {
+          updatePiggyTails(magnitude, ratio, settings);
+          updatePersistentCoinContainer();
+        }, 150);
+      };
+      window.addEventListener('resize', vigourResizeHandler);
+      window.addEventListener('orientationchange', vigourResizeHandler);
+
       // Set up pointerdown (touch/tap) listener on the piggybank
       let pressCount = 0;
       let lastPressTime = null;
@@ -276,8 +294,13 @@ function piggyBankTrial(settings) {
       vigourPiggyContainer = piggyContainer;
 
       vigourPointerHandler = function (event) {
+        if (!event.isPrimary) return; // ignore secondary touches (multi-touch contamination)
         event.preventDefault();
         const now = performance.now();
+
+        if (trialState.pointerType === null) {
+          trialState.pointerType = event.pointerType || 'unknown';
+        }
 
         if (lastPressTime === null) {
           // First tap: record RT from trial start
@@ -334,6 +357,17 @@ function piggyBankTrial(settings) {
         document.removeEventListener('fullscreenchange', fsChangeHandler);
         document.removeEventListener('webkitfullscreenchange', fsChangeHandler);
         fsChangeHandler = null;
+      }
+
+      // Clean up viewport resize listeners and any pending debounce
+      if (vigourResizeHandler) {
+        window.removeEventListener('resize', vigourResizeHandler);
+        window.removeEventListener('orientationchange', vigourResizeHandler);
+        vigourResizeHandler = null;
+      }
+      if (vigourResizeTimer) {
+        clearTimeout(vigourResizeTimer);
+        vigourResizeTimer = null;
       }
 
       // Show warning for no response on easy trials
