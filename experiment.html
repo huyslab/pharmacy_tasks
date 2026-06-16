@@ -77,6 +77,8 @@
            <body data-preferred-orientation="portrait|landscape">, set per task by the registry. */
         #rotate-overlay {
             display: none;
+            flex-direction: column;
+            gap: 20px;
             position: fixed;
             top: 0;
             right: 0;
@@ -98,15 +100,39 @@
             margin: 0;
             display: none;
         }
+        .phone-rotate-icon {
+            width: 80px;
+            height: 80px;
+            display: none;
+        }
+        .phone-rotate-icon svg {
+            width: 100%;
+            height: 100%;
+            transform-origin: center center;
+        }
+        @keyframes rotate-to-portrait {
+            0%, 15%  { transform: rotate(90deg); }
+            55%, 85% { transform: rotate(0deg); }
+            100%     { transform: rotate(90deg); }
+        }
+        @keyframes rotate-to-landscape {
+            0%, 15%  { transform: rotate(0deg); }
+            55%, 85% { transform: rotate(90deg); }
+            100%     { transform: rotate(0deg); }
+        }
         /* Portrait-preferred task on a phone held in landscape */
         @media (orientation: landscape) and (max-height: 500px) {
             body[data-preferred-orientation="portrait"] #rotate-overlay { display: flex; }
             body[data-preferred-orientation="portrait"] #rotate-overlay .rotate-msg-portrait { display: block; }
+            body[data-preferred-orientation="portrait"] .phone-rotate-icon { display: block; }
+            body[data-preferred-orientation="portrait"] .phone-rotate-icon svg { animation: rotate-to-portrait 2.5s ease-in-out infinite; }
         }
         /* Landscape-preferred task on a phone held in portrait */
         @media (orientation: portrait) and (max-width: 500px) {
             body[data-preferred-orientation="landscape"] #rotate-overlay { display: flex; }
             body[data-preferred-orientation="landscape"] #rotate-overlay .rotate-msg-landscape { display: block; }
+            body[data-preferred-orientation="landscape"] .phone-rotate-icon { display: block; }
+            body[data-preferred-orientation="landscape"] .phone-rotate-icon svg { animation: rotate-to-landscape 2.5s ease-in-out infinite; }
         }
     </style>
 </head>
@@ -114,6 +140,14 @@
     <div id="display_element"></div>
 
     <div id="rotate-overlay">
+        <div class="phone-rotate-icon">
+            <svg viewBox="0 0 60 100" xmlns="http://www.w3.org/2000/svg">
+                <rect x="2" y="2" width="56" height="96" rx="10" fill="#182b4b"/>
+                <rect x="6" y="14" width="48" height="72" rx="5" fill="#e2e8f2"/>
+                <circle cx="30" cy="7" r="3" fill="#4a6fa5"/>
+                <rect x="20" y="90" width="20" height="4" rx="2" fill="#4a6fa5"/>
+            </svg>
+        </div>
         <p class="rotate-msg-portrait">Please rotate your device to <strong>portrait</strong> mode to continue.</p>
         <p class="rotate-msg-landscape">Please rotate your device to <strong>landscape</strong> mode to continue.</p>
     </div>
