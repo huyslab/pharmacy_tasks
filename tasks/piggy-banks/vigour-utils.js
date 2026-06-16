@@ -20,7 +20,9 @@ let trialState = {
   pointerTypeCounts: {},
   viewportWidth: null,
   viewportHeight: null,
-  viewportChanged: false
+  viewportChanged: false,
+  wrongOrientation: false,
+  wrongOrientationTimes: []
 };
 
 // Array of image paths to preload for the vigour task
@@ -246,6 +248,8 @@ function piggyBankTrial(settings) {
       viewport_width: () => { return trialState.viewportWidth },
       viewport_height: () => { return trialState.viewportHeight },
       viewport_changed: () => { return trialState.viewportChanged },
+      wrong_orientation: () => { return trialState.wrongOrientation },
+      wrong_orientation_times: () => { return trialState.wrongOrientationTimes },
       trial_presses: () => { return trialState.trialPresses },
       trial_reward: () => { return trialState.trialReward },
       // Global task data
@@ -267,7 +271,9 @@ function piggyBankTrial(settings) {
         pointerTypeCounts: {},
         viewportWidth: null,
         viewportHeight: null,
-        viewportChanged: false
+        viewportChanged: false,
+        wrongOrientation: false,
+        wrongOrientationTimes: []
       };
     },
     on_load: function () {
@@ -277,6 +283,19 @@ function piggyBankTrial(settings) {
       // Record the viewport geometry this trial was presented at
       trialState.viewportWidth = window.innerWidth;
       trialState.viewportHeight = window.innerHeight;
+
+      // Flag the rotate-to-portrait gate (phone-landscape) during this trial, with onset offsets (ms).
+      // trialOnset is separate from trialStartTime below so RT measurement is unchanged.
+      const trialOnset = performance.now();
+      const isRotateGateVisible = () => {
+        const overlay = document.getElementById('rotate-overlay');
+        return !!overlay && getComputedStyle(overlay).display !== 'none';
+      };
+      let gateVisible = isRotateGateVisible();
+      if (gateVisible) {
+        trialState.wrongOrientation = true;
+        trialState.wrongOrientationTimes.push(Math.round(performance.now() - trialOnset));
+      }
 
       // Add magnitudes and ratios to settings for piggy tails
       settings.magnitudes = magnitudes;
@@ -299,6 +318,12 @@ function piggyBankTrial(settings) {
       // Tails are positioned in px from the piggy's measured width, so they must be recomputed.
       vigourResizeHandler = () => {
         trialState.viewportChanged = true; // geometry changed mid-trial (rotation or mobile toolbar)
+        const nowVisible = isRotateGateVisible();
+        if (nowVisible && !gateVisible) { // transitioned INTO the portrait gate this trial
+          trialState.wrongOrientation = true;
+          trialState.wrongOrientationTimes.push(Math.round(performance.now() - trialOnset));
+        }
+        gateVisible = nowVisible;
         if (vigourResizeTimer) clearTimeout(vigourResizeTimer);
         vigourResizeTimer = setTimeout(() => {
           updatePiggyTails(magnitude, ratio, settings);
