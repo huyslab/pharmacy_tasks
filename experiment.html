@@ -75,7 +75,7 @@
         /* Portrait gate: block phone-landscape (short viewport); tablets (taller) are exempt */
         #rotate-overlay { display: none; }
         @media (orientation: landscape) and (max-height: 500px) {
-            #rotate-overlay {
+            body.vigour-portrait-gate #rotate-overlay {
                 display: flex;
                 position: fixed;
                 top: 0;

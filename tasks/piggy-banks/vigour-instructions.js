@@ -253,7 +253,10 @@ export const vigour_instructions = {
       return false; // Continue to main task
     }
   },
-  on_timeline_start: () => {updateState(`vigour_instructions_start`)}
+  on_timeline_start: () => {
+    updateState(`vigour_instructions_start`);
+    document.body.classList.add('vigour-portrait-gate'); // portrait gate applies to vigour only
+  }
 }
 
 /**

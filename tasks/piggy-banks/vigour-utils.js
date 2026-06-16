@@ -437,6 +437,7 @@ function createVigourCoreTimeline(settings) {
         updateState("no_resume_10_minutes");
         updateState(`vigour_task_start`);
         createPersistentCoinContainer();
+        document.body.classList.add('vigour-portrait-gate'); // portrait gate applies to vigour only
         // Reset task counters
         taskTotalReward = 0;
         taskTotalPresses = 0;
@@ -445,6 +446,7 @@ function createVigourCoreTimeline(settings) {
     // Add cleanup callback to last trial
     experimentTimeline.at(-1)["on_timeline_finish"] = () => {
         removePersistentCoinContainer();
+        document.body.classList.remove('vigour-portrait-gate'); // disable gate when leaving vigour
     };
     
     return experimentTimeline;
