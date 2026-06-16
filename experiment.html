@@ -132,10 +132,10 @@
             body[data-preferred-orientation="portrait"] #rotate-overlay { display: flex; }
             body[data-preferred-orientation="portrait"] #rotate-overlay .rotate-msg-portrait { display: block; }
             body[data-preferred-orientation="portrait"] .phone-rotate-icon { display: block; }
-            /* Default: assume rotated CW (right side down) → guide CCW back */
+            /* Default: device tilted CW / top pointing right (angle=270) → guide CCW back */
             body[data-preferred-orientation="portrait"] .phone-rotate-icon svg { animation: rotate-portrait-from-right 2.5s ease-in-out infinite; }
-            /* Override when rotated CCW (left side down, angle=270) → guide CW back */
-            body[data-preferred-orientation="portrait"][data-orientation-angle="270"] .phone-rotate-icon svg { animation: rotate-portrait-from-left 2.5s ease-in-out infinite; }
+            /* Override: device tilted CCW / top pointing left (angle=90) → guide CW back */
+            body[data-preferred-orientation="portrait"][data-orientation-angle="90"] .phone-rotate-icon svg { animation: rotate-portrait-from-left 2.5s ease-in-out infinite; }
         }
         /* Landscape-preferred task on a phone held in portrait */
         @media (orientation: portrait) and (max-width: 500px) {
