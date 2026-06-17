@@ -62,7 +62,10 @@
   display: flex;
   justify-content: center;
   height: min(40%, 300px);
-  width: 90%;
+  width: fit-content;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
   bottom: 50%;
   cursor: pointer;
   touch-action: manipulation;
@@ -120,6 +123,9 @@
 }
 
 #piggy-bank {
+  /* In flow so #piggy-container's fit-content width measures the image; overrides
+     the shared position:absolute rule above. Tails are still absolute children. */
+  position: relative;
   /* Route taps to #piggy-container (the listener target) and block image callout/drag */
   pointer-events: none;
   -webkit-user-select: none;
