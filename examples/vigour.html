@@ -99,13 +99,13 @@
             height: 100%;
             transform-origin: center center;
         }
-        /* rotate-portrait-from-right: phone rotated CW (angle=90°) → guide CCW back to portrait */
+        /* default (no angle override): phone top pointing right → icon animates CCW back to portrait */
         @keyframes rotate-portrait-from-right {
             0%, 15%  { transform: rotate(90deg); }
             55%, 85% { transform: rotate(0deg); }
             100%     { transform: rotate(90deg); }
         }
-        /* rotate-portrait-from-left: phone rotated CCW (angle=270°) → guide CW back to portrait */
+        /* [data-orientation-angle="90"]: phone top pointing left → icon animates CW back to portrait */
         @keyframes rotate-portrait-from-left {
             0%, 15%  { transform: rotate(-90deg); }
             55%, 85% { transform: rotate(0deg); }
