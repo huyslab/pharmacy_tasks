@@ -3,6 +3,7 @@ import { shakePiggy } from './utils.js';
 import { updateState } from '@utils/index.js';
 
 let instructionPointerListener = null;
+let instructionResizeObserver = null;
 
 /**
  * Interactive instruction page that demonstrates the piggy bank shaking mechanism
@@ -16,7 +17,7 @@ const instructionPage = {
   data: {trialphase: 'vigour_instructions'},
   on_load: function () {
     updatePersistentCoinContainer();
-    observeResizing('coin-container', updatePersistentCoinContainer);
+    instructionResizeObserver = observeResizing('coin-container', updatePersistentCoinContainer);
 
     // Demo state variables
     let shakeCount = 0;
@@ -119,6 +120,10 @@ const instructionPage = {
     if (instructionPointerListener) {
       cleanupPointerListener(instructionPointerListener.handler, instructionPointerListener.element);
       instructionPointerListener = null;
+    }
+    if (instructionResizeObserver) {
+      instructionResizeObserver.disconnect();
+      instructionResizeObserver = null;
     }
     jsPsych.pluginAPI.cancelAllKeyboardResponses();
   }
