@@ -72,7 +72,58 @@ export async function createTaskTimeline(taskName, config = {}) {
         }
     }
     
-    return task.createTimeline(mergedConfig);
+    // Build the task's timeline
+    const timeline = await task.createTimeline(mergedConfig);
+
+    // Gate the task to its preferred device orientation on phones. The overlay markup and CSS
+    // live in the experiment entry HTML, keyed off <body data-preferred-orientation="...">;
+    // vigour's wrong_orientation logging keys off the overlay's actual visibility.
+    const orientation = mergedConfig.preferredOrientation;
+    if (orientation === 'portrait' || orientation === 'landscape') {
+        // Phone SVG shapes shared by both orientations
+        const shapes = `
+            <rect x="2" y="2" width="56" height="96" rx="10" fill="#182b4b"/>
+            <rect x="6" y="14" width="48" height="72" rx="5" fill="#e2e8f2"/>
+            <circle cx="30" cy="7" r="3" fill="#4a6fa5"/>
+            <rect x="20" y="90" width="20" height="4" rx="2" fill="#4a6fa5"/>`;
+        // Landscape icon uses an SVG matrix to remap portrait 60×100 space to landscape 100×60
+        // (matrix(0,1,-1,0,100,0) maps (x,y)→(100-y, x)), avoiding CSS-rotate layout artefacts
+        const phoneIcon = orientation === 'portrait'
+            ? `<svg viewBox="0 0 60 100" xmlns="http://www.w3.org/2000/svg" style="width:70px;height:116px;display:block;margin:0 auto 20px;">${shapes}</svg>`
+            : `<svg viewBox="0 0 100 60" xmlns="http://www.w3.org/2000/svg" style="width:116px;height:70px;display:block;margin:0 auto 20px;"><g transform="matrix(0,1,-1,0,100,0)">${shapes}</g></svg>`;
+        const orientationLabel = orientation === 'portrait' ? 'portrait (upright)' : 'landscape (on its side)';
+
+        // Shown before the gate activates so users know how to hold their device
+        const orientationHintTrial = {
+            type: jsPsychHtmlButtonResponse,
+            stimulus: function() {
+                // Mirror the CSS gate threshold: phones have min(width, height) ≤ 500px
+                const isPhone = Math.min(screen.width, screen.height) <= 500;
+                if (isPhone) {
+                    return `<div style="text-align:center;max-width:min(500px,92vw);margin:0 auto;">
+                        ${phoneIcon}
+                        <p>For this task, please hold your phone in <strong>${orientationLabel}</strong> mode.</p>
+                    </div>`;
+                }
+                return `<div style="text-align:center;max-width:min(500px,92vw);margin:0 auto;">
+                    <p>You can hold your tablet in whichever orientation feels comfortable — just keep it consistent throughout the task.</p>
+                </div>`;
+            },
+            choices: ['Got it'],
+            data: { trialphase: 'orientation_hint' },
+            simulation_options: { data: { response: 0 } }
+        };
+
+        return [
+            orientationHintTrial,
+            {
+                timeline: Array.isArray(timeline) ? timeline : [timeline],
+                on_timeline_start: () => { document.body.setAttribute('data-preferred-orientation', orientation); },
+                on_timeline_finish: () => { document.body.removeAttribute('data-preferred-orientation'); }
+            }
+        ];
+    }
+    return timeline;
 }
 
 /**

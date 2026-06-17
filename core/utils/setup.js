@@ -168,6 +168,30 @@ function saveUrlParameters() {
 }
 
 /**
+ * Captures device, input, and viewport covariates once at experiment entry.
+ * Recorded on every trial via addProperties so analyses can covary on (or
+ * exclude by) device type, input modality, pixel density, and whether
+ * fullscreen actually engaged (it silently no-ops on iOS Safari).
+ */
+function logDeviceInfo() {
+    const orientation = (window.screen && window.screen.orientation && window.screen.orientation.type) || null;
+    jsPsych.data.addProperties({
+        device_user_agent: navigator.userAgent,
+        device_pixel_ratio: window.devicePixelRatio || 1,
+        screen_width: window.screen ? window.screen.width : null,
+        screen_height: window.screen ? window.screen.height : null,
+        viewport_width: window.innerWidth,
+        viewport_height: window.innerHeight,
+        device_orientation: orientation,
+        max_touch_points: navigator.maxTouchPoints || 0,
+        touch_capable: ('ontouchstart' in window) || ((navigator.maxTouchPoints || 0) > 0),
+        fullscreen_enabled: !!(document.fullscreenEnabled || document.webkitFullscreenEnabled),
+        fullscreen_active: !!(document.fullscreenElement || document.webkitFullscreenElement)
+    });
+    console.log("Device info logged.");
+}
+
+/**
  * Creates a jsPsych fullscreen trial that initiates the experiment
  * Handles URL parameter saving and participant termination prevention
  * @type {Object} jsPsych trial configuration for entering fullscreen mode
@@ -175,7 +199,7 @@ function saveUrlParameters() {
 const enterExperiment = {
     type: jsPsychFullscreen,
     fullscreen_mode: true,
-    message: '<p>The experiment will switch to full screen mode when you press the button below.</p>',
+    message: '<div style="max-width: min(600px, 88vw); margin: 0 auto; box-sizing: border-box;"><p>The experiment will switch to full screen mode when you press the button below.</p></div>',
     on_start: () => {
         // Save all URL parameters to jsPsych data for experiment tracking
         saveUrlParameters();
@@ -188,6 +212,10 @@ const enterExperiment = {
         if (!(window.participantID && window.participantID.includes("debug"))) {
             preventParticipantTermination();
         }
+    },
+    on_finish: () => {
+        // Capture device/viewport covariates after fullscreen has (or hasn't) engaged
+        logDeviceInfo();
     }
 };
 
