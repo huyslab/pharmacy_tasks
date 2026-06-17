@@ -185,7 +185,7 @@ function logDeviceInfo() {
         device_orientation: orientation,
         max_touch_points: navigator.maxTouchPoints || 0,
         touch_capable: ('ontouchstart' in window) || ((navigator.maxTouchPoints || 0) > 0),
-        fullscreen_enabled: !!document.fullscreenEnabled,
+        fullscreen_enabled: !!(document.fullscreenEnabled || document.webkitFullscreenEnabled),
         fullscreen_active: !!(document.fullscreenElement || document.webkitFullscreenElement)
     });
     console.log("Device info logged.");
