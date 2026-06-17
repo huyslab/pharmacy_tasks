@@ -136,7 +136,7 @@ function kickOutWarning(settings)  {
         conditional_function: function() {
             const n_warnings = jsPsych.data.get().last(1).select('n_warnings').values[0];
             const warned = jsPsych.data.get().last(1).select('kick_out_warned').values[0] || false;
-            if ((n_warnings == settings.finalWarning) && (!warned)) {
+            if ((n_warnings >= settings.finalWarning) && (!warned)) {
                 jsPsych.data.addProperties(
                     {
                         kick_out_warned: true

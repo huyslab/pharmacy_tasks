@@ -11,7 +11,7 @@ let instructionPointerListener = null;
 const instructionPage = {
   type: jsPsychHtmlKeyboardResponse,
   stimulus: generateInstructStimulus,
-  choices: ["NO_KEYS"],
+  choices: 'NO_KEYS',
   trial_duration: null,
   data: {trialphase: 'vigour_instructions'},
   on_load: function () {

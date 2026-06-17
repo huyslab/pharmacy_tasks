@@ -95,6 +95,7 @@ function observeResizing(elementId, callback) {
   if (element) {
     resizeObserver.observe(element);
   }
+  return resizeObserver;
 }
 
 /**
@@ -217,6 +218,7 @@ let vigourPointerHandler = null;
 let vigourPiggyContainer = null;
 let vigourResizeHandler = null;
 let vigourResizeTimer = null;
+let vigourResizeObserver = null;
 
 /**
  * Creates a single vigour trial with piggy bank shaking mechanics
@@ -303,7 +305,7 @@ function piggyBankTrial(settings) {
 
       updatePiggyTails(magnitude, ratio, settings);
       updatePersistentCoinContainer();
-      observeResizing('coin-container', updatePersistentCoinContainer);
+      vigourResizeObserver = observeResizing('coin-container', updatePersistentCoinContainer);
 
       // Add fullscreen change listener to re-update piggy tails
       fsChangeHandler = () => {
@@ -419,23 +421,22 @@ function piggyBankTrial(settings) {
         clearTimeout(vigourResizeTimer);
         vigourResizeTimer = null;
       }
+      if (vigourResizeObserver) {
+        vigourResizeObserver.disconnect();
+        vigourResizeObserver = null;
+      }
 
       // Show warning for no response on easy trials
       if (data.trial_presses === 0 && data.timeline_variables.ratio === 1) {
-        var up_to_now = parseInt(jsPsych.data.get().last(1).select('n_warnings').values);
-        jsPsych.data.addProperties({
-          n_warnings: up_to_now + 1
-        });
-        // console.log(jsPsych.data.get().last(1).select('n_warnings').values[0]);
+        const up_to_now = jsPsych.data.get().last(1).select('n_warnings').values[0] ?? 0;
+        jsPsych.data.addProperties({ n_warnings: up_to_now + 1 });
         showTemporaryWarning("Didn't catch a response - moving on", 800);
       }
 
       // Warn (and count like a missed response) if a stylus / Apple Pencil was used
       if ((data.pointer_type_counts?.pen || 0) > 0) {
-        var pen_up_to_now = parseInt(jsPsych.data.get().last(1).select('n_warnings').values);
-        jsPsych.data.addProperties({
-          n_warnings: pen_up_to_now + 1
-        });
+        const pen_up_to_now = jsPsych.data.get().last(1).select('n_warnings').values[0] ?? 0;
+        jsPsych.data.addProperties({ n_warnings: pen_up_to_now + 1 });
         showTemporaryWarning("Please tap with your finger, not a stylus (e.g., Apple Pencil)", 800);
       }
     }
@@ -462,9 +463,11 @@ function createVigourCoreTimeline(settings) {
         updateState("no_resume_10_minutes");
         updateState(`vigour_task_start`);
         createPersistentCoinContainer();
-        // Reset task counters
+        // Reset task counters (vigourTrialCounter must also be reset so trial_number
+        // data is correct and the end-of-task save fires on every run, not just the first)
         taskTotalReward = 0;
         taskTotalPresses = 0;
+        vigourTrialCounter = 0;
     };
 
     // Add cleanup callback to last trial

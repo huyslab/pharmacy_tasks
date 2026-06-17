@@ -154,7 +154,7 @@
     <script>
         (function () {
             function setOrientationAngle() {
-                var angle = (screen.orientation ? screen.orientation.angle : (window.orientation || 0));
+                var angle = (screen.orientation?.angle != null ? screen.orientation.angle : (window.orientation || 0));
                 // Normalise to 0–359 (window.orientation can return -90)
                 document.body.setAttribute('data-orientation-angle', String(((angle % 360) + 360) % 360));
             }
