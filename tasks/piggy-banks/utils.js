@@ -23,10 +23,12 @@ function animatePiggy(keyframes, options) {
  */
 function shakePiggy() {
   animatePiggy([
-    'translateX(-1%)',
-    'translateX(1%)',
+    'translateX(-6%)',
+    'translateX(6%)',
+    'translateX(-4%)',
+    'translateX(4%)',
     'translateX(0)'
-  ], { duration: 80, easing: 'linear' });
+  ], { duration: 200, easing: 'linear' });
 }
 
 /**

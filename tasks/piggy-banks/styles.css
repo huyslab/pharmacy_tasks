@@ -66,6 +66,7 @@
   left: 0;
   right: 0;
   margin: 0 auto;
+  padding: 0 20px;
   bottom: 50%;
   cursor: pointer;
   touch-action: manipulation;
