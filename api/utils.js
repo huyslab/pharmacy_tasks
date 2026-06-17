@@ -96,11 +96,19 @@ export async function createTaskTimeline(taskName, config = {}) {
         // Shown before the gate activates so users know how to hold their device
         const orientationHintTrial = {
             type: jsPsychHtmlButtonResponse,
-            stimulus: `<div style="text-align:center;max-width:min(500px,92vw);margin:0 auto;">
-                ${phoneIcon}
-                <p>For this task, please hold your phone in <strong>${orientationLabel}</strong> mode.</p>
-                <p style="font-size:0.9em;color:#555;">Tablets can be used in either orientation.</p>
-            </div>`,
+            stimulus: function() {
+                // Mirror the CSS gate threshold: phones have min(width, height) ≤ 500px
+                const isPhone = Math.min(screen.width, screen.height) <= 500;
+                if (isPhone) {
+                    return `<div style="text-align:center;max-width:min(500px,92vw);margin:0 auto;">
+                        ${phoneIcon}
+                        <p>For this task, please hold your phone in <strong>${orientationLabel}</strong> mode.</p>
+                    </div>`;
+                }
+                return `<div style="text-align:center;max-width:min(500px,92vw);margin:0 auto;">
+                    <p>You can hold your tablet in whichever orientation feels comfortable — just keep it consistent throughout the task.</p>
+                </div>`;
+            },
             choices: ['Got it'],
             data: { trialphase: 'orientation_hint' },
             simulation_options: { data: { response: 0 } }
