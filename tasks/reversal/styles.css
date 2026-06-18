@@ -1,9 +1,16 @@
 .reversal-stimuli {
     position: relative;
-    width: 80vw; /* 80% of the viewport width */
-    padding-top: 40.30%;
-    max-width: 800px; /* Maximum size */
+    width: 80vw; /* default: desktop / tablet */
+    max-width: 800px;
+    aspect-ratio: 800 / 322; /* matches the squirrel image dimensions exactly */
     margin: 0 auto; /* Center horizontally */
+}
+
+/* Phone screens (portrait or landscape): shrink the squirrels so they fit comfortably */
+@media (max-height: 500px), (max-width: 500px) {
+    .reversal-stimuli {
+        width: 65vw;
+    }
 }
 
 .rev-squirrel-bg, .rev-squirrel-fg, .rev-squirrel-empty {
@@ -32,9 +39,8 @@
 .rev-coin-side {
     position: absolute;
     top: 60%;
-    z-index: 2; /* On top of background */
-    width: 8vw;
-    max-width: 80px;
+    z-index: 2; /* Behind foreground squirrel (z-index 3); animation lifts coin above */
+    width: min(8vw, 80px);
 }
 
 .rev-coin-side img {
@@ -121,4 +127,28 @@
   background: white;
   font-size: larger;
   font-weight: bold;
+}
+
+/* --- Touch/pointer tap zones for left/right squirrel selection --- */
+.rev-tap-zone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 38%;
+  z-index: 15;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  /* Transparent — invisible but tappable */;
+}
+
+.rev-tap-left {
+  left: 0;
+}
+
+.rev-tap-right {
+  right: 0;
 }
