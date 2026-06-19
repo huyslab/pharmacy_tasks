@@ -6,10 +6,11 @@
     margin: 0 auto; /* Center horizontally */
 }
 
-/* Phone screens (portrait or landscape): shrink the squirrels so they fit comfortably */
+/* Phone screens: shrink the squirrels to leave breathing room for
+   Dynamic Island, Home Indicator, and browser chrome on notched iPhones */
 @media (max-height: 500px), (max-width: 500px) {
     .reversal-stimuli {
-        width: 65vw;
+        width: 60vw;
     }
 }
 
