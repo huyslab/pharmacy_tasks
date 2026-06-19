@@ -6,7 +6,9 @@
     <base href="../">
     <title>Reversal Task</title>
 
-    <!-- Import map for module resolution -->
+    <!-- Import map for module resolution. Required: the inline module script below uses
+         relative paths, but the modules it pulls in (api/index.js, task.js, …) import each
+         other via bare "@utils/", "@tasks/", "@api/" specifiers that resolve through this map. -->
     <script type="importmap">
         {
             "imports": {

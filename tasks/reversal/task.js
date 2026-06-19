@@ -240,15 +240,8 @@ function reversalInstructions(settings) {
                 finished = true;
                 jsPsych.finishTrial({ response: 'b' });
             };
-            var leftTapHandler = function (event) {
-                if (!event.isPrimary) return;
-                if (event.button !== 0) return;
-                event.preventDefault();
-                finishOnce();
-            };
-            var rightTapHandler = function (event) {
-                if (!event.isPrimary) return;
-                if (event.button !== 0) return;
+            var tapHandler = function (event) {
+                if (!event.isPrimary || event.button !== 0) return;
                 event.preventDefault();
                 finishOnce();
             };
@@ -256,20 +249,20 @@ function reversalInstructions(settings) {
             var tapLeft = document.getElementById('rev-tap-left');
             var tapRight = document.getElementById('rev-tap-right');
             if (tapLeft) {
-                tapLeft.addEventListener('pointerdown', leftTapHandler);
+                tapLeft.addEventListener('pointerdown', tapHandler);
                 tapLeft.addEventListener('contextmenu', suppressContext);
             }
             if (tapRight) {
-                tapRight.addEventListener('pointerdown', rightTapHandler);
+                tapRight.addEventListener('pointerdown', tapHandler);
                 tapRight.addEventListener('contextmenu', suppressContext);
             }
             _revReadyCleanup = function () {
                 if (tapLeft) {
-                    tapLeft.removeEventListener('pointerdown', leftTapHandler);
+                    tapLeft.removeEventListener('pointerdown', tapHandler);
                     tapLeft.removeEventListener('contextmenu', suppressContext);
                 }
                 if (tapRight) {
-                    tapRight.removeEventListener('pointerdown', rightTapHandler);
+                    tapRight.removeEventListener('pointerdown', tapHandler);
                     tapRight.removeEventListener('contextmenu', suppressContext);
                 }
             };
