@@ -461,6 +461,7 @@ var jsPsychReversal = (function (jspsych) {
             var coinElement = document.getElementById('rev-coin-' + side);
             var animClass = 'rev-coin-' + side + '-animate';
 
+            coinElement.style.opacity = '1'; // reveal now that a response was made
             coinElement.classList.remove(animClass);
             void coinElement.offsetWidth;  // trigger reflow for CSS animation restart
             coinElement.classList.add(animClass);
