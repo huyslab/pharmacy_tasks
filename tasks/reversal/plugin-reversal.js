@@ -167,8 +167,10 @@ var jsPsychReversal = (function (jspsych) {
                 wrongOrientationTimes.push(0);  // offset from trial onset is 0
             }
 
-            // Create stimuli
+            // Create stimuli — hidden until images are decoded to avoid Safari flash
             display_element.innerHTML = this.create_stimuli(trial);
+            var stimuliEl = display_element.querySelector('.reversal-stimuli');
+            stimuliEl.style.opacity = '0';
 
             // --- Handler & cleanup declarations (must precede cleanupAll) ---
 
@@ -417,14 +419,23 @@ var jsPsychReversal = (function (jspsych) {
             window.addEventListener('resize', resizeHandler);
             window.addEventListener('orientationchange', resizeHandler);
 
-            // --- Set up response deadline timer ---
-            if (trial.response_deadline > 0) {
-                if (trial.show_warning) {
-                    this.jsPsych.pluginAPI.setTimeout(deadline_warning, trial.response_deadline);
-                } else {
-                    this.jsPsych.pluginAPI.setTimeout(ITI, trial.response_deadline);
+            // Reveal stimuli once all images are decoded, then start the deadline clock.
+            // img.decode() resolves when the browser has a fully decoded bitmap ready to
+            // paint — no intermediate blank frame. trialOnset is reset here so RT is
+            // measured from actual stimulus visibility, not DOM creation.
+            var imgs = Array.from(display_element.querySelectorAll('img'));
+            Promise.all(imgs.map(function (img) { return img.decode().catch(function () {}); })).then(() => {
+                trialOnset = performance.now();
+                stimuliEl.style.opacity = '1';
+
+                if (trial.response_deadline > 0) {
+                    if (trial.show_warning) {
+                        this.jsPsych.pluginAPI.setTimeout(deadline_warning, trial.response_deadline);
+                    } else {
+                        this.jsPsych.pluginAPI.setTimeout(ITI, trial.response_deadline);
+                    }
                 }
-            }
+            });
         }
 
         // Create stimuli
