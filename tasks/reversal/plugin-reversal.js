@@ -461,9 +461,10 @@ var jsPsychReversal = (function (jspsych) {
                 '</div>' +
                 '<div id="rev-deadline-warning">' +
                 '</div>' +
-                // Invisible tap zones for touch/pointer input
-                '<div id="rev-tap-left" class="rev-tap-zone rev-tap-left"></div>' +
-                '<div id="rev-tap-right" class="rev-tap-zone rev-tap-right"></div>';
+                // Tap zones only on touch devices; keyboard users interact via arrow keys only
+                (navigator.maxTouchPoints > 0 ?
+                    '<div id="rev-tap-left" class="rev-tap-zone rev-tap-left"></div>' +
+                    '<div id="rev-tap-right" class="rev-tap-zone rev-tap-right"></div>' : '');
 
             return '<div class="reversal-stimuli">' + stimulus + '</div>';
         }
