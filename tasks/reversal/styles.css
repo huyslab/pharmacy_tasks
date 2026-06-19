@@ -41,7 +41,7 @@
     position: absolute;
     top: 60%;
     z-index: 2; /* Behind foreground squirrel (z-index 3); animation lifts coin above */
-    width: min(8vw, 80px);
+    width: 10%; /* container-relative so coin scales with stimuli on all viewport sizes */
 }
 
 .rev-coin-side img {
