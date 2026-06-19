@@ -167,10 +167,11 @@ var jsPsychReversal = (function (jspsych) {
                 wrongOrientationTimes.push(0);  // offset from trial onset is 0
             }
 
-            // Create stimuli — hidden until images are decoded to avoid Safari flash
+            // Create stimuli. Reveal is handled below: synchronously when images are already
+            // loaded (the normal case after preload — no blank frame), or after img.decode()
+            // when they are not yet ready (slow/uncached load — avoids Safari half-paint flash).
             display_element.innerHTML = this.create_stimuli(trial);
             var stimuliEl = display_element.querySelector('.reversal-stimuli');
-            stimuliEl.style.opacity = '0';
 
             // --- Handler & cleanup declarations (must precede cleanupAll) ---
 
@@ -388,7 +389,7 @@ var jsPsychReversal = (function (jspsych) {
             }
 
             // --- Keyboard response listener (parallel to pointer) ---
-            var keyboardListener = this.jsPsych.pluginAPI.getKeyboardResponse({
+            this.jsPsych.pluginAPI.getKeyboardResponse({
                 callback_function: function (resp) {
                     var side = this.keys[resp.key.toLowerCase()];
                     if (side) {
@@ -419,17 +420,10 @@ var jsPsychReversal = (function (jspsych) {
             window.addEventListener('resize', resizeHandler);
             window.addEventListener('orientationchange', resizeHandler);
 
-            // Reveal stimuli once all images are decoded, then start the deadline clock.
-            // img.decode() resolves when the browser has a fully decoded bitmap ready to
-            // paint — no intermediate blank frame. trialOnset is reset here so RT is
-            // measured from actual stimulus visibility, not DOM creation.
-            var imgs = Array.from(display_element.querySelectorAll('img'));
-            Promise.all(imgs.map(function (img) {
-                return img.decode ? img.decode().catch(function () {}) : Promise.resolve();
-            })).then(() => {
+            // Start the response-deadline clock. trialOnset is reset to the reveal moment so
+            // RT is measured from actual stimulus visibility, not DOM creation.
+            var startDeadline = () => {
                 trialOnset = performance.now();
-                stimuliEl.style.opacity = '1';
-
                 if (trial.response_deadline > 0) {
                     if (trial.show_warning) {
                         this.jsPsych.pluginAPI.setTimeout(deadline_warning, trial.response_deadline);
@@ -437,7 +431,29 @@ var jsPsychReversal = (function (jspsych) {
                         this.jsPsych.pluginAPI.setTimeout(ITI, trial.response_deadline);
                     }
                 }
+            };
+
+            // Reveal the stimuli. If every image is already loaded (the normal case once the
+            // task preload has run), show synchronously in this same JS turn — the browser
+            // paints the new scene directly over the previous one with no blank frame between
+            // trials. Only when an image is not yet ready (slow/uncached load) do we hide and
+            // wait for img.decode(), which avoids Safari painting a half-decoded bitmap.
+            var imgs = Array.from(display_element.querySelectorAll('img'));
+            var allReady = imgs.every(function (img) {
+                return img.complete && img.naturalWidth > 0;
             });
+
+            if (allReady) {
+                startDeadline();
+            } else {
+                stimuliEl.style.opacity = '0';
+                Promise.all(imgs.map(function (img) {
+                    return img.decode ? img.decode().catch(function () {}) : Promise.resolve();
+                })).then(() => {
+                    stimuliEl.style.opacity = '1';
+                    startDeadline();
+                });
+            }
         }
 
         // Create stimuli
