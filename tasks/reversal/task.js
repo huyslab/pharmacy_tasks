@@ -10,6 +10,7 @@
 
 import {
     createPreloadTrial,
+    createPressBothTrial,
     kickOut,
     fullscreen_prompt,
     canBeWarned,
@@ -202,10 +203,8 @@ function reversalInstructions(settings) {
         ] : [
             `${sessionPrefix}
             <p>Next, you will meet two friendly squirrels, each with a bag of coins to share.
-            Press the <strong>left (←)</strong> or <strong>right (→) arrow key</strong> to choose one.
-            The squirrel you pick will give you a coin to add to your safe.</p>
-            <p>Place your index fingers on the left and right arrow keys, like this:</p>
-            <img src="./assets/images/2_finger_keys.jpg" style="max-width:min(400px,80vw);margin:0.5em auto;display:block;">`,
+            Use the arrow keys to choose either the left or right squirrel.
+            The squirrel you pick will give you a coin to add to your safe.</p>`,
             pageRules
         ],
         show_clickable_nav: true,
@@ -295,24 +294,14 @@ function reversalInstructions(settings) {
         }
     };
 
-    // --- Keyboard ready screen: press either arrow key ---
-    var keyboardReadyTrial = {
-        type: jsPsychHtmlKeyboardResponse,
-        choices: ['arrowleft', 'arrowright'],
-        stimulus: squirrelHtml +
-            `</div>
-            <p style="text-align:center;margin-top:1.2em;max-width:600px;margin-left:auto;margin-right:auto;">
-                You will now play the squirrel game for about ${duration} minutes without breaks.
-            </p>
-            <p style="text-align:center;max-width:600px;margin-left:auto;margin-right:auto;">
-                When you're ready, press <strong>either arrow key</strong> to begin.
-            </p>`,
-        data: { trialphase: "reversal_instruction" },
-        on_finish: function () {
-            jsPsych.pluginAPI.cancelAllKeyboardResponses();
-            jsPsych.data.addProperties({ reversal_n_warnings: 0 });
-        }
-    };
+    // --- Keyboard ready screen: press both arrow keys simultaneously (original behaviour) ---
+    var keyboardReadyTrial = createPressBothTrial(
+        `<p>You will now play the squirrel game for about ${duration} minutes without breaks.</p>
+        <p>When you're ready, place your fingers comfortably on the <strong>left and right arrow keys</strong> as shown below.
+        Press down <strong>both left and right arrow keys at the same time</strong> to begin.</p>
+        <img src='./assets/images/2_finger_keys.jpg' style='width:250px;'>`,
+        "reversal_instruction"
+    );
 
     return [instructionTrial, touchCapable ? touchReadyTrial : keyboardReadyTrial];
 }
