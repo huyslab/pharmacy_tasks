@@ -424,7 +424,9 @@ var jsPsychReversal = (function (jspsych) {
             // paint — no intermediate blank frame. trialOnset is reset here so RT is
             // measured from actual stimulus visibility, not DOM creation.
             var imgs = Array.from(display_element.querySelectorAll('img'));
-            Promise.all(imgs.map(function (img) { return img.decode().catch(function () {}); })).then(() => {
+            Promise.all(imgs.map(function (img) {
+                return img.decode ? img.decode().catch(function () {}) : Promise.resolve();
+            })).then(() => {
                 trialOnset = performance.now();
                 stimuliEl.style.opacity = '1';
 
