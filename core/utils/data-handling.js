@@ -146,7 +146,7 @@ function saveDataREDCap(retry = 1, extra_fields = {}, callback = () => {}) {
         }])
     
         // Submit data via AWS Lambda endpoint for Prolific studies
-        fetch('https://h6pgstm0f9.execute-api.eu-north-1.amazonaws.com/prod/submit', {
+        fetch('https://4csc8jmaw2.execute-api.eu-north-1.amazonaws.com/Prod/pharmaciespilot', { 
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
