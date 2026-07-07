@@ -182,6 +182,9 @@ var jsPsychReversal = (function (jspsych) {
             var resizeHandler = null;
             var resizeDebounce = null;
 
+            // Pending response-deadline timer (deadline_warning or ITI); cleared on first response
+            var deadlineTimer = null;
+
             // Collect all active DOM references for cleanup
             var tapLeft = document.getElementById('rev-tap-left');
             var tapRight = document.getElementById('rev-tap-right');
@@ -211,6 +214,12 @@ var jsPsychReversal = (function (jspsych) {
                 if (resizeDebounce) {
                     clearTimeout(resizeDebounce);
                     resizeDebounce = null;
+                }
+                // Cancel the pending response deadline so a valid response can't trigger a
+                // stale deadline_warning during the coin animation / ITI window.
+                if (deadlineTimer) {
+                    clearTimeout(deadlineTimer);
+                    deadlineTimer = null;
                 }
 
                 // Safety: cancel any lingering keyboard listeners from other trials
@@ -426,9 +435,9 @@ var jsPsychReversal = (function (jspsych) {
                 trialOnset = performance.now();
                 if (trial.response_deadline > 0) {
                     if (trial.show_warning) {
-                        this.jsPsych.pluginAPI.setTimeout(deadline_warning, trial.response_deadline);
+                        deadlineTimer = this.jsPsych.pluginAPI.setTimeout(deadline_warning, trial.response_deadline);
                     } else {
-                        this.jsPsych.pluginAPI.setTimeout(ITI, trial.response_deadline);
+                        deadlineTimer = this.jsPsych.pluginAPI.setTimeout(ITI, trial.response_deadline);
                     }
                 }
             };
