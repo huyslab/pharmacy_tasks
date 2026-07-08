@@ -6,6 +6,7 @@
 // Import communication utility for sending messages to parent window
 import { postToParent } from './data-handling.js';
 import { preventParticipantTermination } from './participation-validation.js';
+import { formatDateString } from './calculations.js';
 
 /**
  * Dynamically loads a JavaScript file with Promise-based interface
@@ -201,6 +202,11 @@ const enterExperiment = {
     fullscreen_mode: true,
     message: '<div style="max-width: min(600px, 88vw); margin: 0 auto; box-sizing: border-box;"><p>The experiment will switch to full screen mode when you press the button below.</p></div>',
     on_start: () => {
+        // Record the sitting start time now that jsPsych has actually begun running -
+        // getStartTime() is unset until jsPsych.run()/simulate() starts the timeline,
+        // so this can't be read any earlier (e.g. in the entry HTML before jsPsych.run()).
+        window.module_start_time = formatDateString(jsPsych.getStartTime());
+
         // Save all URL parameters to jsPsych data for experiment tracking
         saveUrlParameters();
 

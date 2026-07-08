@@ -126,14 +126,23 @@
             </div>
             
             <div class="form-group">
-                <label for="session">Session:</label>
-                <select id="session" name="session" required style="width: 100%; padding: 12px 16px; font-size: 16px; border: 2px solid #e1e8ed; border-radius: 8px; transition: border-color 0.3s ease; outline: none; background: white;">
-                    <option value="">Select session</option>
-                    <option value="wk0">Session 1</option>
-                    <option value="wk2">Session 2</option>
+                <label for="context">Context:</label>
+                <select id="context" name="context" required style="width: 100%; padding: 12px 16px; font-size: 16px; border: 2px solid #e1e8ed; border-radius: 8px; transition: border-color 0.3s ease; outline: none; background: white;">
+                    <option value="">Select context</option>
+                    <option value="relmed">RELMED</option>
+                    <option value="prolific">Prolific</option>
                 </select>
             </div>
-            
+
+            <div class="form-group">
+                <label for="task">Task:</label>
+                <select id="task" name="task" required style="width: 100%; padding: 12px 16px; font-size: 16px; border: 2px solid #e1e8ed; border-radius: 8px; transition: border-color 0.3s ease; outline: none; background: white;">
+                    <option value="">Select task</option>
+                    <option value="vigour">Vigour</option>
+                    <option value="reversal">Reversal</option>
+                </select>
+            </div>
+
             <button type="submit" class="start-button" id="startButton">
                 Start Experiment
             </button>
@@ -147,37 +156,45 @@
     <script>
         document.getElementById('startForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            
+
             const participantId = document.getElementById('participantId').value.trim();
-            const session = document.getElementById('session').value;
+            const context = document.getElementById('context').value;
+            const task = document.getElementById('task').value;
             const errorMessage = document.getElementById('errorMessage');
-            
+
             // Hide error message
             errorMessage.style.display = 'none';
-            
+
             // Validate participant ID
             if (!participantId) {
                 errorMessage.textContent = 'Please enter a participant ID';
                 errorMessage.style.display = 'block';
                 return;
             }
-            
-            // Validate session selection
-            if (!session) {
-                errorMessage.textContent = 'Please select a session';
-                errorMessage.style.display = 'block';
-                return;
-            }
-            
+
             // Check if participant ID contains only valid characters (alphanumeric, hyphens, underscores)
             if (!/^[a-zA-Z0-9_-]+$/.test(participantId)) {
                 errorMessage.textContent = 'Participant ID can only contain letters, numbers, hyphens, and underscores';
                 errorMessage.style.display = 'block';
                 return;
             }
-            
-            // Redirect to experiment.html with participant_id and session parameters
-            window.location.href = `experiment.html?participant_id=${encodeURIComponent(participantId)}&session=${encodeURIComponent(session)}`;
+
+            // Validate context selection
+            if (!context) {
+                errorMessage.textContent = 'Please select a context';
+                errorMessage.style.display = 'block';
+                return;
+            }
+
+            // Validate task selection
+            if (!task) {
+                errorMessage.textContent = 'Please select a task';
+                errorMessage.style.display = 'block';
+                return;
+            }
+
+            // Redirect to experiment.html with participant_id, context, and task parameters
+            window.location.href = `experiment.html?participant_id=${encodeURIComponent(participantId)}&context=${encodeURIComponent(context)}&task=${encodeURIComponent(task)}`;
         });
 
         // Enable real-time validation
@@ -188,8 +205,16 @@
             }
         });
 
-        // Hide error message when session is selected
-        document.getElementById('session').addEventListener('change', function() {
+        // Hide error message when context is selected
+        document.getElementById('context').addEventListener('change', function() {
+            const errorMessage = document.getElementById('errorMessage');
+            if (this.value) {
+                errorMessage.style.display = 'none';
+            }
+        });
+
+        // Hide error message when task is selected
+        document.getElementById('task').addEventListener('change', function() {
             const errorMessage = document.getElementById('errorMessage');
             if (this.value) {
                 errorMessage.style.display = 'none';
