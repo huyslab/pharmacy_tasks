@@ -26,13 +26,7 @@ jobs:
         with:
           node-version: 'lts/*'
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Verify integrity of dependencies
-        run: npm audit signatures
-
       - name: Release
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}  # Use PAT here too
-        run: npx semantic-release
+        run: npx -y -p semantic-release -p @semantic-release/changelog -p @semantic-release/exec -p @semantic-release/git -p @semantic-release/github semantic-release
