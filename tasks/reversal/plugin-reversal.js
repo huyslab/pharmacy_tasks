@@ -87,7 +87,7 @@ var jsPsychReversal = (function (jspsych) {
             response_optimal: {
                 type: jspsych.ParameterType.BOOL
             },
-            /** Input modality used for the response (touch, mouse, pen, or null) */
+            /** Input modality used for the response (touch, mouse, pen, keyboard, or null) */
             pointer_type: {
                 type: jspsych.ParameterType.STRING
             },
