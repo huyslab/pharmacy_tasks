@@ -57,7 +57,8 @@
             text-align: left;
         }
 
-        input[type="text"] {
+        input[type="text"],
+        select {
             width: 100%;
             padding: 12px 16px;
             font-size: 16px;
@@ -65,9 +66,11 @@
             border-radius: 8px;
             transition: border-color 0.3s ease;
             outline: none;
+            background: white;
         }
 
-        input[type="text"]:focus {
+        input[type="text"]:focus,
+        select:focus {
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
@@ -127,7 +130,7 @@
             
             <div class="form-group">
                 <label for="context">Context:</label>
-                <select id="context" name="context" required style="width: 100%; padding: 12px 16px; font-size: 16px; border: 2px solid #e1e8ed; border-radius: 8px; transition: border-color 0.3s ease; outline: none; background: white;">
+                <select id="context" name="context" required>
                     <option value="">Select context</option>
                     <option value="relmed">RELMED</option>
                     <option value="prolific">Prolific</option>
@@ -136,7 +139,7 @@
 
             <div class="form-group">
                 <label for="task">Task:</label>
-                <select id="task" name="task" required style="width: 100%; padding: 12px 16px; font-size: 16px; border: 2px solid #e1e8ed; border-radius: 8px; transition: border-color 0.3s ease; outline: none; background: white;">
+                <select id="task" name="task" required>
                     <option value="">Select task</option>
                     <option value="vigour">Vigour</option>
                     <option value="reversal">Reversal</option>
