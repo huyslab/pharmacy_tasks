@@ -157,10 +157,16 @@
   /* Transparent — invisible but tappable */
 }
 
+/* Outer edge extends into the margin beside the background (out to the screen edge)
+   for a more forgiving touch target; inner edge stays at 38% of the stimulus.
+   calc(50% - 50vw) = -(side margin) for the centered container, so it self-adjusts
+   across the 80vw / 60vw breakpoints. */
 .rev-tap-left {
-  left: 0;
+  left: calc(50% - 50vw);
+  width: calc(50vw - 12%);
 }
 
 .rev-tap-right {
-  right: 0;
+  right: calc(50% - 50vw);
+  width: calc(50vw - 12%);
 }
