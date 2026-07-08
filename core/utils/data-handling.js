@@ -84,11 +84,13 @@ function saveDataREDCap(retry = 1, extra_fields = {}, callback = () => {}) {
     // Get interaction data (mouse movements, focus changes, etc.)
     const interaction_data = jsPsych.data.getInteractionData().json();
 
-    // Combine interaction data with jsPsych data
+    // Combine interaction data with jsPsych data. Device info (set once by logDeviceInfo)
+    // is sent as its own field rather than repeated on every trial via addProperties.
     const combined_data = JSON.stringify([
         {
             interaction_data: interaction_data,
-            jspsych_data: jspsych_data
+            jspsych_data: jspsych_data,
+            device_info: window.deviceInfo || null
         }
     ]);
 
@@ -97,9 +99,8 @@ function saveDataREDCap(retry = 1, extra_fields = {}, callback = () => {}) {
             record_id: window.participantID + "_" + window.module_start_time,
             participant_id: window.participantID,
             sitting_start_time: window.module_start_time,
-            session: window.session,
             module: window.module,
-            data: combined_data 
+            data: combined_data
         },
         ...extra_fields
     };
@@ -140,7 +141,6 @@ function saveDataREDCap(retry = 1, extra_fields = {}, callback = () => {}) {
             record_id: window.participantID + "_" + window.module_start_time,
             participant_id: window.participantID,
             sitting_start_time: window.module_start_time,
-            session: window.session,
             module: window.module,
             data: combined_data
         }])

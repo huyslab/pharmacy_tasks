@@ -6,6 +6,7 @@
 // Import communication utility for sending messages to parent window
 import { postToParent } from './data-handling.js';
 import { preventParticipantTermination } from './participation-validation.js';
+import { formatDateString } from './calculations.js';
 
 /**
  * Dynamically loads a JavaScript file with Promise-based interface
@@ -169,25 +170,40 @@ function saveUrlParameters() {
 
 /**
  * Captures device, input, and viewport covariates once at experiment entry.
- * Recorded on every trial via addProperties so analyses can covary on (or
- * exclude by) device type, input modality, pixel density, and whether
- * fullscreen actually engaged (it silently no-ops on iOS Safari).
+ * Properties that never change during a session (user agent, pixel ratio,
+ * screen size, touch capability, fullscreen support/state - the latter is
+ * also covered continuously by interaction_data's fullscreenenter/exit
+ * events) are stored on window.deviceInfo and sent as their own field in the
+ * REDCap payload (see saveDataREDCap), rather than repeated on every trial.
+ * Viewport size and orientation are captured once here too - there is no
+ * resize/orientationchange listener re-triggering this - but stay on
+ * addProperties rather than window.deviceInfo, since jsPsych forward-fills
+ * addProperties values onto every subsequent trial. That keeps them
+ * available as a per-trial column for tasks other than vigour/reversal
+ * (which already record their own freshly-measured per-trial values), but
+ * this entry-time snapshot goes stale for any other task if the viewport
+ * actually changes mid-session.
  */
 function logDeviceInfo() {
     const orientation = (window.screen && window.screen.orientation && window.screen.orientation.type) || null;
-    jsPsych.data.addProperties({
+
+    window.deviceInfo = {
         device_user_agent: navigator.userAgent,
         device_pixel_ratio: window.devicePixelRatio || 1,
         screen_width: window.screen ? window.screen.width : null,
         screen_height: window.screen ? window.screen.height : null,
-        viewport_width: window.innerWidth,
-        viewport_height: window.innerHeight,
-        device_orientation: orientation,
         max_touch_points: navigator.maxTouchPoints || 0,
         touch_capable: ('ontouchstart' in window) || ((navigator.maxTouchPoints || 0) > 0),
         fullscreen_enabled: !!(document.fullscreenEnabled || document.webkitFullscreenEnabled),
         fullscreen_active: !!(document.fullscreenElement || document.webkitFullscreenElement)
+    };
+
+    jsPsych.data.addProperties({
+        viewport_width: window.innerWidth,
+        viewport_height: window.innerHeight,
+        device_orientation: orientation
     });
+
     console.log("Device info logged.");
 }
 
@@ -201,6 +217,11 @@ const enterExperiment = {
     fullscreen_mode: true,
     message: '<div style="max-width: min(600px, 88vw); margin: 0 auto; box-sizing: border-box;"><p>The experiment will switch to full screen mode when you press the button below.</p></div>',
     on_start: () => {
+        // Record the sitting start time now that jsPsych has actually begun running -
+        // getStartTime() is unset until jsPsych.run()/simulate() starts the timeline,
+        // so this can't be read any earlier (e.g. in the entry HTML before jsPsych.run()).
+        window.module_start_time = formatDateString(jsPsych.getStartTime());
+
         // Save all URL parameters to jsPsych data for experiment tracking
         saveUrlParameters();
 

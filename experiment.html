@@ -180,62 +180,66 @@
 
     <script type="module">
         // Import task registry functions
-        import { createModuleTimeline, getModuleInfo } from '@api/index.js';
+        import { createTaskTimeline, getTaskInfo } from '@api/index.js';
         import { enterExperiment } from '@utils/index.js';
 
-        // Get parameters from URL
+        // Get parameters from URL (populated by index.html's setup form redirect)
         window.participantID = new URLSearchParams(window.location.search).get('participant_id') || '';
         window.simulating = window.participantID.includes("simulate") || false;
-        console.log(window.simulating);
+        window.context = new URLSearchParams(window.location.search).get('context') || '';
+
+        // Which task to run. Vigour and reversal don't vary by session, so there's no
+        // session/sequence selection here - each task just uses its registry default.
+        const taskName = new URLSearchParams(window.location.search).get('task') || '';
+        window.module = taskName;
 
         // Initialize jsPsych
         window.jsPsych = initJsPsych({
             display_element: 'display_element',
             on_finish: function(data) {
                 // Display results
-                jsPsych.getDisplayElement().innerHTML = session == "screening" ? '<p>Thank you for participating! You may now close this tab.</p>' : '<p>Thank you for participating! Please call the experimenter.</p>';
+                jsPsych.getDisplayElement().innerHTML = '<p>Thank you for participating! You may now close this tab.</p>';
             }
         });
-
-        // Configurations
-        window.session = new URLSearchParams(window.location.search).get('session') || 'wk0';
-        window.module = new URLSearchParams(window.location.search).get('module') ;
-
-        const settings = {
-            sequence: window.session,
-            session: window.session
-        };
 
         // Function to run the experiment
         async function runExperiment() {
             try {
-                // Which module to run
-                const module_name = session == "screening" ? 'screening' : 'full_battery';
+                // Fail fast if this page was reached without what index.html's setup form
+                // provides - otherwise createTaskTimeline throws deep in the call stack for a
+                // missing task, and an unrecognized context fails silently later (saveDataREDCap
+                // only saves data for "relmed"/"prolific" contexts).
+                if (!taskName) {
+                    throw new Error('Missing "task" URL parameter. Launch this page via index.html rather than directly.');
+                }
+                if (window.context !== 'relmed' && window.context !== 'prolific') {
+                    throw new Error(`Missing or unrecognized "context" URL parameter ("${window.context}"). Data will not be saved to REDCap unless context is "relmed" or "prolific". Launch this page via index.html rather than directly.`);
+                }
 
-                // Get module information
-                const moduleInfo = getModuleInfo(module_name);
-                console.log('Module info:', moduleInfo);
+                // Get task information
+                const taskInfo = getTaskInfo(taskName);
+                console.log('Task info:', taskInfo);
 
-                // Create the timeline
-                const timeline = await createModuleTimeline(module_name, settings);
+                // Create the task timeline with default settings
+                const timeline = await createTaskTimeline(taskName);
                 console.log('Timeline created:', timeline);
-                
+
                 const exitFullscreen = {
                     type: jsPsychFullscreen,
                     fullscreen_mode: false
                 };
-                
+
                 // Create the complete timeline
                 const fullTimeline = [
                     enterExperiment,
                     ...timeline,
                     exitFullscreen
                 ];
-                
+
                 // Run the experiment
                 if (window.simulating) {
                     console.log('Simulating experiment run...');
-                    
+
                     // Simulation options
                     let simulation_options = {
                             default: {
@@ -252,13 +256,17 @@
                     console.log('Running experiment...');
                     await jsPsych.run(fullTimeline);
                 }
-                
+
             } catch (error) {
                 console.error('Error running experiment:', error);
-                jsPsych.getDisplayElement().innerHTML = `
+                // jsPsych.getDisplayElement() is only populated once jsPsych.run()/simulate()
+                // has started (inside prepareDom()) - errors thrown before that point (e.g. the
+                // guard above, or createTaskTimeline for an unknown task) need the raw container.
+                const errorContainer = jsPsych.getDisplayElement() || document.getElementById('display_element');
+                errorContainer.innerHTML = `
                     <div style="text-align: center; padding: 50px;">
                         <h2>Error Loading Experiment</h2>
-                        <p>There was an error loading the card choosing task:</p>
+                        <p>There was an error loading the ${taskName || 'requested'} task:</p>
                         <p><strong>${error.message}</strong></p>
                         <p>Please check the console for more details.</p>
                     </div>
