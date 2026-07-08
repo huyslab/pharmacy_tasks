@@ -147,6 +147,10 @@
   top: 0;
   bottom: 0;
   width: 38%;
+  /* How far each zone reaches from the background edge into the side margin:
+     0 = flush with the image, 1 = all the way to the screen edge. The remaining
+     outer margin nearest the screen stays a dead buffer (no stray edge touches). */
+  --tap-extend: 0.2;
   z-index: 15;
   cursor: pointer;
   touch-action: manipulation;
@@ -157,16 +161,16 @@
   /* Transparent — invisible but tappable */
 }
 
-/* Outer edge extends into the margin beside the background (out to the screen edge)
-   for a more forgiving touch target; inner edge stays at 38% of the stimulus.
-   calc(50% - 50vw) = -(side margin) for the centered container, so it self-adjusts
-   across the 80vw / 60vw breakpoints. */
+/* Outer edge extends --tap-extend of the way into the side margin (see above); inner
+   edge stays at 38% of the stimulus. (50% - 50vw) = -(side margin) for the centered
+   container, so this self-adjusts across the 80vw / 60vw breakpoints and max-width cap.
+   To make the zones wider/narrower, change --tap-extend only. */
 .rev-tap-left {
-  left: calc(50% - 50vw);
-  width: calc(50vw - 12%);
+  left: calc(var(--tap-extend) * (50% - 50vw));
+  width: calc(38% - var(--tap-extend) * (50% - 50vw));
 }
 
 .rev-tap-right {
-  right: calc(50% - 50vw);
-  width: calc(50vw - 12%);
+  right: calc(var(--tap-extend) * (50% - 50vw));
+  width: calc(38% - var(--tap-extend) * (50% - 50vw));
 }
