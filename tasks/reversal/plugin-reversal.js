@@ -476,10 +476,10 @@ var jsPsychReversal = (function (jspsych) {
                     '<img id="rev-squirrel-bg" src="' + trial.images_path + 'squirrels_bg.png"></img>' +
                 '</div>' +
                 '<div id="rev-coin-left" class="rev-coin-side">' +
-                    '<img id="rev-coin-left" src="' + trial.images_path + trial.coin_images[trial.feedback_left] + '"></img>' +
+                    '<img src="' + trial.images_path + trial.coin_images[trial.feedback_left] + '"></img>' +
                 '</div>' +
                 '<div id="rev-coin-right" class="rev-coin-side">' +
-                    '<img id="rev-coin-right" src="' + trial.images_path + trial.coin_images[trial.feedback_right] + '"></img>' +
+                    '<img src="' + trial.images_path + trial.coin_images[trial.feedback_right] + '"></img>' +
                 '</div>' +
                 '<div class="rev-squirrel-fg">' +
                     '<img id="rev-squirrel-fg" src="' + trial.images_path + 'squirrels_fg.png"></img>' +
