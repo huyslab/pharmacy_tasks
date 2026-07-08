@@ -39,7 +39,7 @@ jobs:
           mkdir -p /tmp/release-tools
           cd /tmp/release-tools
           npm init -y
-          npm install --package-lock-only --ignore-scripts \
+          npm install --ignore-scripts \
             semantic-release@${SEMANTIC_RELEASE_VERSION} \
             @semantic-release/changelog@${SEMREL_CHANGELOG_VERSION} \
             @semantic-release/exec@${SEMREL_EXEC_VERSION} \
