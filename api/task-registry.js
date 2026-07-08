@@ -180,7 +180,8 @@ export const TaskRegistry = {
       task_name: "reversal",
       n_trials: 150,
       sequence: 'wk0',
-      session: 'wk0'
+      session: 'wk0',
+      preferredOrientation: "landscape"
     },
     sequences: {
         screening: '@tasks/reversal/sequences/trial1_screening.js',
@@ -200,7 +201,8 @@ export const TaskRegistry = {
         task_name: "The name of the task as it would appear in the bonus object. Default is 'reversal'.",
         n_trials: "Total number of trials in the reversal task. Default is 150.",
         sequence: "The key for the sequence to use for the reversal task. Default is 'wk0'.",
-        session: "Session identifier to govern session-specific behaviour. Default is 'wk0'. Should be deprecated, with settings exposed."
+        session: "Session identifier to govern session-specific behaviour. Default is 'wk0'. Should be deprecated, with settings exposed.",
+        preferredOrientation: "Preferred device orientation on phones ('portrait' or 'landscape'). On a phone held in the other orientation, a 'please rotate' overlay blocks the task until it is rotated; tablets and desktop are exempt. Default is 'landscape' for reversal."
     }
   },
   delay_discounting: {

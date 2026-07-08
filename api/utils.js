@@ -79,7 +79,9 @@ export async function createTaskTimeline(taskName, config = {}) {
     // live in the experiment entry HTML, keyed off <body data-preferred-orientation="...">;
     // vigour's wrong_orientation logging keys off the overlay's actual visibility.
     const orientation = mergedConfig.preferredOrientation;
-    if (orientation === 'portrait' || orientation === 'landscape') {
+    // Only gate orientation on touch-capable devices (phones/tablets); desktop is exempt
+    const touchCapable = navigator.maxTouchPoints > 0;
+    if (touchCapable && (orientation === 'portrait' || orientation === 'landscape')) {
         // Phone SVG shapes shared by both orientations
         const shapes = `
             <rect x="2" y="2" width="56" height="96" rx="10" fill="#182b4b"/>
