@@ -1,3 +1,16 @@
+# [1.1.0](https://github.com/huyslab/pharmacy_tasks/compare/v1.0.0...v1.1.0) (2026-07-08)
+
+
+### Bug Fixes
+
+* **experiment:** guard against missing/invalid URL params, fix error display ([f88bbf1](https://github.com/huyslab/pharmacy_tasks/commit/f88bbf1ab47fab25a83bd47ef49b9983f891df39)), closes [#display_element](https://github.com/huyslab/pharmacy_tasks/issues/display_element)
+* **redcap:** stop duplicating static device info on every trial ([953c9da](https://github.com/huyslab/pharmacy_tasks/commit/953c9da63d4d9aa420198c6acfc0881bb4dd767b))
+
+
+### Features
+
+* **experiment:** select task and context from index.html instead of running full battery ([d94fda2](https://github.com/huyslab/pharmacy_tasks/commit/d94fda2cf7c0a4c81cd6650e6d5abd4a96596c3c))
+
 # 1.0.0 (2026-07-08)
 
 
