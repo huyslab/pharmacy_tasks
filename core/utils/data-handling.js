@@ -84,11 +84,13 @@ function saveDataREDCap(retry = 1, extra_fields = {}, callback = () => {}) {
     // Get interaction data (mouse movements, focus changes, etc.)
     const interaction_data = jsPsych.data.getInteractionData().json();
 
-    // Combine interaction data with jsPsych data
+    // Combine interaction data with jsPsych data. Device info (set once by logDeviceInfo)
+    // is sent as its own field rather than repeated on every trial via addProperties.
     const combined_data = JSON.stringify([
         {
             interaction_data: interaction_data,
-            jspsych_data: jspsych_data
+            jspsych_data: jspsych_data,
+            device_info: window.deviceInfo || null
         }
     ]);
 

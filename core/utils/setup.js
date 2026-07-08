@@ -170,25 +170,36 @@ function saveUrlParameters() {
 
 /**
  * Captures device, input, and viewport covariates once at experiment entry.
- * Recorded on every trial via addProperties so analyses can covary on (or
- * exclude by) device type, input modality, pixel density, and whether
- * fullscreen actually engaged (it silently no-ops on iOS Safari).
+ * Properties that never change during a session (user agent, pixel ratio,
+ * screen size, touch capability, fullscreen support/state - the latter is
+ * also covered continuously by interaction_data's fullscreenenter/exit
+ * events) are stored on window.deviceInfo and sent as their own field in the
+ * REDCap payload (see saveDataREDCap), rather than repeated on every trial.
+ * Viewport size and orientation CAN change mid-session (resize, rotation),
+ * so those stay on addProperties as before - kept available per-trial for
+ * tasks other than vigour/reversal, which already record their own more
+ * precise viewport/orientation fields directly on each trial.
  */
 function logDeviceInfo() {
     const orientation = (window.screen && window.screen.orientation && window.screen.orientation.type) || null;
-    jsPsych.data.addProperties({
+
+    window.deviceInfo = {
         device_user_agent: navigator.userAgent,
         device_pixel_ratio: window.devicePixelRatio || 1,
         screen_width: window.screen ? window.screen.width : null,
         screen_height: window.screen ? window.screen.height : null,
-        viewport_width: window.innerWidth,
-        viewport_height: window.innerHeight,
-        device_orientation: orientation,
         max_touch_points: navigator.maxTouchPoints || 0,
         touch_capable: ('ontouchstart' in window) || ((navigator.maxTouchPoints || 0) > 0),
         fullscreen_enabled: !!(document.fullscreenEnabled || document.webkitFullscreenEnabled),
         fullscreen_active: !!(document.fullscreenElement || document.webkitFullscreenElement)
+    };
+
+    jsPsych.data.addProperties({
+        viewport_width: window.innerWidth,
+        viewport_height: window.innerHeight,
+        device_orientation: orientation
     });
+
     console.log("Device info logged.");
 }
 
