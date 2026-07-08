@@ -175,10 +175,14 @@ function saveUrlParameters() {
  * also covered continuously by interaction_data's fullscreenenter/exit
  * events) are stored on window.deviceInfo and sent as their own field in the
  * REDCap payload (see saveDataREDCap), rather than repeated on every trial.
- * Viewport size and orientation CAN change mid-session (resize, rotation),
- * so those stay on addProperties as before - kept available per-trial for
- * tasks other than vigour/reversal, which already record their own more
- * precise viewport/orientation fields directly on each trial.
+ * Viewport size and orientation are captured once here too - there is no
+ * resize/orientationchange listener re-triggering this - but stay on
+ * addProperties rather than window.deviceInfo, since jsPsych forward-fills
+ * addProperties values onto every subsequent trial. That keeps them
+ * available as a per-trial column for tasks other than vigour/reversal
+ * (which already record their own freshly-measured per-trial values), but
+ * this entry-time snapshot goes stale for any other task if the viewport
+ * actually changes mid-session.
  */
 function logDeviceInfo() {
     const orientation = (window.screen && window.screen.orientation && window.screen.orientation.type) || null;

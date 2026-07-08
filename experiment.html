@@ -205,6 +205,17 @@
         // Function to run the experiment
         async function runExperiment() {
             try {
+                // Fail fast if this page was reached without what index.html's setup form
+                // provides - otherwise createTaskTimeline throws deep in the call stack for a
+                // missing task, and an unrecognized context fails silently later (saveDataREDCap
+                // only saves data for "relmed"/"prolific" contexts).
+                if (!taskName) {
+                    throw new Error('Missing "task" URL parameter. Launch this page via index.html rather than directly.');
+                }
+                if (window.context !== 'relmed' && window.context !== 'prolific') {
+                    throw new Error(`Missing or unrecognized "context" URL parameter ("${window.context}"). Data will not be saved to REDCap unless context is "relmed" or "prolific". Launch this page via index.html rather than directly.`);
+                }
+
                 // Get task information
                 const taskInfo = getTaskInfo(taskName);
                 console.log('Task info:', taskInfo);
@@ -248,10 +259,14 @@
 
             } catch (error) {
                 console.error('Error running experiment:', error);
-                jsPsych.getDisplayElement().innerHTML = `
+                // jsPsych.getDisplayElement() is only populated once jsPsych.run()/simulate()
+                // has started (inside prepareDom()) - errors thrown before that point (e.g. the
+                // guard above, or createTaskTimeline for an unknown task) need the raw container.
+                const errorContainer = jsPsych.getDisplayElement() || document.getElementById('display_element');
+                errorContainer.innerHTML = `
                     <div style="text-align: center; padding: 50px;">
                         <h2>Error Loading Experiment</h2>
-                        <p>There was an error loading the ${taskName} task:</p>
+                        <p>There was an error loading the ${taskName || 'requested'} task:</p>
                         <p><strong>${error.message}</strong></p>
                         <p>Please check the console for more details.</p>
                     </div>
