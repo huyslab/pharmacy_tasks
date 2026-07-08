@@ -6,6 +6,16 @@
     margin: 0 auto; /* Center horizontally */
 }
 
+/* Fallback for browsers without aspect-ratio support (pre-2021). All children are
+   absolutely positioned, so without an explicit height the container collapses to 0
+   and the stimuli vanish. Reinstate the padding-top ratio hack; padding-top is
+   width-relative, so it also tracks the 60vw phone width below. */
+@supports not (aspect-ratio: 1 / 1) {
+    .reversal-stimuli {
+        padding-top: 40.25%; /* 322 / 800, matches the aspect-ratio above */
+    }
+}
+
 /* Phone screens: shrink the squirrels to leave breathing room for
    Dynamic Island, Home Indicator, and browser chrome on notched iPhones */
 @media (max-height: 500px), (max-width: 500px) {
