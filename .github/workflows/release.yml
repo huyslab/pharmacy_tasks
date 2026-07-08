@@ -26,6 +26,16 @@ jobs:
         with:
           node-version: 'lts/*'
 
+      - name: Verify release package signatures
+        # The repository doesn't include a package-lock.json, so we verify
+        # signatures using a temporary lockfile in /tmp.
+        run: |
+          mkdir -p /tmp/release-tools
+          cd /tmp/release-tools
+          npm init -y
+          npm install --package-lock-only --ignore-scripts semantic-release@25.0.5 @semantic-release/changelog@6.0.3 @semantic-release/exec@7.1.0 @semantic-release/git@10.0.1 @semantic-release/github@12.0.9
+          npm audit signatures
+
       - name: Release
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}  # Use PAT here too
