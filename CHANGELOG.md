@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/huyslab/pharmacy_tasks/compare/v1.1.0...v1.1.1) (2026-07-10)
+
+
+### Bug Fixes
+
+* **playwright:** declare ESM module type and guard against ambiguous selectors ([9d04d22](https://github.com/huyslab/pharmacy_tasks/commit/9d04d223d80be3db78b7c5b5d8d84f8b4fd2c938))
+
 # [1.1.0](https://github.com/huyslab/pharmacy_tasks/compare/v1.0.0...v1.1.0) (2026-07-08)
 
 
