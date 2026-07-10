@@ -302,3 +302,21 @@ const fullTimeline = [
     exitFullscreen
 ];
 ```
+
+## Testing
+
+Cross-device checks for the vigour and reversal tasks live under `validation/playwright/`, in two parts:
+
+- **Rendering matrix** (`*-rendering.spec.js`, `support/render-check.js`): runs each task (via `examples/vigour.html` / `examples/reversal.html`, driven by jsPsych's simulate mode) across all 21 device projects - common phones, tablets, and desktop browsers - asserting it actually renders (no console errors, no collapsed/overflowing layout, the orientation "please rotate" gate shows only where expected).
+- **Journey checks** (`*-journey.spec.js`, `support/journey-check.js`): drives a real (non-simulate) run - real clicks/taps/keypresses through the actual instructions flow - on a small curated subset of 5 devices, to deterministically capture the static instructions text and an in-task feedback/coin moment (checkpoints simulate mode can't reliably land on, since it auto-advances through everything).
+
+Both save a screenshot per device/checkpoint to `validation/playwright/screenshots/`.
+
+```bash
+npm install
+npx playwright install        # first time only, downloads browser binaries
+npm run test:e2e              # run everything (rendering matrix + journeys)
+npm run test:e2e:report       # browse the last run's HTML report (includes screenshots)
+```
+
+Run a subset with `npx playwright test --project="iPhone 14"` or `--project="iPhone 14 (journey)"` (see `playwright.config.js` for the full device list).
