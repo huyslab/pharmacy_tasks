@@ -48,10 +48,18 @@ export function defineTaskRenderingTest(taskKey, taskConfig) {
 
       await captureShot(page, testInfo, taskKey, 'rotate-gate');
     } else {
-      const stimulus = page.locator(taskConfig.readySelector).first();
+      const readyLocator = page.locator(taskConfig.readySelector);
+      const stimulus = readyLocator.first();
       await expect(stimulus, `${taskConfig.readySelector} should appear once the task starts`).toBeVisible({
         timeout: 30000,
       });
+      // Guards against readySelector becoming too broad and silently matching more than the
+      // real trial (e.g. also matching a reused instructions/preview screen) - .first() alone
+      // would keep passing on an ambiguous match instead of failing loudly.
+      await expect(
+        readyLocator,
+        `${taskConfig.readySelector} should match exactly one element, not several`
+      ).toHaveCount(1);
 
       // jsPsych.simulate() keeps auto-advancing trials in the background (each trial's DOM
       // is torn down and rebuilt), so a single snapshot can land mid-transition between
