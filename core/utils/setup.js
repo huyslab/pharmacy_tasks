@@ -213,10 +213,8 @@ function logDeviceInfo() {
  * @type {Object} jsPsych trial configuration for entering fullscreen mode
  */
 const enterExperiment = {
-    type: jsPsychFullscreen,
-    fullscreen_mode: true,
-    message: '<div style="max-width: min(600px, 88vw); margin: 0 auto; box-sizing: border-box;"><p>The experiment will switch to full screen mode when you press the button below.</p></div>',
-    on_start: () => {
+    type: jsPsychCallFunction,
+    func: function() {
         // Record the sitting start time now that jsPsych has actually begun running -
         // getStartTime() is unset until jsPsych.run()/simulate() starts the timeline,
         // so this can't be read any earlier (e.g. in the entry HTML before jsPsych.run()).
@@ -233,9 +231,8 @@ const enterExperiment = {
         if (!(window.participantID && window.participantID.includes("debug"))) {
             preventParticipantTermination();
         }
-    },
-    on_finish: () => {
-        // Capture device/viewport covariates after fullscreen has (or hasn't) engaged
+
+        // Capture device/viewport covariates
         logDeviceInfo();
     }
 };
