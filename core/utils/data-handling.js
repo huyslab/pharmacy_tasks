@@ -17,7 +17,8 @@ function postToParent(message, fallback = () => {}) {
             const allowedOrigins = [
                 'http://localhost:3000',
                 'https://relmed.ac.uk',
-                'https://www.relmed.ac.uk'
+                'https://www.relmed.ac.uk',
+                'https://mymeds.study'
             ];
 
             // Normalize a URL by removing trailing slashes
