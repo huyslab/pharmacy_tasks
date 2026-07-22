@@ -100,7 +100,7 @@ export async function createTaskTimeline(taskName, config = {}) {
             type: jsPsychHtmlButtonResponse,
             stimulus: function() {
                 // Mirror the CSS gate threshold: phones have min(width, height) ≤ 500px
-                const isPhone = Math.min(screen.width, screen.height) <= 500;
+                const isPhone = Math.min(window.innerWidth, window.innerHeight) <= 500;
                 if (isPhone) {
                     return `<div style="text-align:center;max-width:min(500px,92vw);margin:0 auto;">
                         ${phoneIcon}
