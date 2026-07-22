@@ -1,3 +1,10 @@
+## [1.1.5](https://github.com/huyslab/pharmacy_tasks/compare/v1.1.4...v1.1.5) (2026-07-22)
+
+
+### Bug Fixes
+
+* **orientation:** classify phones using viewport dimensions ([a90a719](https://github.com/huyslab/pharmacy_tasks/commit/a90a719b8ebeb57e259a6590df666e4c6d9eead2))
+
 ## [1.1.4](https://github.com/huyslab/pharmacy_tasks/compare/v1.1.3...v1.1.4) (2026-07-22)
 
 
