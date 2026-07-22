@@ -224,16 +224,10 @@
                 const timeline = await createTaskTimeline(taskName);
                 console.log('Timeline created:', timeline);
 
-                const exitFullscreen = {
-                    type: jsPsychFullscreen,
-                    fullscreen_mode: false
-                };
-
                 // Create the complete timeline
                 const fullTimeline = [
                     enterExperiment,
-                    ...timeline,
-                    exitFullscreen
+                    ...timeline
                 ];
 
                 // Run the experiment
