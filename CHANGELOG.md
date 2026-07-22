@@ -1,3 +1,11 @@
+## [1.1.4](https://github.com/huyslab/pharmacy_tasks/compare/v1.1.3...v1.1.4) (2026-07-22)
+
+
+### Bug Fixes
+
+* **experiment:** remove obsolete fullscreen exit trial ([1a95a7d](https://github.com/huyslab/pharmacy_tasks/commit/1a95a7da37ed4d01f124bfc9db92359e4fa640e6))
+* **tasks:** preload assets before orientation hints ([9f08b34](https://github.com/huyslab/pharmacy_tasks/commit/9f08b34cdb616f47b07526d239fc08d77e52cf9f))
+
 ## [1.1.3](https://github.com/huyslab/pharmacy_tasks/compare/v1.1.2...v1.1.3) (2026-07-22)
 
 
