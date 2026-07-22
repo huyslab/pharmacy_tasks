@@ -21,14 +21,11 @@ async function tapOrClick(locator, hasTouch) {
 }
 
 /**
- * Clicks through the two screens common to every task, before task-specific instructions
- * begin: the fullscreen entry prompt, and - on touch-capable devices only - the orientation
- * hint screen (api/utils.js createTaskTimeline wraps any task with a preferredOrientation in
- * an unconditional "Got it" trial ahead of the orientation gate; desktop/non-touch skips it
- * entirely). Missing this step here would hang forever waiting for task-specific content.
+ * Clicks through the touch-only orientation hint before task-specific instructions begin.
+ * api/utils.js createTaskTimeline inserts this "Got it" trial after stimulus preloading;
+ * desktop/non-touch skips it entirely.
  */
-async function passEntryScreens(page, hasTouch) {
-  await page.locator('#jspsych-fullscreen-btn').click();
+async function passOrientationHint(page, hasTouch) {
   if (hasTouch) {
     await page.getByRole('button', { name: 'Got it' }).click();
   }
@@ -45,7 +42,7 @@ async function passEntryScreens(page, hasTouch) {
  * why the real trial needs the `:not(:has(#instruction-container))` qualifier).
  */
 async function vigourJourney(page, testInfo, hasTouch) {
-  await passEntryScreens(page, hasTouch);
+  await passOrientationHint(page, hasTouch);
 
   // Interactive instructions demo: "Continue" only unlocks after DEMO_UNLOCK_TAPS taps.
   const demoPiggy = page.locator('#piggy-container');
@@ -85,7 +82,7 @@ async function vigourJourney(page, testInfo, hasTouch) {
  * same way the app itself does (task.js reversalInstructions / plugin-reversal.js).
  */
 async function reversalJourney(page, testInfo, hasTouch) {
-  await passEntryScreens(page, hasTouch);
+  await passOrientationHint(page, hasTouch);
 
   // Static rules pages (jsPsychInstructions) - wording differs by touch vs keyboard, both real.
   await expect(page.locator('#jspsych-instructions-next'), 'rules instructions page should appear').toBeVisible({
