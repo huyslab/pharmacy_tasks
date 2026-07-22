@@ -1,3 +1,10 @@
+## [1.1.3](https://github.com/huyslab/pharmacy_tasks/compare/v1.1.2...v1.1.3) (2026-07-22)
+
+
+### Bug Fixes
+
+* **experiment:** remove fullscreen instead to use jsPsychCallFunction to successfully preload ([277abc4](https://github.com/huyslab/pharmacy_tasks/commit/277abc4605d52ea0643c2371a242fb4e07758cff))
+
 ## [1.1.2](https://github.com/huyslab/pharmacy_tasks/compare/v1.1.1...v1.1.2) (2026-07-22)
 
 
