@@ -116,10 +116,15 @@ export async function createTaskTimeline(taskName, config = {}) {
             simulation_options: { data: { response: 0 } }
         };
 
+        const taskTimeline = Array.isArray(timeline) ? timeline : [timeline];
+        const preloadTrial = taskTimeline[0]?.type === jsPsychPreload ? taskTimeline[0] : null;
+        const gatedTimeline = preloadTrial ? taskTimeline.slice(1) : taskTimeline;
+
         return [
+            ...(preloadTrial ? [preloadTrial] : []),
             orientationHintTrial,
             {
-                timeline: Array.isArray(timeline) ? timeline : [timeline],
+                timeline: gatedTimeline,
                 on_timeline_start: () => { document.body.setAttribute('data-preferred-orientation', orientation); },
                 on_timeline_finish: () => { document.body.removeAttribute('data-preferred-orientation'); }
             }
