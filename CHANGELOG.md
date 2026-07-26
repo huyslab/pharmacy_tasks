@@ -1,3 +1,10 @@
+## [1.1.6](https://github.com/huyslab/pharmacy_tasks/compare/v1.1.5...v1.1.6) (2026-07-26)
+
+
+### Bug Fixes
+
+* **data:** stop entry-time viewport logging overwriting per-trial columns ([6ea0b5c](https://github.com/huyslab/pharmacy_tasks/commit/6ea0b5c85f41e616bbeb6b37edba949298e07d2d))
+
 ## [1.1.5](https://github.com/huyslab/pharmacy_tasks/compare/v1.1.4...v1.1.5) (2026-07-22)
 
 
