@@ -26,8 +26,8 @@
     <script src="./core/jspsych/plugin-html-keyboard-response.js"></script>
     <script src="./core/jspsych/plugin-call-function.js"></script>
     <!-- Not used by this fixture's timeline, but core/utils/participation-validation.js
-         builds its fullscreen_prompt trial at module-evaluation time, so the plugin has
-         to exist before core/utils/index.js is imported. -->
+         builds its fullscreen_prompt trial at module-evaluation time, and setup.js imports
+         that module, so the plugin has to exist before setup.js is imported below. -->
     <script src="./core/jspsych/plugin-fullscreen.js"></script>
 </head>
 <body>
