@@ -170,19 +170,21 @@ function saveUrlParameters() {
 
 /**
  * Captures device, input, and viewport covariates once at experiment entry.
- * Properties that never change during a session (user agent, pixel ratio,
- * screen size, touch capability, fullscreen support/state - the latter is
- * also covered continuously by interaction_data's fullscreenenter/exit
- * events) are stored on window.deviceInfo and sent as their own field in the
- * REDCap payload (see saveDataREDCap), rather than repeated on every trial.
- * Viewport size and orientation are captured once here too - there is no
- * resize/orientationchange listener re-triggering this - but stay on
- * addProperties rather than window.deviceInfo, since jsPsych forward-fills
- * addProperties values onto every subsequent trial. That keeps them
- * available as a per-trial column for tasks other than vigour/reversal
- * (which already record their own freshly-measured per-trial values), but
- * this entry-time snapshot goes stale for any other task if the viewport
- * actually changes mid-session.
+ * Everything here is a single entry-time snapshot, stored on window.deviceInfo
+ * and sent as its own field in the REDCap payload (see saveDataREDCap) rather
+ * than repeated on every trial. Most of it never changes during a session
+ * (user agent, pixel ratio, screen size, touch capability, fullscreen
+ * support/state - the latter also covered continuously by interaction_data's
+ * fullscreenenter/exit events).
+ *
+ * Viewport size and orientation DO change mid-session (rotation, browser
+ * chrome, dvh), so they are prefixed entry_* to mark them as the value at
+ * entry only. They must not go through jsPsych.data.addProperties: those
+ * values are merged over each trial's own result at write time
+ * (core/jspsych/jspsych.js write() -> Object.assign(result, dataProperties)),
+ * so an addProperties key silently overwrites any per-trial column of the
+ * same name. Tasks that measure the live viewport per trial (reversal,
+ * vigour) own the unprefixed viewport_width / viewport_height names.
  */
 function logDeviceInfo() {
     const orientation = (window.screen && window.screen.orientation && window.screen.orientation.type) || null;
@@ -195,14 +197,11 @@ function logDeviceInfo() {
         max_touch_points: navigator.maxTouchPoints || 0,
         touch_capable: ('ontouchstart' in window) || ((navigator.maxTouchPoints || 0) > 0),
         fullscreen_enabled: !!(document.fullscreenEnabled || document.webkitFullscreenEnabled),
-        fullscreen_active: !!(document.fullscreenElement || document.webkitFullscreenElement)
+        fullscreen_active: !!(document.fullscreenElement || document.webkitFullscreenElement),
+        entry_viewport_width: window.innerWidth,
+        entry_viewport_height: window.innerHeight,
+        entry_device_orientation: orientation
     };
-
-    jsPsych.data.addProperties({
-        viewport_width: window.innerWidth,
-        viewport_height: window.innerHeight,
-        device_orientation: orientation
-    });
 
     console.log("Device info logged.");
 }

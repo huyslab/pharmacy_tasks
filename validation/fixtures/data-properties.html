@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <base href="../../">
+    <title>Fixture: entry data properties</title>
+
+    <!-- Minimal harness that runs the real experiment-entry path (enterExperiment ->
+         logDeviceInfo) followed by one trial carrying sentinel per-trial values, so a
+         test can assert that entry-time properties never overwrite per-trial columns.
+         See validation/playwright/data-properties.spec.js. -->
+
+    <script type="importmap">
+        {
+            "imports": {
+                "@utils/": "./core/utils/",
+                "@jspsych/": "./core/jspsych/",
+                "@tasks/": "./tasks/",
+                "@api/": "./api/",
+                "@images/": "./assets/images/"
+            }
+        }
+    </script>
+
+    <script src="./core/jspsych/jspsych.js"></script>
+    <script src="./core/jspsych/plugin-html-keyboard-response.js"></script>
+    <script src="./core/jspsych/plugin-call-function.js"></script>
+    <!-- Not used by this fixture's timeline, but core/utils/participation-validation.js
+         builds its fullscreen_prompt trial at module-evaluation time, so the plugin has
+         to exist before core/utils/index.js is imported. -->
+    <script src="./core/jspsych/plugin-fullscreen.js"></script>
+</head>
+<body>
+    <div id="display_element"></div>
+
+    <script type="module">
+        import { enterExperiment } from './core/utils/index.js';
+
+        // "debug" suppresses preventParticipantTermination (beforeunload handlers would
+        // otherwise linger); "simulate" is not used - this fixture runs a real timeline.
+        window.participantID = 'debug_data_properties_fixture';
+        window.context = 'test';
+
+        window.jsPsych = initJsPsych({ display_element: 'display_element' });
+
+        // Sentinel values a plugin/task would measure per trial. They deliberately reuse
+        // the names entry-time device logging is tempted to claim; if any of those names
+        // go back onto jsPsych.data.addProperties, these get silently overwritten at
+        // write time (core/jspsych/jspsych.js write() -> Object.assign(result, dataProperties)).
+        window.SENTINEL = { viewport_width: 424242, viewport_height: 131313 };
+
+        const perTrialSentinelTrial = {
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: '<p id="fixture-trial">fixture trial</p>',
+            choices: 'NO_KEYS',
+            trial_duration: 50,
+            data: {
+                trialphase: 'fixture_per_trial',
+                viewport_width: window.SENTINEL.viewport_width,
+                viewport_height: window.SENTINEL.viewport_height
+            }
+        };
+
+        jsPsych.run([enterExperiment, perTrialSentinelTrial]).then(() => {
+            window.FIXTURE_DONE = true;
+            document.body.insertAdjacentHTML('beforeend', '<div id="fixture-done"></div>');
+        });
+    </script>
+</body>
+</html>

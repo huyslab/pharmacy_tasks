@@ -59,6 +59,19 @@ const journeyProjects = JOURNEY_DEVICES.map((name) => ({
   testMatch: /.*-journey\.spec\.js/,
 }));
 
+/**
+ * Engine- and device-independent invariants about the data we record (see
+ * data-properties.spec.js). Nothing here varies by viewport or input modality, so one
+ * project is enough - running it across the device matrix would only duplicate work.
+ */
+const dataProjects = [
+  {
+    name: 'data invariants',
+    use: { ...devices['Desktop Chrome'] },
+    testMatch: /data-.*\.spec\.js/,
+  },
+];
+
 export default defineConfig({
   testDir: './validation/playwright',
   fullyParallel: true,
@@ -71,7 +84,7 @@ export default defineConfig({
     trace: 'retain-on-failure',
   },
 
-  projects: [...deviceProjects, ...journeyProjects],
+  projects: [...deviceProjects, ...journeyProjects, ...dataProjects],
 
   /* Serves the repo root statically - required since the app resolves absolute
      paths (/core, /tasks, /assets) and import maps against the server root. */
