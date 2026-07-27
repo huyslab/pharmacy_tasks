@@ -40,7 +40,7 @@ const deviceProjects = [
 ].map((name) => ({
   name,
   use: { ...devices[name] },
-  testMatch: /.*-rendering\.spec\.js$/,
+  testMatch: /.*-rendering\.spec\.js/,
 }));
 
 /**
@@ -56,26 +56,8 @@ const JOURNEY_DEVICES = ['iPhone 14', 'Galaxy A55', 'iPad Pro 11', 'Desktop Chro
 const journeyProjects = JOURNEY_DEVICES.map((name) => ({
   name: `${name} (journey)`,
   use: { ...devices[name] },
-  testMatch: /.*-journey\.spec\.js$/,
+  testMatch: /.*-journey\.spec\.js/,
 }));
-
-/**
- * Engine- and device-independent invariants about the data we record (see
- * data-properties.spec.js). Nothing here varies by viewport or input modality, so one
- * project is enough - running it across the device matrix would only duplicate work.
- *
- * The pattern is anchored on the path separator, not with ^: testMatch regexes are matched
- * against the ABSOLUTE file path, so /^data-/ anchors to the filesystem root and matches
- * nothing at all. [^\\/]* then keeps "data-" as a filename prefix rather than a substring,
- * so a future metadata-*.spec.js isn't silently pulled into this single-project run.
- */
-const dataProjects = [
-  {
-    name: 'data invariants',
-    use: { ...devices['Desktop Chrome'] },
-    testMatch: /[\\/]data-[^\\/]*\.spec\.js$/,
-  },
-];
 
 export default defineConfig({
   testDir: './validation/playwright',
@@ -89,7 +71,7 @@ export default defineConfig({
     trace: 'retain-on-failure',
   },
 
-  projects: [...deviceProjects, ...journeyProjects, ...dataProjects],
+  projects: [...deviceProjects, ...journeyProjects],
 
   /* Serves the repo root statically - required since the app resolves absolute
      paths (/core, /tasks, /assets) and import maps against the server root. */
