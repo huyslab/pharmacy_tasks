@@ -4,7 +4,7 @@
  */
 
 // Import communication utility for sending messages to parent window
-import { postToParent } from './data-handling.js';
+import { ALLOWED_PARENT_ORIGINS, signalLoadSuccess, updateState } from './data-handling.js';
 import { preventParticipantTermination } from './participation-validation.js';
 import { formatDateString } from './calculations.js';
 
@@ -149,23 +149,125 @@ function createPreloadTrial(images, task_name) {
         data: {
             trialphase: `${task_name}_preload`,
         },
-        on_start: () => {
-            console.log("load_successful");
-            postToParent({ message: "load_successful" });
-        },
-        continue_after_error: true
+        // No load_successful signal here - enterExperiment sends one for every task, whether
+        // or not it has assets. That message is the website's boot heartbeat and deliberately
+        // says nothing about whether the stimuli actually arrived; this trial reports that.
+        continue_after_error: true,
+        on_finish: (data) => {
+            const failed = [
+                ...(data.failed_images || []),
+                ...(data.failed_audio || []),
+                ...(data.failed_video || [])
+            ];
+
+            if (data.success === false || failed.length > 0) {
+                console.error(`Preload failed for ${task_name}:`, failed);
+            }
+        }
     };
 }
 
-// Save all URL parameters to jsPsych data
+/**
+ * URL parameters that must not be forward-filled onto every trial row.
+ *
+ * jsPsych's addProperties applies to all existing and future trials, so a stringified study
+ * configuration or bonus state would be duplicated across the whole dataset. These are
+ * captured once instead and sent as their own fields in the REDCap payload (see
+ * saveDataREDCap); session_state is additionally already parsed into window.session_state.
+ */
+const BULKY_URL_PARAMS = ['study_object', 'session_state'];
+
+// Save URL parameters to jsPsych data, minus the bulky ones recorded once elsewhere
 function saveUrlParameters() {
     const urlParams = new URLSearchParams(window.location.search);
     const params = {};
     for (const [key, value] of urlParams.entries()) {
+        if (BULKY_URL_PARAMS.includes(key)) continue;
         params[key] = value;
     }
+
+    // Keep the study configuration for provenance, recorded once in the REDCap payload.
+    // On a parse failure the raw text goes to a separate global rather than window.studyObject,
+    // so the payload's study_object field is always an object or null - never sometimes a
+    // string that silently reads back as undefined during analysis.
+    const studyObject = urlParams.get('study_object');
+    if (studyObject) {
+        try {
+            window.studyObject = JSON.parse(studyObject);
+        } catch (error) {
+            console.warn("Could not parse study_object URL parameter:", error);
+            window.studyObjectRaw = studyObject;
+        }
+    }
+
     jsPsych.data.addProperties(params);
     console.log("URL parameters saved to data:", params);
+}
+
+/**
+ * Attaches any buffered pause/resume events to the trial that just finished, then clears
+ * the buffer. Installed automatically by listenToParentMessages.
+ * @param {Object} data - The finished trial's data object
+ */
+function flushPauseResumeEvents(data) {
+    if (window.pause_resume_events?.length) {
+        data.pause_resume_events = window.pause_resume_events;
+        window.pause_resume_events = [];
+    }
+}
+
+// Guards against a second registration if enterExperiment is ever composed into a timeline
+// more than once - two listeners would double every pause/resume event and pause twice, and
+// re-running setup would discard events already buffered but not yet flushed.
+let parentMessageListenerInstalled = false;
+
+/**
+ * Listens for control messages from the embedding website.
+ *
+ * Both hosting sites post {message: "pause_task"} / {message: "resume_task"} into the task
+ * iframe when the participant leaves the task - on mymeds that fires on fullscreen exit
+ * where supported, and on tab/app switch (Page Visibility) on iOS, where fullscreen isn't
+ * available (see TaskFrame.js). Without this the participant keeps burning response
+ * deadlines while the task isn't on screen, and the interruption goes unrecorded.
+ *
+ * Owns both halves of the feature: events are buffered on window.pause_resume_events, and
+ * the on_trial_finish hook that drains that buffer into the trial data is chained onto
+ * jsPsych here rather than left for each entry HTML to remember to wire up.
+ */
+function listenToParentMessages() {
+    if (parentMessageListenerInstalled) return;
+    parentMessageListenerInstalled = true;
+
+    window.pause_resume_events = [];
+
+    // Chain the flush onto whatever on_trial_finish the entry page already configured
+    const existingOnTrialFinish = jsPsych.options.on_trial_finish;
+    jsPsych.options.on_trial_finish = (data) => {
+        flushPauseResumeEvents(data);
+        existingOnTrialFinish(data);
+    };
+
+    window.addEventListener("message", (event) => {
+        // Check origin and sender for security - an allowlisted origin isn't enough on its
+        // own, since any window able to reach this frame could otherwise stall the task.
+        if (!ALLOWED_PARENT_ORIGINS.includes(event.origin)) return;
+        if (event.source !== window.parent) return;
+
+        const msg = event.data?.message;
+        console.log("Message received from parent:", msg);
+
+        if (msg === "pause_task") {
+            console.log("Experiment paused");
+            window.pause_resume_events.push({ time: jsPsych.getTotalTime(), event: "pause" });
+            jsPsych.pauseExperiment();
+        }
+
+        if (msg === "resume_task") {
+            console.log("Experiment resumed");
+            window.pause_resume_events.push({ time: jsPsych.getTotalTime(), event: "resume" });
+            jsPsych.resumeExperiment();
+        }
+    }, false);
 }
 
 /**
@@ -234,6 +336,14 @@ const enterExperiment = {
 
         // Capture device/viewport covariates
         logDeviceInfo();
+
+        // Accept pause/resume control messages from the embedding website, and record them
+        // against the interrupted trial
+        listenToParentMessages();
+
+        // Report a successful load for every task, whether or not it preloads assets, before
+        // the website's load timeout fires
+        signalLoadSuccess();
     }
 };
 
@@ -243,6 +353,7 @@ export {
     loadSequence,
     createPreloadTrial,
     saveUrlParameters,
+    listenToParentMessages,
     enterExperiment,
     loadCSS
 };

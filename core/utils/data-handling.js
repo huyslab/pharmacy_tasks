@@ -6,6 +6,56 @@ import { preventRefresh} from "./participation-validation.js"
  */
 
 /**
+ * Parent origins this task battery is allowed to exchange messages with.
+ * Shared by postToParent (outgoing) and the parent message listener (incoming), so a new
+ * deployment domain only ever has to be added in one place.
+ */
+const ALLOWED_PARENT_ORIGINS = [
+    'http://localhost:3000',
+    'https://relmed.ac.uk',
+    'https://www.relmed.ac.uk',
+    'https://beta.relmed.ac.uk',
+    'https://mymeds.study',
+    'https://www.mymeds.study',
+    'https://mymeds.delosis.com'
+];
+
+/**
+ * Resolves the origin of the embedding page.
+ *
+ * document.referrer holds the parent page's URL. Cross-origin referrer policy trims it to
+ * the bare origin ("https://mymeds.study/"), but same-origin embedding keeps the full path
+ * ("https://mymeds.study/participant") - and the mymeds participant page lives at
+ * /participant, not the domain root the way My RELMED does. Parsing out the origin rather
+ * than string-matching the referrer is what makes both cases work.
+ *
+ * @returns {string|null} The parent origin, or null if it cannot be determined
+ */
+function getParentOrigin() {
+    let candidate = document.referrer;
+
+    if (!candidate) {
+        // No referrer (e.g. opened directly): fall back to the parent's own origin, which is
+        // only readable when we are same-origin with it.
+        try {
+            candidate = window.parent.location.origin;
+        } catch (error) {
+            return null;
+        }
+    }
+
+    try {
+        return new URL(candidate).origin;
+    } catch (error) {
+        return null;
+    }
+}
+
+// Latches once postToParent has reported a rejected parent origin, so the warning doesn't
+// repeat on every trial's state/bonus update.
+let warnedAboutParentOrigin = false;
+
+/**
  * Sends messages to parent window with security validation
  * Used for communication between iframe and parent window in web experiments
  * @param {Object} message - Message object to send to parent
@@ -14,26 +64,17 @@ import { preventRefresh} from "./participation-validation.js"
 function postToParent(message, fallback = () => {}) {
     try {
         if (window.parent && window.parent.postMessage) {
-            const allowedOrigins = [
-                'http://localhost:3000',
-                'https://relmed.ac.uk',
-                'https://www.relmed.ac.uk',
-                'https://mymeds.study'
-            ];
+            const parentOrigin = getParentOrigin();
 
-            // Normalize a URL by removing trailing slashes
-            const normalizeUrl = (url) => url.replace(/\/+$/, '');
-
-            // Get the parent URL and normalize it
-            const parentUrl = normalizeUrl(document.referrer || window.parent.location.origin);
-
-            // Check if the normalized parent URL matches any of the allowed origins
-            const isAllowed = allowedOrigins.some(origin => normalizeUrl(origin) === parentUrl);
-
-            if (isAllowed) {
-                window.parent.postMessage(message, parentUrl);
+            if (parentOrigin && ALLOWED_PARENT_ORIGINS.includes(parentOrigin)) {
+                window.parent.postMessage(message, parentOrigin);
             } else {
-                // console.warn("Parent URL does not match any allowed origins:", parentUrl);
+                // Warn once, not per call: state and bonus updates post on every trial, so a
+                // non-allowlisted host (local dev, examples/) would otherwise bury the console.
+                if (!warnedAboutParentOrigin) {
+                    warnedAboutParentOrigin = true;
+                    console.warn("Parent origin does not match any allowed origins:", parentOrigin);
+                }
                 fallback();
             }
         } else {
@@ -46,6 +87,30 @@ function postToParent(message, fallback = () => {}) {
         // Implement a fallback or handle the error
         fallback();
     }
+}
+
+// Latches once the load signal has actually reached the parent, so the two call sites
+// (the entry page, ahead of its async timeline build, and enterExperiment, which covers
+// entry pages that don't signal for themselves) only ever produce one message.
+let loadSuccessSignalled = false;
+
+/**
+ * Tells the embedding website that the task booted successfully.
+ *
+ * Both My RELMED and mymeds start a timeout when they create the task iframe and show a
+ * "Task failed to load" dialog if this message doesn't arrive in time (5s on mymeds - see
+ * TaskFrame.js). Sent from experiment entry rather than only from preload trials, so tasks
+ * that have no assets to preload aren't reported as broken. Safe to call more than once.
+ */
+function signalLoadSuccess() {
+    if (loadSuccessSignalled) return;
+
+    console.log("load_successful");
+
+    // Latch before posting, and release again from the fallback, so a call made while the
+    // parent is unreachable doesn't suppress a later one that would have got through.
+    loadSuccessSignalled = true;
+    postToParent({ message: "load_successful" }, () => { loadSuccessSignalled = false; });
 }
 
 /**
@@ -86,12 +151,17 @@ function saveDataREDCap(retry = 1, extra_fields = {}, callback = () => {}) {
     const interaction_data = jsPsych.data.getInteractionData().json();
 
     // Combine interaction data with jsPsych data. Device info (set once by logDeviceInfo)
-    // is sent as its own field rather than repeated on every trial via addProperties.
+    // and the launch context (set once by saveUrlParameters) are sent as their own fields
+    // rather than repeated on every trial via addProperties - study_object in particular is
+    // a whole study configuration blob, which would otherwise be duplicated onto all ~150
+    // trial rows.
     const combined_data = JSON.stringify([
         {
             interaction_data: interaction_data,
             jspsych_data: jspsych_data,
-            device_info: window.deviceInfo || null
+            device_info: window.deviceInfo || null,
+            study_object: window.studyObject || null,
+            launch_session_state: window.session_state || null
         }
     ]);
 
@@ -125,7 +195,11 @@ function saveDataREDCap(retry = 1, extra_fields = {}, callback = () => {}) {
                     // Exponential backoff: 1s, 2s, 4s, etc.
                     const delay = Math.pow(2, (3 - retry)) * 1000;
                     setTimeout(function () {
-                        saveDataREDCap(retry - 1);
+                        // extra_fields must be forwarded: endExperiment's {message, endTask}
+                        // is what tells the website the module finished, and a retry that
+                        // dropped it would submit data the site never acts on. callback is
+                        // deliberately not forwarded - this branch already fired it below.
+                        saveDataREDCap(retry - 1, extra_fields);
                     }, delay);
                 } else {
                     console.error('Failed to submit data after retrying.');
@@ -174,7 +248,9 @@ function saveDataREDCap(retry = 1, extra_fields = {}, callback = () => {}) {
             if (retry > 0) {
                 console.log('Retrying to submit data...');
                 setTimeout(function(){
-                    saveDataREDCap(retry - 1);
+                    // Unlike the relmed branch, callback here only fires on success or on
+                    // final failure, so it has to be carried through the retry chain.
+                    saveDataREDCap(retry - 1, extra_fields, callback);
                 }, 1000);
             } else {
                 console.error('Failed to submit data after retrying.');
@@ -197,15 +273,22 @@ function endExperiment() {
     // Remove beforeunload event listener to allow page navigation
     window.removeEventListener('beforeunload', preventRefresh);
 
-    // Save data with end task message for RELMED context
+    // Save data and tell the website the module is done. The two hosting sites read this
+    // differently: My RELMED keys off `message`, mymeds checks for a truthy top-level
+    // `endTask` field (src/pages/Participant.js) before marking the task finished, closing
+    // the iframe and refreshing session state. Sending both satisfies either parent.
     saveDataREDCap(10, {
-        message: "endTask"
+        message: "endTask",
+        endTask: true
     });
 }
 
 // Export functions for use in other modules
 export {
+    ALLOWED_PARENT_ORIGINS,
+    getParentOrigin,
     postToParent,
+    signalLoadSuccess,
     updateState,
     saveDataREDCap,
     endExperiment

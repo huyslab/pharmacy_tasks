@@ -186,36 +186,108 @@
     <script type="module">
         // Import task registry functions
         import { createTaskTimeline, getTask, getTaskInfo } from '@api/index.js';
-        import { bonusTrial, enterExperiment } from '@utils/index.js';
+        import { bonusTrial, enterExperiment, getResumptionState, saveDataREDCap,
+                 signalLoadSuccess } from '@utils/index.js';
 
-        // Initialize jsPsych
+        // Initialize jsPsych. The pause/resume hook is installed by enterExperiment, which
+        // owns both the message listener and the buffer it drains.
         window.jsPsych = initJsPsych({
             display_element: 'display_element',
+            // Last-ditch save if the participant closes or reloads mid-task - without this
+            // everything since the last periodic save is lost.
+            on_close: () => { saveDataREDCap(); },
             on_finish: function(data) {
                 // Display results
                 jsPsych.getDisplayElement().innerHTML = '<p>Thank you for participating! You may now close this tab.</p>';
             }
         });
-        
+
+        // Read the query string once - every launch parameter comes from the same place, and
+        // a single accessor is what keeps a rename on the website side from being missed
+        // (as `module_state` was).
+        const urlParams = new URLSearchParams(window.location.search);
+
         // Get parameters from URL (populated by index.html's setup form redirect)
-        window.context = new URLSearchParams(window.location.search).get('context') || 'relmed';
-        window.participantID = new URLSearchParams(window.location.search).get('participant_id') || '';
+        window.context = urlParams.get('context') || 'relmed';
+        window.participantID = urlParams.get('participant_id') || '';
         window.simulating = window.participantID.includes("simulate") || false;
-        window.last_state = jsPsych.data.getURLVariable('state') || "none";
-        window.session_state = JSON.parse(jsPsych.data.getURLVariable('session_state') || "{}");
+        window.debug = window.participantID.includes("debug") || window.participantID.includes("TST");
+        // Resolves the website's `module_state`, falling back to the older `state` name
+        window.last_state = getResumptionState();
+        window.session_state = JSON.parse(urlParams.get('session_state') || "{}");
+
+        // Stamped into every trial for provenance; kept in this exact shape because
+        // .releaserc.json rewrites the literal on release.
+        jsPsych.data.addProperties({
+            version: "1.5.3"
+        });
 
         // Which task to run. Vigour and reversal don't vary by session, but
-        // session is still a required field, and will be provided by the 
+        // session is still a required field, and will be provided by the
         // website.
-        window.session = new URLSearchParams(window.location.search).get('session') || '';
-        const taskName = new URLSearchParams(window.location.search).get('task') || '';
+        window.session = urlParams.get('session') || '';
+        const taskName = urlParams.get('task') || '';
         window.module = taskName;
 
-        // Map the website's session labels to the reversal sequence keys in TaskRegistry.
-        const sessionSequenceMap = {
-            "Session 1": "wk0",
-            "Session 2": "wk2"
-        };
+        // Order in which the study runs its reversal sequences, so the website's default
+        // "Session N" labels can select one. Week-style labels and raw sequence keys are
+        // matched against the registry directly and don't depend on this.
+        const sessionOrder = ['wk0', 'wk2', 'wk4', 'wk24', 'wk28'];
+
+        /**
+         * Resolves a session label to a reversal sequence key from TaskRegistry.
+         *
+         * The label is whatever the study admin named the session in StudyManagement, so
+         * accept mymeds' default ("Session 1"), RELMED-style week labels ("Week 0"), and the
+         * raw keys ("wk0", "screening"). Availability comes from the registry rather than a
+         * hand-maintained list here, so adding a sequence there is enough.
+         *
+         * @param {string} label - The session label from the URL
+         * @returns {string|null} A key of TaskRegistry.reversal.sequences, or null
+         */
+        function resolveReversalSequence(label) {
+            const sequences = getTask('reversal').sequences || {};
+            const normalized = label.trim().toLowerCase().replace(/[\s_-]+/g, '');
+
+            // Raw sequence key, e.g. "wk0" or "screening"
+            if (sequences[normalized]) return normalized;
+
+            // mymeds maps its "Training" session onto the screening sequence
+            if (normalized === 'training' && sequences.screening) return 'screening';
+
+            // Week label, e.g. "Week 24" -> "wk24"
+            const week = normalized.match(/^week(\d+)$/);
+            if (week && sequences[`wk${week[1]}`]) return `wk${week[1]}`;
+
+            // Ordinal label, e.g. "Session 2" -> the 2nd sequence the study runs
+            const session = normalized.match(/^session(\d+)$/);
+            if (session) {
+                const key = sessionOrder[parseInt(session[1], 10) - 1];
+                if (key && sequences[key]) return key;
+            }
+
+            return null;
+        }
+
+        /**
+         * Describes the session labels resolveReversalSequence accepts, derived from the same
+         * registry it resolves against so the error message can't drift from the behaviour.
+         *
+         * @returns {string} Human-readable list of accepted labels
+         */
+        function describeAcceptedSessions() {
+            const keys = Object.keys(getTask('reversal').sequences || {});
+            const weekLabels = keys.filter((key) => /^wk\d+$/.test(key))
+                                   .map((key) => `"Week ${key.slice(2)}"`);
+            const sessionCount = sessionOrder.filter((key) => keys.includes(key)).length;
+
+            return [
+                sessionCount ? `"Session 1"-"Session ${sessionCount}"` : null,
+                weekLabels.length ? weekLabels.join(', ') : null,
+                keys.includes('screening') ? '"Training"' : null,
+                `or a sequence key (${keys.join(', ')})`
+            ].filter(Boolean).join(', ');
+        }
 
         const bonusRules = {
             reversal: {
@@ -241,11 +313,22 @@
                 if (window.context !== 'relmed' && window.context !== 'prolific') {
                     throw new Error(`Missing or unrecognized "context" URL parameter ("${window.context}"). Expected "relmed" (also used for mymeds) or "prolific".`);
                 }
-
-                const sequence = sessionSequenceMap[window.session];
-                if (!sequence) {
-                    throw new Error(`Missing or unrecognized "session" URL parameter ("${window.session}"). Expected "Session 1" or "Session 2".`);
+                // REDCap rejects a submission with no session (post-data requires it), so this
+                // is fatal for every task even though only reversal maps it to a sequence.
+                if (!window.session) {
+                    throw new Error('Missing "session" URL parameter. Launch this page via index.html rather than directly.');
                 }
+
+                const sequence = resolveReversalSequence(window.session);
+                if (taskName === "reversal" && !sequence) {
+                    throw new Error(`Unrecognized "session" URL parameter ("${window.session}") - the reversal task needs it to pick a trial sequence. Accepted: ${describeAcceptedSessions()}.`);
+                }
+
+                // Only now report a successful load. Signalling before the guards above would
+                // clear the website's load timeout, suppressing the "Task failed to load"
+                // dialog whose Close button is the participant's way back to the task list.
+                // Still ahead of the awaited work below, which is what the timeout is for.
+                signalLoadSuccess();
 
                 // Get task information
                 const taskInfo = getTaskInfo(taskName);
