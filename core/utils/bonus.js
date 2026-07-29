@@ -3,7 +3,7 @@
  * Handles bonus computation and payment tracking across different experimental modules
  */
 
-import { postToParent, endExperiment, saveDataREDCap } from "./data-handling.js";
+import { postToParent, endExperiment, updateState, saveDataREDCap } from "./data-handling.js";
 
 /**
  * Rounds a numeric value to a specified number of decimal places
@@ -160,7 +160,7 @@ function bonusTrial(module) {
     },
     on_finish: (data) => {
         updateState('bonus_trial_end');
-        
+
         endExperiment();
     },
     simulation_options: {
