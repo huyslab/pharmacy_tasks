@@ -1,3 +1,11 @@
+## [1.5.4](https://github.com/huyslab/pharmacy_tasks/compare/v1.5.3...v1.5.4) (2026-07-29)
+
+
+### Bug Fixes
+
+* **experiment:** describe every accepted session label in the error ([6815b3f](https://github.com/huyslab/pharmacy_tasks/commit/6815b3fd74c5b1c301cb1a01848b6654838218b9))
+* **integration:** restore website settings needed to run on mymeds ([36663f9](https://github.com/huyslab/pharmacy_tasks/commit/36663f97a9f0a22ab9e77f137eac8e4eba21df3d))
+
 ## [1.5.3](https://github.com/huyslab/pharmacy_tasks/compare/v1.5.2...v1.5.3) (2026-07-29)
 
 
