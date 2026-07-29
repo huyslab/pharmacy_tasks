@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/huyslab/pharmacy_tasks/compare/v1.3.1...v1.4.0) (2026-07-29)
+
+
+### Features
+
+* **experiment:** enhance layout and add bonus rules for tasks in experiment ([52b2448](https://github.com/huyslab/pharmacy_tasks/commit/52b24483994447b9f8dd754e04ebd0453abd5f81))
+
 ## [1.3.1](https://github.com/huyslab/pharmacy_tasks/compare/v1.3.0...v1.3.1) (2026-07-29)
 
 
