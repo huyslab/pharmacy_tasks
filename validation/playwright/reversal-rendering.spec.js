@@ -27,6 +27,7 @@ test('website Session 2 selects the wk2 reversal sequence', async ({ page }, tes
   await sequenceRequest;
 
   await expect.poll(() => page.evaluate(() => window.session)).toBe('Session 2');
+  await expect(page.locator('#jspsych-content')).toBeAttached({ timeout: 15000 });
 });
 
 test('reversal preloads stimuli before showing the orientation hint', async ({ page }, testInfo) => {

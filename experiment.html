@@ -75,6 +75,11 @@
             margin: 1em 0;
         }
 
+        .instructions td {
+            padding-left: 20px;
+            padding-right: 20px
+        }
+
         /* Orientation gate: on phones, block the wrong orientation for the active task; tablets/
            desktop are exempt (larger min dimension). Driven by
            <body data-preferred-orientation="portrait|landscape">, set per task by the registry. */
@@ -150,7 +155,7 @@
     </style>
 </head>
 <body>
-    <div id="display_element"></div>
+    <div id='display_element' class='jsPsychDE'></div>
 
     <div id="rotate-overlay">
         <div class="phone-rotate-icon">
@@ -180,8 +185,8 @@
 
     <script type="module">
         // Import task registry functions
-        import { createTaskTimeline, getTaskInfo } from '@api/index.js';
-        import { enterExperiment } from '@utils/index.js';
+        import { createTaskTimeline, getTask, getTaskInfo } from '@api/index.js';
+        import { bonusTrial, enterExperiment } from '@utils/index.js';
 
         // Get parameters from URL (populated by index.html's setup form redirect)
         window.participantID = new URLSearchParams(window.location.search).get('participant_id') || '';
@@ -199,6 +204,17 @@
         const sessionSequenceMap = {
             "Session 1": "wk0",
             "Session 2": "wk2"
+        };
+
+        const bonusRules = {
+            reversal: {
+                max_bonus: 0.00,
+                min_prop_bonus: 0.00
+            },
+            vigour: {
+                max_bonus: 0.00,
+                min_prop_bonus: 0.00
+            }
         };
 
         // Initialize jsPsych
@@ -242,10 +258,22 @@
                 const timeline = await createTaskTimeline(taskName, taskConfig);
                 console.log('Timeline created:', timeline);
 
+                const standaloneModule = {
+                    elements: [
+                        {
+                            type: "task",
+                            name: taskName,
+                            __task: getTask(taskName)
+                        }
+                    ],
+                    ...bonusRules[taskName]
+                };
+
                 // Create the complete timeline
                 const fullTimeline = [
                     enterExperiment,
-                    ...timeline
+                    ...timeline,
+                    bonusTrial(standaloneModule)
                 ];
 
                 // Run the experiment
