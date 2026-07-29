@@ -1,3 +1,10 @@
+## [1.5.2](https://github.com/huyslab/pharmacy_tasks/compare/v1.5.1...v1.5.2) (2026-07-29)
+
+
+### Bug Fixes
+
+* **experiment:** refactor jsPsych initialization to improve code structure ([4853e0f](https://github.com/huyslab/pharmacy_tasks/commit/4853e0f0da1c7dcb0eb9ee3122106b4da64f4077))
+
 ## [1.5.1](https://github.com/huyslab/pharmacy_tasks/compare/v1.5.0...v1.5.1) (2026-07-29)
 
 
