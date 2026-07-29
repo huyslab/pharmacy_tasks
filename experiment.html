@@ -269,6 +269,26 @@
             return null;
         }
 
+        /**
+         * Describes the session labels resolveReversalSequence accepts, derived from the same
+         * registry it resolves against so the error message can't drift from the behaviour.
+         *
+         * @returns {string} Human-readable list of accepted labels
+         */
+        function describeAcceptedSessions() {
+            const keys = Object.keys(getTask('reversal').sequences || {});
+            const weekLabels = keys.filter((key) => /^wk\d+$/.test(key))
+                                   .map((key) => `"Week ${key.slice(2)}"`);
+            const sessionCount = sessionOrder.filter((key) => keys.includes(key)).length;
+
+            return [
+                sessionCount ? `"Session 1"-"Session ${sessionCount}"` : null,
+                weekLabels.length ? weekLabels.join(', ') : null,
+                keys.includes('screening') ? '"Training"' : null,
+                `or a sequence key (${keys.join(', ')})`
+            ].filter(Boolean).join(', ');
+        }
+
         const bonusRules = {
             reversal: {
                 max_bonus: 1.00,
@@ -301,7 +321,7 @@
 
                 const sequence = resolveReversalSequence(window.session);
                 if (taskName === "reversal" && !sequence) {
-                    throw new Error(`Unrecognized "session" URL parameter ("${window.session}") - the reversal task needs it to pick a trial sequence. Expected "Session 1" or "Session 2".`);
+                    throw new Error(`Unrecognized "session" URL parameter ("${window.session}") - the reversal task needs it to pick a trial sequence. Accepted: ${describeAcceptedSessions()}.`);
                 }
 
                 // Only now report a successful load. Signalling before the guards above would
