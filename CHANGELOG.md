@@ -1,3 +1,10 @@
+## [1.5.1](https://github.com/huyslab/pharmacy_tasks/compare/v1.5.0...v1.5.1) (2026-07-29)
+
+
+### Bug Fixes
+
+* **experiment:** update context handling and add session state management ([5209ca4](https://github.com/huyslab/pharmacy_tasks/commit/5209ca4a9f4673375ae01c1d9f86573b396f1085))
+
 # [1.5.0](https://github.com/huyslab/pharmacy_tasks/compare/v1.4.0...v1.5.0) (2026-07-29)
 
 
