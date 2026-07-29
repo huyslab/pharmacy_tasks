@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/huyslab/pharmacy_tasks/compare/v1.2.0...v1.3.0) (2026-07-29)
+
+
+### Features
+
+* **session:** add session selection to experiment and update task handling ([5fa3440](https://github.com/huyslab/pharmacy_tasks/commit/5fa34405edce73e4b7d397d8c0b9b1a9e7574e6d))
+
 # [1.2.0](https://github.com/huyslab/pharmacy_tasks/compare/v1.1.6...v1.2.0) (2026-07-29)
 
 
