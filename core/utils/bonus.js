@@ -131,11 +131,11 @@ function updateBonusState(settings) {
  */
 function bonusTrial(module) {
     return {
-        type: jsPsychHtmlKeyboardResponse,
+        type: jsPsychHtmlButtonResponse,
         css_classes: ['instructions'],
         stimulus: function (trial) {
             // Determine context-appropriate terminology
-            let stimulus =  `Thank you for completing this session!`      
+            let stimulus =  `Congratulations! You are nearly at the end of this module!`      
             const total_bonus = computeTotalBonus(module);
             stimulus += `
                     <p>It is time to reveal your total bonus payment for this module.</p>
@@ -143,18 +143,26 @@ function bonusTrial(module) {
                 `;
             return stimulus;
     },
-    choices: ['p'],
+    choices: ['Continue'],
     data: { trialphase: 'bonus_trial' },
     on_start: () => {
-      const bonus = computeTotalBonus(module).toFixed(2);
-      
-      jsPsych.data.addProperties({
-          bonus: bonus
-      });
-
-      saveDataREDCap();
+        updateState(`bonus_trial`);
+        
+        const bonus = computeTotalBonus(module).toFixed(2);
+        
+        jsPsych.data.addProperties({
+            bonus: bonus
+        });
+        
+        postToParent({bonus: bonus});
+        
+        saveDataREDCap();
     },
-    on_finish: endExperiment,
+    on_finish: (data) => {
+        updateState('bonus_trial_end');
+        
+        endExperiment();
+    },
     simulation_options: {
       simulate: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' // Simulate the bonus trial in development mode
     }
