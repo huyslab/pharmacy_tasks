@@ -188,6 +188,15 @@
         import { createTaskTimeline, getTask, getTaskInfo } from '@api/index.js';
         import { bonusTrial, enterExperiment } from '@utils/index.js';
 
+        // Initialize jsPsych
+        window.jsPsych = initJsPsych({
+            display_element: 'display_element',
+            on_finish: function(data) {
+                // Display results
+                jsPsych.getDisplayElement().innerHTML = '<p>Thank you for participating! You may now close this tab.</p>';
+            }
+        });
+        
         // Get parameters from URL (populated by index.html's setup form redirect)
         window.context = new URLSearchParams(window.location.search).get('context') || 'relmed';
         window.participantID = new URLSearchParams(window.location.search).get('participant_id') || '';
@@ -218,15 +227,6 @@
                 min_prop_bonus: 0.00
             }
         };
-
-        // Initialize jsPsych
-        window.jsPsych = initJsPsych({
-            display_element: 'display_element',
-            on_finish: function(data) {
-                // Display results
-                jsPsych.getDisplayElement().innerHTML = '<p>Thank you for participating! You may now close this tab.</p>';
-            }
-        });
 
         // Function to run the experiment
         async function runExperiment() {
