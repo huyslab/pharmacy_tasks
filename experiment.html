@@ -189,10 +189,17 @@
         window.context = new URLSearchParams(window.location.search).get('context') || '';
 
         // Which task to run. Vigour and reversal don't vary by session, but
-        // session is still a required field.
+        // session is still a required field, and will be provided by the 
+        // website.
         window.session = new URLSearchParams(window.location.search).get('session') || '';
         const taskName = new URLSearchParams(window.location.search).get('task') || '';
         window.module = taskName;
+
+        // Map the website's session labels to the reversal sequence keys in TaskRegistry.
+        const sessionSequenceMap = {
+            "Session 1": "wk0",
+            "Session 2": "wk2"
+        };
 
         // Initialize jsPsych
         window.jsPsych = initJsPsych({
@@ -217,12 +224,22 @@
                     throw new Error(`Missing or unrecognized "context" URL parameter ("${window.context}"). Data will not be saved to REDCap unless context is "relmed" or "prolific". Launch this page via index.html rather than directly.`);
                 }
 
+                const sequence = sessionSequenceMap[window.session];
+                if (!sequence) {
+                    throw new Error(`Missing or unrecognized "session" URL parameter ("${window.session}"). Expected "Session 1" or "Session 2".`);
+                }
+
                 // Get task information
                 const taskInfo = getTaskInfo(taskName);
                 console.log('Task info:', taskInfo);
 
-                // Create the task timeline with default settings
-                const timeline = await createTaskTimeline(taskName);
+                // Reversal selects a week-specific sequence; vigour uses session as metadata only.
+                const taskConfig =
+                    taskName === "reversal"
+                        ? { sequence }
+                        : {};
+
+                const timeline = await createTaskTimeline(taskName, taskConfig);
                 console.log('Timeline created:', timeline);
 
                 // Create the complete timeline

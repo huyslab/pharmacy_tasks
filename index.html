@@ -146,6 +146,15 @@
                 </select>
             </div>
 
+            <div class="form-group">
+                <label for="session">Session:</label>
+                <select id="session" name="session" required>
+                    <option value="">Select session</option>
+                    <option value="Session 1">Session 1</option>
+                    <option value="Session 2">Session 2</option>
+                </select>
+            </div>
+
             <button type="submit" class="start-button" id="startButton">
                 Start Experiment
             </button>
@@ -163,6 +172,7 @@
             const participantId = document.getElementById('participantId').value.trim();
             const context = document.getElementById('context').value;
             const task = document.getElementById('task').value;
+            const session = document.getElementById('session').value;
             const errorMessage = document.getElementById('errorMessage');
 
             // Hide error message
@@ -196,8 +206,15 @@
                 return;
             }
 
-            // Redirect to experiment.html with participant_id, context, and task parameters
-            window.location.href = `experiment.html?participant_id=${encodeURIComponent(participantId)}&context=${encodeURIComponent(context)}&task=${encodeURIComponent(task)}`;
+            // Validate session selection
+            if (!session) {
+                errorMessage.textContent = 'Please select a session';
+                errorMessage.style.display = 'block';
+                return;
+            }
+
+            // Redirect to experiment.html with participant_id, context, task, and session parameters
+            window.location.href = `experiment.html?participant_id=${encodeURIComponent(participantId)}&context=${encodeURIComponent(context)}&task=${encodeURIComponent(task)}&session=${encodeURIComponent(session)}`;
         });
 
         // Enable real-time validation
@@ -218,6 +235,14 @@
 
         // Hide error message when task is selected
         document.getElementById('task').addEventListener('change', function() {
+            const errorMessage = document.getElementById('errorMessage');
+            if (this.value) {
+                errorMessage.style.display = 'none';
+            }
+        });
+
+        // Hide error message when session is selected
+        document.getElementById('session').addEventListener('change', function() {
             const errorMessage = document.getElementById('errorMessage');
             if (this.value) {
                 errorMessage.style.display = 'none';
