@@ -1,3 +1,10 @@
+## [1.5.3](https://github.com/huyslab/pharmacy_tasks/compare/v1.5.2...v1.5.3) (2026-07-29)
+
+
+### Bug Fixes
+
+* **bonus:** update bonus trial to include state updates and improve data handling ([12fac7b](https://github.com/huyslab/pharmacy_tasks/commit/12fac7bcb09c9c5a4fdd5fe64e97d436f2505b44))
+
 ## [1.5.2](https://github.com/huyslab/pharmacy_tasks/compare/v1.5.1...v1.5.2) (2026-07-29)
 
 
