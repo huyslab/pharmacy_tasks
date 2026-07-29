@@ -186,7 +186,7 @@
         // Get parameters from URL (populated by index.html's setup form redirect)
         window.participantID = new URLSearchParams(window.location.search).get('participant_id') || '';
         window.simulating = window.participantID.includes("simulate") || false;
-        window.context = new URLSearchParams(window.location.search).get('context') || '';
+        window.context = new URLSearchParams(window.location.search).get('context') || 'relmed';
 
         // Which task to run. Vigour and reversal don't vary by session, but
         // session is still a required field, and will be provided by the 
@@ -221,7 +221,7 @@
                     throw new Error('Missing "task" URL parameter. Launch this page via index.html rather than directly.');
                 }
                 if (window.context !== 'relmed' && window.context !== 'prolific') {
-                    throw new Error(`Missing or unrecognized "context" URL parameter ("${window.context}"). Data will not be saved to REDCap unless context is "relmed" or "prolific". Launch this page via index.html rather than directly.`);
+                    throw new Error(`Missing or unrecognized "context" URL parameter ("${window.context}"). Expected "relmed" (also used for mymeds) or "prolific".`);
                 }
 
                 const sequence = sessionSequenceMap[window.session];
