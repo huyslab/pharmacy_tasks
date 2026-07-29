@@ -100,6 +100,7 @@ function saveDataREDCap(retry = 1, extra_fields = {}, callback = () => {}) {
             record_id: window.participantID + "_" + window.module_start_time,
             participant_id: window.participantID,
             sitting_start_time: window.module_start_time,
+            session: window.session,
             module: window.module,
             data: combined_data
         },
@@ -142,6 +143,7 @@ function saveDataREDCap(retry = 1, extra_fields = {}, callback = () => {}) {
             record_id: window.participantID + "_" + window.module_start_time,
             participant_id: window.participantID,
             sitting_start_time: window.module_start_time,
+            session: window.session,
             module: window.module,
             data: combined_data
         }])

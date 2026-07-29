@@ -188,8 +188,9 @@
         window.simulating = window.participantID.includes("simulate") || false;
         window.context = new URLSearchParams(window.location.search).get('context') || '';
 
-        // Which task to run. Vigour and reversal don't vary by session, so there's no
-        // session/sequence selection here - each task just uses its registry default.
+        // Which task to run. Vigour and reversal don't vary by session, but
+        // session is still a required field.
+        window.session = new URLSearchParams(window.location.search).get('session') || '';
         const taskName = new URLSearchParams(window.location.search).get('task') || '';
         window.module = taskName;
 
