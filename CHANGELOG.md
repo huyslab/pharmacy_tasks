@@ -1,3 +1,10 @@
+# [1.5.0](https://github.com/huyslab/pharmacy_tasks/compare/v1.4.0...v1.5.0) (2026-07-29)
+
+
+### Features
+
+* **bonus:** update bonus trial to use button response and enhance completion message ([82703b7](https://github.com/huyslab/pharmacy_tasks/commit/82703b7ec36d92344c42b1dc8ffeeb140e9c07b3))
+
 # [1.4.0](https://github.com/huyslab/pharmacy_tasks/compare/v1.3.1...v1.4.0) (2026-07-29)
 
 
