@@ -1,3 +1,15 @@
+# [1.2.0](https://github.com/huyslab/pharmacy_tasks/compare/v1.1.6...v1.2.0) (2026-07-29)
+
+
+### Features
+
+* **session:** add session handling to data saving and task execution ([3fa0c41](https://github.com/huyslab/pharmacy_tasks/commit/3fa0c41d20c3fbe769e400bfdeae2829e6172958))
+
+
+### Reverts
+
+* entry-time viewport data-properties fix (wrong repository) ([2f81fc9](https://github.com/huyslab/pharmacy_tasks/commit/2f81fc9757e3fa01974d702253594faf565a9cec)), closes [#14](https://github.com/huyslab/pharmacy_tasks/issues/14)
+
 ## [1.1.6](https://github.com/huyslab/pharmacy_tasks/compare/v1.1.5...v1.1.6) (2026-07-26)
 
 
