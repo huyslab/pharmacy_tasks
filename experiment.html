@@ -189,9 +189,11 @@
         import { bonusTrial, enterExperiment } from '@utils/index.js';
 
         // Get parameters from URL (populated by index.html's setup form redirect)
+        window.context = new URLSearchParams(window.location.search).get('context') || 'relmed';
         window.participantID = new URLSearchParams(window.location.search).get('participant_id') || '';
         window.simulating = window.participantID.includes("simulate") || false;
-        window.context = new URLSearchParams(window.location.search).get('context') || 'relmed';
+        window.last_state = jsPsych.data.getURLVariable('state') || "none";
+        window.session_state = JSON.parse(jsPsych.data.getURLVariable('session_state') || "{}");
 
         // Which task to run. Vigour and reversal don't vary by session, but
         // session is still a required field, and will be provided by the 
