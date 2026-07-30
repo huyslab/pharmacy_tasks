@@ -324,12 +324,6 @@
                     throw new Error(`Unrecognized "session" URL parameter ("${window.session}") - the reversal task needs it to pick a trial sequence. Accepted: ${describeAcceptedSessions()}.`);
                 }
 
-                // Only now report a successful load. Signalling before the guards above would
-                // clear the website's load timeout, suppressing the "Task failed to load"
-                // dialog whose Close button is the participant's way back to the task list.
-                // Still ahead of the awaited work below, which is what the timeout is for.
-                signalLoadSuccess();
-
                 // Get task information
                 const taskInfo = getTaskInfo(taskName);
                 console.log('Task info:', taskInfo);
@@ -342,6 +336,11 @@
 
                 const timeline = await createTaskTimeline(taskName, taskConfig);
                 console.log('Timeline created:', timeline);
+
+                // Report success only once all fallible task setup has completed. If timeline
+                // construction fails, the website's load timeout remains active and provides
+                // the participant with its normal recovery dialog.
+                signalLoadSuccess();
 
                 const standaloneModule = {
                     elements: [

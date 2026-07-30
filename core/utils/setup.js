@@ -247,6 +247,11 @@ function listenToParentMessages() {
         existingOnTrialFinish(data);
     };
 
+    // Only act on genuine state transitions. Native fullscreen entry can emit an initial
+    // resume_task even though the experiment was never paused, and duplicate messages
+    // should not create duplicate interruption records.
+    let experimentPausedByParent = false;
+
     window.addEventListener("message", (event) => {
         // Check origin and sender for security - an allowlisted origin isn't enough on its
         // own, since any window able to reach this frame could otherwise stall the task.
@@ -256,13 +261,15 @@ function listenToParentMessages() {
         const msg = event.data?.message;
         console.log("Message received from parent:", msg);
 
-        if (msg === "pause_task") {
+        if (msg === "pause_task" && !experimentPausedByParent) {
+            experimentPausedByParent = true;
             console.log("Experiment paused");
             window.pause_resume_events.push({ time: jsPsych.getTotalTime(), event: "pause" });
             jsPsych.pauseExperiment();
         }
 
-        if (msg === "resume_task") {
+        if (msg === "resume_task" && experimentPausedByParent) {
+            experimentPausedByParent = false;
             console.log("Experiment resumed");
             window.pause_resume_events.push({ time: jsPsych.getTotalTime(), event: "resume" });
             jsPsych.resumeExperiment();
