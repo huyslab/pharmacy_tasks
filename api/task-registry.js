@@ -389,7 +389,8 @@ export const TaskRegistry = {
       allow_unsure: true,
       max_pill_buttons: 5,
       earliest_year: 1970,
-      transition_duration: 350
+      transition_duration: 350,
+      input_mode: "auto"
     },
     configOptions: {
       task_name: "The name of the task, used for state updates and data field prefixes. Default is 'medication_questionnaire'.",
@@ -397,7 +398,8 @@ export const TaskRegistry = {
       allow_unsure: "Whether the medicine name and dose questions offer an \"I'm not sure\" button, which records a missing answer rather than blocking the participant. Default is true.",
       max_pill_buttons: "Pills-per-day is answered with buttons 1 to this number minus one, plus an 'N or more' button that opens a keypad. Default is 5.",
       earliest_year: "Earliest year offered in the start date question. Default is 1970.",
-      transition_duration: "Duration of the slide transition between questions, in milliseconds. Default is 350."
+      transition_duration: "Duration of the slide transition between questions, in milliseconds. Default is 350.",
+      input_mode: "Which controls to show: 'touch' for tap targets and an on-screen keypad, 'keyboard' for typed entry on a machine with a mouse and keyboard, or 'auto' to pick from the device. Default is 'auto'."
     },
     requirements: {
       css: ['@tasks/medication-questionnaire/styles.css'],

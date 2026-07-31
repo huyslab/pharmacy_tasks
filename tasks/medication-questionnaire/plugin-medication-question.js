@@ -116,6 +116,12 @@ var jsPsychMedicationQuestion = (function (jspsych) {
             transition_duration: {
                 type: jspsych.ParameterType.INT,
                 default: 350
+            },
+            /** 'touch' for the on-screen keypad and tap targets, 'keyboard' for typed entry
+             *  on a machine with a mouse and keyboard, or 'auto' to pick from the device */
+            input_mode: {
+                type: jspsych.ParameterType.STRING,
+                default: "auto"
             }
         },
         data: {
@@ -139,6 +145,10 @@ var jsPsychMedicationQuestion = (function (jspsych) {
             unsure: {
                 type: jspsych.ParameterType.BOOL
             },
+            /** Which set of controls was shown, 'touch' or 'keyboard' */
+            input_mode: {
+                type: jspsych.ParameterType.STRING
+            },
             /** Time from screen onset to the response that ended the trial */
             rt: {
                 type: jspsych.ParameterType.INT
@@ -149,10 +159,14 @@ var jsPsychMedicationQuestion = (function (jspsych) {
     /**
      * **medication-question**
      *
-     * jsPsych plugin presenting a single questionnaire screen designed for touchscreens:
-     * one question per screen, finger-sized controls, an on-screen keypad for numbers, and
-     * a slide-in / slide-out transition between screens. There is no way back to a previous
-     * screen - each screen is its own trial and answers are committed when it slides away.
+     * jsPsych plugin presenting a single questionnaire screen: one question per screen, a
+     * slide-in / slide-out transition between screens, and no way back to a previous screen -
+     * each screen is its own trial and answers are committed when it slides away.
+     *
+     * The controls adapt to the device. On a touchscreen the screen offers large tap targets
+     * and an on-screen keypad for numbers; on a machine with a mouse and keyboard, numbers are
+     * typed into a field, every control is reachable by tab, Enter moves on, and the arrow keys
+     * and number keys work the list of options.
      *
      * @author {Yaniv Abir}
      */
@@ -167,6 +181,7 @@ var jsPsychMedicationQuestion = (function (jspsych) {
             const duration = simulating ? 0 : trial.transition_duration;
 
             const startTime = performance.now();
+            const keyboardMode = this.usesKeyboard(trial);
 
             display_element.innerHTML = this.buildFrame(trial);
 
@@ -174,6 +189,7 @@ var jsPsychMedicationQuestion = (function (jspsych) {
             const body = display_element.querySelector('.medq-body');
             const footer = display_element.querySelector('.medq-footer');
             screen.style.setProperty('--medq-transition', duration + 'ms');
+            screen.classList.add(keyboardMode ? 'medq-keyboard' : 'medq-touch');
 
             // Slide the screen in from the right on the frame after it is in the DOM
             requestAnimationFrame(() => screen.classList.add('medq-screen-in'));
@@ -183,12 +199,15 @@ var jsPsychMedicationQuestion = (function (jspsych) {
              * @param {Object} response - {response, response_label, unsure} for this screen
              */
             const endTrial = (response) => {
+                document.removeEventListener('keydown', onKeyDown);
+
                 const trial_data = {
                     question_name: trial.name,
                     question_type: trial.question_type,
                     response: response.response,
                     response_label: response.response_label,
                     unsure: response.unsure || false,
+                    input_mode: keyboardMode ? 'keyboard' : 'touch',
                     rt: Math.round(performance.now() - startTime)
                 };
 
@@ -201,29 +220,69 @@ var jsPsychMedicationQuestion = (function (jspsych) {
                 );
             };
 
+            // Enter moves on from anywhere on the screen that doesn't already handle it.
+            // Screens that act on Enter themselves (the text field, the add-a-medicine field)
+            // call preventDefault, and buttons are activated by the browser, so neither
+            // double-fires here. Key repeat is ignored so a held Enter cannot run past a screen.
+            const onKeyDown = (event) => {
+                if (event.key !== 'Enter' || event.repeat || event.defaultPrevented) return;
+                if (document.activeElement && document.activeElement.tagName === 'BUTTON') return;
+
+                const continueButton = footer.querySelector('#medq-continue');
+                if (continueButton && !continueButton.disabled) {
+                    event.preventDefault();
+                    continueButton.click();
+                }
+            };
+            document.addEventListener('keydown', onKeyDown);
+
             // Each screen type wires up its own controls and calls endTrial when done
             switch (trial.question_type) {
                 case 'message':
                     this.setupMessage(body, footer, trial, endTrial);
                     break;
                 case 'text':
-                    this.setupText(body, footer, trial, endTrial);
+                    this.setupText(body, footer, trial, endTrial, keyboardMode);
                     break;
                 case 'number':
-                    this.setupNumber(body, footer, trial, endTrial);
+                    this.setupNumber(body, footer, trial, endTrial, keyboardMode);
                     break;
                 case 'choice':
-                    this.setupChoice(body, footer, trial, endTrial);
+                    this.setupChoice(body, footer, trial, endTrial, keyboardMode);
                     break;
                 case 'date':
                     this.setupDate(body, footer, trial, endTrial);
                     break;
                 case 'list':
-                    this.setupList(body, footer, trial, endTrial);
+                    this.setupList(body, footer, trial, endTrial, keyboardMode);
                     break;
                 default:
                     throw new Error(`Unknown question_type "${trial.question_type}" in medication-question plugin.`);
             }
+
+            // Put the caret where the answer goes, so a keyboard user can start typing or
+            // tabbing straight away. Left alone on touchscreens, where focusing a text field
+            // would throw the on-screen keyboard over the question before it has been read.
+            if (keyboardMode) {
+                const first = screen.querySelector('.medq-body input, .medq-body select, .medq-body button')
+                    || footer.querySelector('#medq-continue');
+                if (first) first.focus({ preventScroll: true });
+            }
+        }
+
+        /**
+         * Decides whether to show the typed controls or the touch controls.
+         * 'auto' reads the device: anything with no touch points at all, or with a mouse-like
+         * pointer (a laptop with a touchscreen, say), gets the typed controls.
+         */
+        usesKeyboard(trial) {
+            if (trial.input_mode === 'keyboard') return true;
+            if (trial.input_mode === 'touch') return false;
+
+            const touchCapable = navigator.maxTouchPoints > 0;
+            const finePointer = window.matchMedia
+                && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+            return !touchCapable || finePointer;
         }
 
         /**
@@ -280,8 +339,8 @@ var jsPsychMedicationQuestion = (function (jspsych) {
             });
         }
 
-        /** Free text answer, using the device's own keyboard */
-        setupText(body, footer, trial, endTrial) {
+        /** Free text answer, typed on whichever keyboard the device has */
+        setupText(body, footer, trial, endTrial, keyboardMode) {
             body.innerHTML = `<input type="text" class="medq-input" id="medq-text"
                 placeholder="${trial.placeholder}" autocomplete="off" autocapitalize="words"
                 autocorrect="off" spellcheck="false" enterkeyhint="done">`;
@@ -303,11 +362,13 @@ var jsPsychMedicationQuestion = (function (jspsych) {
                 continueButton.disabled = trial.required && answer() === '';
             });
 
-            // The on-screen keyboard covers the lower half of the screen on phones, so bring
-            // the field back into view once it has opened
-            input.addEventListener('focus', () => {
-                setTimeout(() => input.scrollIntoView({ block: 'center', behavior: 'smooth' }), 300);
-            });
+            // A phone's on-screen keyboard covers the lower half of the screen, so bring the
+            // field back into view once it has opened. Not needed with a real keyboard.
+            if (!keyboardMode) {
+                input.addEventListener('focus', () => {
+                    setTimeout(() => input.scrollIntoView({ block: 'center', behavior: 'smooth' }), 300);
+                });
+            }
 
             input.addEventListener('keydown', (event) => {
                 if (event.key === 'Enter') {
@@ -318,11 +379,11 @@ var jsPsychMedicationQuestion = (function (jspsych) {
             });
         }
 
-        /** Number answer, using a large on-screen keypad rather than the device keyboard */
-        setupNumber(body, footer, trial, endTrial) {
-            this.renderKeypad(body, trial);
-
-            const readout = body.querySelector('#medq-keypad-value');
+        /**
+         * Number answer. On a touchscreen this is a large on-screen keypad, which keeps the
+         * question visible; with a real keyboard it is a field to type into.
+         */
+        setupNumber(body, footer, trial, endTrial, keyboardMode) {
             let digits = '';
 
             const submit = () => {
@@ -336,11 +397,46 @@ var jsPsychMedicationQuestion = (function (jspsych) {
                 });
             };
 
+            const keypadPrompt = trial.keypad_prompt ? `<div class="medq-hint">${trial.keypad_prompt}</div>` : '';
+            const unit = trial.unit ? `<span class="medq-number-unit">${trial.unit}</span>` : '';
+
+            if (keyboardMode) {
+                body.innerHTML = `${keypadPrompt}
+                    <div class="medq-number-field">
+                        <input type="text" class="medq-input" id="medq-number"
+                            inputmode="decimal" placeholder="${trial.placeholder}"
+                            autocomplete="off" spellcheck="false" enterkeyhint="done">${unit}
+                    </div>`;
+            } else {
+                this.renderKeypad(body, trial, keypadPrompt);
+            }
+
             const continueButton = this.addContinueButton(footer, trial, !trial.required, submit);
             this.addUnsureButton(footer, trial, () => {
                 endTrial({ response: null, response_label: trial.unsure_label, unsure: true });
             });
 
+            if (keyboardMode) {
+                const input = body.querySelector('#medq-number');
+
+                input.addEventListener('input', () => {
+                    digits = this.cleanNumber(input.value, trial.allow_decimal);
+                    // Rewriting the field drops anything typed that isn't part of a number
+                    if (input.value !== digits) input.value = digits;
+                    continueButton.disabled = trial.required && digits === '';
+                });
+
+                input.addEventListener('keydown', (event) => {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        submit();
+                    }
+                });
+
+                return;
+            }
+
+            const readout = body.querySelector('#medq-keypad-value');
             const render = () => {
                 readout.textContent = digits === '' ? '–' : digits;
                 readout.classList.toggle('medq-keypad-empty', digits === '');
@@ -366,8 +462,21 @@ var jsPsychMedicationQuestion = (function (jspsych) {
             render();
         }
 
+        /** Keeps only what can be part of a number: digits, and at most one decimal point */
+        cleanNumber(value, allowDecimal) {
+            let cleaned = value.replace(/[^0-9.]/g, '');
+
+            if (!allowDecimal) return cleaned.replace(/\./g, '');
+
+            const firstDot = cleaned.indexOf('.');
+            if (firstDot !== -1) {
+                cleaned = cleaned.slice(0, firstDot + 1) + cleaned.slice(firstDot + 1).replace(/\./g, '');
+            }
+            return cleaned;
+        }
+
         /** Draws the keypad markup into a body element */
-        renderKeypad(body, trial) {
+        renderKeypad(body, trial, keypadPrompt) {
             const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
             keys.push(trial.allow_decimal ? '.' : '');
             keys.push('0');
@@ -378,7 +487,6 @@ var jsPsychMedicationQuestion = (function (jspsych) {
             ).join('');
 
             const unit = trial.unit ? `<span class="medq-keypad-unit">${trial.unit}</span>` : '';
-            const keypadPrompt = trial.keypad_prompt ? `<div class="medq-hint">${trial.keypad_prompt}</div>` : '';
 
             body.innerHTML = `${keypadPrompt}
                 <div class="medq-keypad-readout">
@@ -390,13 +498,15 @@ var jsPsychMedicationQuestion = (function (jspsych) {
                 </div>`;
         }
 
-        /** One tap per answer: the options are the buttons, so there is nothing else to press */
-        setupChoice(body, footer, trial, endTrial) {
+        /** One tap or click per answer: the options are the buttons, so there is nothing else to press */
+        setupChoice(body, footer, trial, endTrial, keyboardMode) {
             body.innerHTML = `<div class="medq-choices">${trial.choices.map((choice, i) =>
                 `<button type="button" class="medq-btn medq-choice" data-index="${i}">${choice.label}</button>`
             ).join('')}</div>`;
 
-            body.querySelectorAll('.medq-choice').forEach(button => {
+            const buttons = Array.from(body.querySelectorAll('.medq-choice'));
+
+            buttons.forEach(button => {
                 button.addEventListener('click', () => {
                     const choice = trial.choices[parseInt(button.dataset.index)];
 
@@ -404,12 +514,50 @@ var jsPsychMedicationQuestion = (function (jspsych) {
                     // screen, rather than ending the trial
                     if (choice.reveals === 'number') {
                         footer.innerHTML = '';
-                        this.setupNumber(body, footer, { ...trial, required: true, unit: '', allow_decimal: false }, endTrial);
+                        this.setupNumber(
+                            body, footer,
+                            { ...trial, required: true, unit: '', allow_decimal: false },
+                            endTrial, keyboardMode
+                        );
+                        if (keyboardMode) {
+                            const field = body.querySelector('#medq-number');
+                            if (field) field.focus({ preventScroll: true });
+                        }
                         return;
                     }
 
                     endTrial({ response: choice.value, response_label: choice.label });
                 });
+            });
+
+            if (keyboardMode) this.wireChoiceKeys(body, buttons);
+        }
+
+        /**
+         * Arrow keys walk a list of option buttons and the number keys pick one outright.
+         * Listens on the body rather than each button, and stands down once the options have
+         * been replaced - the pills question swaps them for a keypad, and the digits typed
+         * there must not reach the options that are no longer on screen.
+         */
+        wireChoiceKeys(body, buttons) {
+            body.addEventListener('keydown', (event) => {
+                if (!body.contains(buttons[0])) return;
+
+                const active = document.activeElement;
+                if (active && ['INPUT', 'SELECT', 'TEXTAREA'].includes(active.tagName)) return;
+
+                const position = buttons.indexOf(active);
+
+                if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
+                    event.preventDefault();
+                    buttons[(position + 1) % buttons.length].focus();
+                } else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
+                    event.preventDefault();
+                    buttons[Math.max(position, 0) === 0 ? buttons.length - 1 : position - 1].focus();
+                } else if (/^[1-9]$/.test(event.key) && buttons[Number(event.key) - 1]) {
+                    event.preventDefault();
+                    buttons[Number(event.key) - 1].click();
+                }
             });
         }
 
@@ -466,7 +614,7 @@ var jsPsychMedicationQuestion = (function (jspsych) {
         }
 
         /** A yes/no gate, then a chip list built one item at a time */
-        setupList(body, footer, trial, endTrial) {
+        setupList(body, footer, trial, endTrial, keyboardMode) {
             const labels = trial.list_labels;
 
             body.innerHTML = `<div class="medq-choices">
@@ -479,12 +627,16 @@ var jsPsychMedicationQuestion = (function (jspsych) {
             });
 
             body.querySelector('#medq-list-yes').addEventListener('click', () => {
-                this.setupListEditor(body, footer, trial, endTrial);
+                this.setupListEditor(body, footer, trial, endTrial, keyboardMode);
             });
+
+            if (keyboardMode) {
+                this.wireChoiceKeys(body, Array.from(body.querySelectorAll('.medq-choice')));
+            }
         }
 
         /** The second half of the 'list' screen: text field, add button, and the chips */
-        setupListEditor(body, footer, trial, endTrial) {
+        setupListEditor(body, footer, trial, endTrial, keyboardMode) {
             const labels = trial.list_labels;
             const items = [];
 
@@ -540,9 +692,11 @@ var jsPsychMedicationQuestion = (function (jspsych) {
 
             addButton.addEventListener('click', addItem);
             input.addEventListener('input', () => { addButton.disabled = input.value.trim() === ''; });
-            input.addEventListener('focus', () => {
-                setTimeout(() => input.scrollIntoView({ block: 'center', behavior: 'smooth' }), 300);
-            });
+            if (!keyboardMode) {
+                input.addEventListener('focus', () => {
+                    setTimeout(() => input.scrollIntoView({ block: 'center', behavior: 'smooth' }), 300);
+                });
+            }
             input.addEventListener('keydown', (event) => {
                 if (event.key === 'Enter') {
                     event.preventDefault();
@@ -551,6 +705,9 @@ var jsPsychMedicationQuestion = (function (jspsych) {
             });
 
             renderChips();
+
+            // Straight from "yes" into typing the first medicine
+            if (keyboardMode) input.focus({ preventScroll: true });
         }
 
         create_simulation_data(trial, simulation_options) {
@@ -574,6 +731,7 @@ var jsPsychMedicationQuestion = (function (jspsych) {
                 question_name: trial.name,
                 question_type: trial.question_type,
                 unsure: false,
+                input_mode: this.usesKeyboard(trial) ? 'keyboard' : 'touch',
                 rt: this.jsPsych.randomization.sampleExGaussian(2000, 400, 1 / 800, true),
                 ...responses[trial.question_type]
             };
@@ -617,8 +775,15 @@ var jsPsychMedicationQuestion = (function (jspsych) {
                     input.value = data.response === null ? '' : data.response;
                     input.dispatchEvent(new Event('input'));
                 } else if (trial.question_type === 'number') {
-                    String(data.response === null ? '' : data.response).split('')
-                        .forEach(digit => click(`.medq-key[data-key="${digit}"]`));
+                    // Whichever number control this device was given
+                    const field = display_element.querySelector('#medq-number');
+                    if (field) {
+                        field.value = data.response === null ? '' : String(data.response);
+                        field.dispatchEvent(new Event('input'));
+                    } else {
+                        String(data.response === null ? '' : data.response).split('')
+                            .forEach(digit => click(`.medq-key[data-key="${digit}"]`));
+                    }
                 } else if (trial.question_type === 'choice') {
                     click('.medq-choice');
                     return;

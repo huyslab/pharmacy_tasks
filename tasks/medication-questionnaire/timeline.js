@@ -43,6 +43,7 @@ function medicationQuestions(settings) {
             name: 'medication_dose_mg',
             prompt: 'How strong is one pill?',
             hint: 'The package shows a number followed by "mg". Please type that number.',
+            placeholder: 'For example, 50',
             unit: 'mg',
             unsure_label: unsure
         },
@@ -89,6 +90,7 @@ function medicationQuestions(settings) {
  * @param {number} settings.max_pill_buttons - Highest pills-per-day button before the keypad
  * @param {number} settings.earliest_year - Earliest year offered in the start date question
  * @param {number} settings.transition_duration - Slide transition duration in ms
+ * @param {string} settings.input_mode - 'touch', 'keyboard', or 'auto' to pick from the device
  *
  * @returns {Array} Array of jsPsych timeline objects for the questionnaire
  */
@@ -100,6 +102,7 @@ export function createMedicationQuestionnaireTimeline(settings) {
         question_index: i,
         n_questions: questions.length,
         transition_duration: settings.transition_duration,
+        input_mode: settings.input_mode,
         ...question,
         data: {
             trialphase: `${settings.task_name}_${question.name}`
@@ -117,6 +120,7 @@ export function createMedicationQuestionnaireTimeline(settings) {
             hint: 'There are five short questions. It helps to have the package with you, but if you do not have it, just answer as best you can.',
             button_label: 'Start',
             transition_duration: settings.transition_duration,
+            input_mode: settings.input_mode,
             data: { trialphase: `${settings.task_name}_intro` }
         });
     }

@@ -193,6 +193,25 @@
     color: #9aa8bd;
 }
 
+/* Typed number entry, shown instead of the keypad on machines with a keyboard */
+.medq-number-field {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.medq-number-field .medq-input {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.medq-number-unit {
+    flex: 0 0 auto;
+    font-size: clamp(18px, 4.4vw, 21px);
+    font-weight: 500;
+    color: var(--medq-muted);
+}
+
 /* --- Keypad --- */
 
 .medq-keypad-readout {
@@ -366,4 +385,51 @@
 .medq-chips-empty {
     color: #9aa8bd;
     font-size: clamp(16px, 3.8vw, 18px);
+}
+
+/* --- Keyboard and mouse --- */
+
+/* Every control has to show where the keyboard is */
+.medq-btn:focus-visible,
+.medq-key:focus-visible,
+.medq-chip-remove:focus-visible,
+.medq-input:focus-visible,
+.medq-select:focus-visible {
+    outline: 3px solid var(--medq-blue);
+    outline-offset: 2px;
+}
+
+/* Sized for a cursor rather than a fingertip. Still generous - the questionnaire opens a
+   session and is often the participant's first screen. */
+.medq-keyboard .medq-btn,
+.medq-keyboard .medq-input,
+.medq-keyboard .medq-select {
+    min-height: 54px;
+}
+
+.medq-keyboard .medq-btn-quiet {
+    min-height: 44px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .medq-btn:hover:not(:disabled),
+    .medq-key:hover {
+        background-color: #eef2f8;
+        border-color: var(--medq-blue);
+    }
+
+    .medq-btn-primary:hover:not(:disabled) {
+        background-color: var(--medq-blue-dark);
+        border-color: var(--medq-blue-dark);
+    }
+
+    .medq-btn-quiet:hover {
+        background-color: transparent;
+        border-color: transparent;
+        color: var(--medq-navy);
+    }
+
+    .medq-chip-remove:hover {
+        color: var(--medq-navy);
+    }
 }
