@@ -114,7 +114,7 @@ export function createMedicationQuestionnaireTimeline(settings) {
             question_type: 'message',
             name: 'medication_questionnaire_intro',
             prompt: 'First, a few questions about your medicine.',
-            hint: 'There are five short questions. It helps to have the package with you, but if you do not have it, just answer as best you can. You cannot go back to a question once you have answered it.',
+            hint: 'There are five short questions. It helps to have the package with you, but if you do not have it, just answer as best you can.',
             button_label: 'Start',
             transition_duration: settings.transition_duration,
             data: { trialphase: `${settings.task_name}_intro` }
