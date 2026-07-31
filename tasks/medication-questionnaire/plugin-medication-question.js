@@ -430,16 +430,16 @@ var jsPsychMedicationQuestion = (function (jspsych) {
 
             body.innerHTML = `<div class="medq-date">
                 <label class="medq-date-field">
+                    <span class="medq-date-label">Day</span>
+                    <select class="medq-select" id="medq-day">${options(days)}</select>
+                </label>
+                <label class="medq-date-field">
                     <span class="medq-date-label">Month</span>
                     <select class="medq-select" id="medq-month">${options(months)}</select>
                 </label>
                 <label class="medq-date-field">
                     <span class="medq-date-label">Year</span>
                     <select class="medq-select" id="medq-year">${options(years)}</select>
-                </label>
-                <label class="medq-date-field">
-                    <span class="medq-date-label">Day</span>
-                    <select class="medq-select" id="medq-day">${options(days)}</select>
                 </label>
             </div>`;
 

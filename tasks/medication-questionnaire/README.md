@@ -24,7 +24,7 @@ A short questionnaire, asked at the start of a session, about the medication the
 1. `medication_name` (text) - the name of the medicine, copied from the package
 2. `medication_dose_mg` (number) - the strength of one pill, in mg, entered on the keypad
 3. `pills_per_day` (choice) - buttons 1-4, plus "5 or more" which opens the keypad
-4. `medication_start_date` (date) - month, year and day, each optional
+4. `medication_start_date` (date) - day, month and year, each optional
 5. `other_medications` (list) - a yes/no question, and if yes, a list built one item at a time
 
 #### `plugin-medication-question.js`
@@ -37,7 +37,7 @@ Each screen is a card with progress dots, the question, an optional supporting l
 - `text` - a single large text field, using the device keyboard
 - `number` - a large on-screen keypad with a running readout and optional unit
 - `choice` - one large button per option, each ending the trial on a single tap. An option with `reveals: 'number'` swaps the same screen for the keypad instead, which is how "5 or more" is handled
-- `date` - month, year and day as native selects, so the device's own picker is used. All three are optional, so a year on its own is a valid answer
+- `date` - day, month and year as native selects, so the device's own picker is used. All three are optional, so a year on its own is a valid answer
 - `list` - a yes/no gate; answering yes reveals a text field, an add button, and the list of items added so far, each removable
 
 `text` and `number` screens can offer an "I'm not sure" button (`unsure_label`), which records a missing answer and sets `unsure: true` rather than leaving a participant stuck on a package they cannot read.
