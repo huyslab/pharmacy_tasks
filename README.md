@@ -24,6 +24,7 @@ The battery currently includes the following experimental tasks:
 ### Miscellaneous Tasks
 - **Delay Discounting** - Measures preferences for smaller-sooner vs larger-later monetary rewards
 - **Open Text** - Collects open-ended text responses with customizable time limits and validation
+- **Medication Questionnaire** - Touchscreen questionnaire about the participant's medication, asked at the start of a session
 
 ## Repository Structure
 
@@ -41,6 +42,7 @@ relmed_task_battery/
 │   ├── control/                 # Control task
 │   ├── delay-discounting/       # Delay discounting task
 │   ├── max-press-test/          # Max press speed test
+│   ├── medication-questionnaire/ # Touchscreen medication questionnaire
 │   ├── open-text/               # Open text questions
 │   ├── pavlovian-lottery/       # Pavlovian conditioning
 │   └── piggy-banks/             # Vigour and PIT tasks
@@ -187,6 +189,7 @@ export const ModuleRegistry = {
 - **Control**: Requires multiple control plugins and `styles.css`
 - **Vigour/PIT**: Requires piggy-banks plugins and `styles.css`
 - **Delay Discounting**: Requires only core plugins and `styles.css`
+- **Medication Questionnaire**: Requires `plugin-medication-question.js` and `styles.css`
 
 ### Task Configuration
 
@@ -257,7 +260,7 @@ Use these exact strings when calling `createTaskTimeline()`:
 - `'PILT'`, `'WM'`, `'post_learning_test'`, `'post_PILT_test'`, `'post_WM_test'`
 - `'delay_discounting'`, `'vigour'`, `'vigour_test'`, `'PIT'` 
 - `'control'`, `'max_press_test'`, `'pavlovian_lottery'`, `'open_text'`
-- `'reversal'`, `'acceptability_judgment'`
+- `'reversal'`, `'acceptability_judgment'`, `'medication_questionnaire'`
 
 ### Module Names
 
