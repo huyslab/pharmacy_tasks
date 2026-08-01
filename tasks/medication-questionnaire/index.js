@@ -3,5 +3,5 @@
  * Provides a single entry point for importing medication questionnaire functions across the experiment.
  */
 
-// Import and re-export all utility modules
+// Re-export the task timeline factory (and any future task helpers)
 export * from './timeline.js';
