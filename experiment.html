@@ -81,6 +81,24 @@
             padding-right: 20px
         }
 
+        /* Lists sit in the same column as the paragraphs around them, rather than stretching
+           across the centred instructions container */
+        .instructions ul {
+            max-width: min(700px, 92vw);
+            text-align: left;
+            margin: 1em 0;
+            padding-left: 1.4em;
+        }
+
+        .instructions li {
+            margin: 0.4em 0;
+        }
+
+        /* A full URL is longer than a phone is wide */
+        .instructions a {
+            word-break: break-word;
+        }
+
         /* Orientation gate: on phones, block the wrong orientation for the active task; tablets/
            desktop are exempt (larger min dimension). Driven by
            <body data-preferred-orientation="portrait|landscape">, set per task by the registry. */

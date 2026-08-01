@@ -48,6 +48,7 @@ export const ModuleRegistry = {
             { type: "task", name: "vigour" },
             { type: "task", name: "acceptability_judgment", config: { task_name: "vigour", game_description: "piggy-bank game" } },
             { type: "bonus" },
+            { type: "instructions", config: { text: "signposting_message" } },
             { type: "instructions", config: { text: "end_message" } }
         ],
         // Both games promise a bonus in their instructions, so the module reveals one:
