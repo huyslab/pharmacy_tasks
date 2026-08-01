@@ -664,18 +664,34 @@ var jsPsychMedicationQuestion = (function (jspsych) {
             });
 
             const renderChips = () => {
-                chips.innerHTML = items.length === 0
-                    ? `<li class="medq-chips-empty">${labels.empty}</li>`
-                    : items.map((item, i) =>
-                        `<li class="medq-chip">${item}<button type="button" class="medq-chip-remove"
-                            data-index="${i}" aria-label="Remove ${item}">×</button></li>`).join('');
+                chips.replaceChildren();
 
-                chips.querySelectorAll('.medq-chip-remove').forEach(button => {
-                    button.addEventListener('click', () => {
-                        items.splice(parseInt(button.dataset.index), 1);
-                        renderChips();
+                if (items.length === 0) {
+                    const empty = document.createElement('li');
+                    empty.className = 'medq-chips-empty';
+                    empty.textContent = labels.empty;
+                    chips.appendChild(empty);
+                } else {
+                    items.forEach((item, i) => {
+                        const li = document.createElement('li');
+                        li.className = 'medq-chip';
+                        li.textContent = item;
+
+                        const remove = document.createElement('button');
+                        remove.type = 'button';
+                        remove.className = 'medq-chip-remove';
+                        remove.dataset.index = String(i);
+                        remove.setAttribute('aria-label', `Remove ${item}`);
+                        remove.textContent = '×';
+                        remove.addEventListener('click', () => {
+                            items.splice(i, 1);
+                            renderChips();
+                        });
+
+                        li.appendChild(remove);
+                        chips.appendChild(li);
                     });
-                });
+                }
 
                 continueButton.disabled = trial.required && items.length === 0;
             };
