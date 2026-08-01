@@ -2,6 +2,7 @@ import { loadSequence, loadCSS, bonusTrial } from '@utils/index.js';
 import { TaskRegistry, globalConfig, globalConfigOptions } from './task-registry.js';
 import { messages } from './messages.js';
 import { ModuleRegistry } from './module-registry.js';
+import { getSession, listSessions } from './session-registry.js';
 
 /**
  * Get a task from the registry with global config merged
@@ -32,11 +33,17 @@ export async function createTaskTimeline(taskName, config = {}) {
     // Get task
     const task = getTask(taskName);
 
-    // Merge configurations with defaults 
+    // Merge configurations with defaults
     const mergedConfig = { ...globalConfig, ...task.defaultConfig, ...config };
 
     // Attach task object for internal use
     mergedConfig.__task = task;
+
+    // Resolve the session once, here, so every task - including every task inside a module,
+    // which is built through this same function - reads its stimulus set, rule variant and
+    // resumption policy from the registry rather than comparing session strings itself.
+    // Tasks with no session at all (the medication questionnaire, vigour) get null.
+    mergedConfig.sessionInfo = mergedConfig.session ? getSession(mergedConfig.session) : null;
 
     // Load required CSS assets
     if (task.requirements?.css) {
@@ -52,23 +59,30 @@ export async function createTaskTimeline(taskName, config = {}) {
         }
     }
 
-    // Load task-specific sequence if available
+    // Load the trial sequence for this session. The session key is the lookup - a task's
+    // sequences map is keyed by the same canonical keys as the session registry.
     if (task.sequences) {
-        const sequenceName = mergedConfig.sequence;
-        const sequencePath = task.sequences?.[sequenceName];
+        const sessionKey = mergedConfig.session;
+        const sequencePath = task.sequences[sessionKey];
 
-        console.log(`Loading sequence for task ${taskName}: ${sequenceName} from ${sequencePath}`);
+        // A task that needs a sequence and has none for this session cannot run. Failing here
+        // is what keeps a half-added session from starting and then breaking mid-task (WM and
+        // the post-learning tests deliberately have no screening sequence, for instance).
+        if (!sequencePath) {
+            throw new Error(
+                `Task "${taskName}" has no trial sequence for session "${sessionKey}". ` +
+                `Available: ${Object.keys(task.sequences).join(', ')}. ` +
+                `Known sessions: ${listSessions().join(', ')}.`
+            );
+        }
 
-        if (sequencePath) {
-            console.log(`Loading sequence using script loading: ${sequencePath}`);
-            
-            try {
-                await loadSequence(sequencePath);
-                console.log(`Successfully loaded sequence: ${sequenceName}`);
-            } catch (error) {
-                console.warn(`Failed to load sequence ${sequencePath}, continuing without it:`, error);
-                // Continue without the sequence - let the task handle missing sequences gracefully
-            }
+        console.log(`Loading sequence for task ${taskName}: ${sessionKey} from ${sequencePath}`);
+
+        try {
+            await loadSequence(sequencePath);
+            console.log(`Successfully loaded sequence: ${sessionKey}`);
+        } catch (error) {
+            throw new Error(`Failed to load sequence ${sequencePath} for task "${taskName}": ${error.message}`);
         }
     }
     

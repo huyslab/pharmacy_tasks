@@ -186,8 +186,8 @@
 
     <script type="module">
         // Import task registry functions
-        import { createModuleTimeline, createTaskTimeline, getModule, getModuleInfo,
-                 getTask, getTaskInfo } from '@api/index.js';
+        import { createModuleTimeline, createTaskTimeline, describeAcceptedSessions,
+                 getModuleInfo, getTask, getTaskInfo, resolveSession } from '@api/index.js';
         import { bonusTrial, enterExperiment, getResumptionState, saveDataREDCap,
                  signalLoadSuccess } from '@utils/index.js';
 
@@ -224,9 +224,23 @@
             version: "1.5.4"
         });
 
-        // What to run. Vigour and reversal don't vary by session, but session is still a
-        // required field, and will be provided by the website.
+        // The session label as the website sent it ("Session 1", "Week 0", "Training"). Kept
+        // in its original form because this is the value REDCap already stores; the canonical
+        // key the run actually uses is resolved from it below.
         window.session = urlParams.get('session') || '';
+
+        // The one place a label becomes a session. Everything downstream - trial sequences,
+        // stimulus sets, rule variants, resumption policy - is driven by this key, for both
+        // module and single-task runs. Null when the label isn't recognised; runExperiment
+        // refuses to start in that case.
+        window.sessionKey = resolveSession(window.session);
+
+        // The label goes to REDCap as `session`; the key it resolved to is stamped onto every
+        // trial alongside it, so the data says which stimuli and sequences were actually used.
+        // Must come after the resolution above, or every trial records a null key.
+        jsPsych.data.addProperties({
+            session_key: window.sessionKey
+        });
 
         // Two ways in: `module` runs a collection of tasks from the module registry, `task`
         // runs a single task from the task registry. A module is the more specific
@@ -241,66 +255,6 @@
         // Recorded against every submission, so the data says which run this was
         window.module = moduleName || taskName;
 
-        // Order in which the study runs its reversal sequences, so the website's default
-        // "Session N" labels can select one. Week-style labels and raw sequence keys are
-        // matched against the registry directly and don't depend on this.
-        const sessionOrder = ['wk0', 'wk2', 'wk4', 'wk24', 'wk28'];
-
-        /**
-         * Resolves a session label to a reversal sequence key from TaskRegistry.
-         *
-         * The label is whatever the study admin named the session in StudyManagement, so
-         * accept mymeds' default ("Session 1"), RELMED-style week labels ("Week 0"), and the
-         * raw keys ("wk0", "screening"). Availability comes from the registry rather than a
-         * hand-maintained list here, so adding a sequence there is enough.
-         *
-         * @param {string} label - The session label from the URL
-         * @returns {string|null} A key of TaskRegistry.reversal.sequences, or null
-         */
-        function resolveReversalSequence(label) {
-            const sequences = getTask('reversal').sequences || {};
-            const normalized = label.trim().toLowerCase().replace(/[\s_-]+/g, '');
-
-            // Raw sequence key, e.g. "wk0" or "screening"
-            if (sequences[normalized]) return normalized;
-
-            // mymeds maps its "Training" session onto the screening sequence
-            if (normalized === 'training' && sequences.screening) return 'screening';
-
-            // Week label, e.g. "Week 24" -> "wk24"
-            const week = normalized.match(/^week(\d+)$/);
-            if (week && sequences[`wk${week[1]}`]) return `wk${week[1]}`;
-
-            // Ordinal label, e.g. "Session 2" -> the 2nd sequence the study runs
-            const session = normalized.match(/^session(\d+)$/);
-            if (session) {
-                const key = sessionOrder[parseInt(session[1], 10) - 1];
-                if (key && sequences[key]) return key;
-            }
-
-            return null;
-        }
-
-        /**
-         * Describes the session labels resolveReversalSequence accepts, derived from the same
-         * registry it resolves against so the error message can't drift from the behaviour.
-         *
-         * @returns {string} Human-readable list of accepted labels
-         */
-        function describeAcceptedSessions() {
-            const keys = Object.keys(getTask('reversal').sequences || {});
-            const weekLabels = keys.filter((key) => /^wk\d+$/.test(key))
-                                   .map((key) => `"Week ${key.slice(2)}"`);
-            const sessionCount = sessionOrder.filter((key) => keys.includes(key)).length;
-
-            return [
-                sessionCount ? `"Session 1"-"Session ${sessionCount}"` : null,
-                weekLabels.length ? weekLabels.join(', ') : null,
-                keys.includes('screening') ? '"Training"' : null,
-                `or a sequence key (${keys.join(', ')})`
-            ].filter(Boolean).join(', ');
-        }
-
         const bonusRules = {
             reversal: {
                 max_bonus: 1.00,
@@ -311,19 +265,6 @@
                 min_prop_bonus: 0.00
             }
         };
-
-        /**
-         * Whether this run includes the reversal task, which is the only one that needs the
-         * session label resolved to a trial sequence. Read from the registry rather than
-         * hardcoded, so a module gains or loses the requirement by its own contents.
-         *
-         * @returns {boolean} True if reversal will run
-         */
-        function runIncludesReversal() {
-            if (!runningModule) return taskName === 'reversal';
-            return getModule(moduleName).elements
-                .some((element) => element.type === 'task' && element.name === 'reversal');
-        }
 
         // Function to run the experiment
         async function runExperiment() {
@@ -338,38 +279,27 @@
                 if (window.context !== 'relmed' && window.context !== 'prolific') {
                     throw new Error(`Missing or unrecognized "context" URL parameter ("${window.context}"). Expected "relmed" (also used for mymeds) or "prolific".`);
                 }
-                // REDCap rejects a submission with no session (post-data requires it), so this
-                // is fatal for every task even though only reversal maps it to a sequence.
+                // REDCap rejects a submission with no session (post-data requires it), and
+                // every task's stimuli, rules and trial sequence are chosen by session, so a
+                // label that doesn't resolve is fatal for any run rather than reversal alone.
                 if (!window.session) {
                     throw new Error('Missing "session" URL parameter. Launch this page via index.html rather than directly.');
                 }
-
-                const sequence = resolveReversalSequence(window.session);
-                if (runIncludesReversal() && !sequence) {
-                    throw new Error(`Unrecognized "session" URL parameter ("${window.session}") - the reversal task needs it to pick a trial sequence. Accepted: ${describeAcceptedSessions()}.`);
+                if (!window.sessionKey) {
+                    throw new Error(`Unrecognized "session" URL parameter ("${window.session}"). Accepted: ${describeAcceptedSessions()}.`);
                 }
+
+                // The resolved session drives the whole run. Passed as runtime config, which
+                // is applied last, so it holds for every task in a module too.
+                const runConfig = { session: window.sessionKey };
 
                 let timeline;
                 if (runningModule) {
                     console.log('Module info:', getModuleInfo(moduleName));
-
-                    // Only the sequence is overridden at runtime. Everything else a module
-                    // needs - `session` in particular, which several tasks use to pick their
-                    // stimuli - stays under the module's own control, since a runtime value
-                    // would override it for every task in the module at once.
-                    const moduleConfig = sequence ? { sequence } : {};
-
-                    timeline = await createModuleTimeline(moduleName, moduleConfig);
+                    timeline = await createModuleTimeline(moduleName, runConfig);
                 } else {
                     console.log('Task info:', getTaskInfo(taskName));
-
-                    // Reversal selects a week-specific sequence; vigour uses session as metadata only.
-                    const taskConfig =
-                        taskName === "reversal"
-                            ? { sequence }
-                            : {};
-
-                    timeline = await createTaskTimeline(taskName, taskConfig);
+                    timeline = await createTaskTimeline(taskName, runConfig);
                 }
                 console.log('Timeline created:', timeline);
 

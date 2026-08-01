@@ -137,8 +137,7 @@ Modules support three levels of configuration (in order of precedence):
 {
     name: "Screening Module",
     moduleConfig: {           // Applied to all tasks
-        session: "screening",
-        sequence: "screening"
+        max_instruction_fails: 5
     },
     elements: [
         { type: "task", name: "PILT", config: { present_pavlovian: false } }, // Task-specific config
@@ -148,9 +147,13 @@ Modules support three levels of configuration (in order of precedence):
 
 // Runtime configuration overrides everything
 const timeline = await createModuleTimeline('screening', {
-    session: 'custom_session'  // This will override moduleConfig.session
+    session: 'wk2'  // Applied to every task in the module
 });
 ```
+
+Note that `session` is not something a module declares. `experiment.html` resolves it from the
+launch URL and passes it as runtime config, so one module definition serves every session the
+study runs - see [Sessions](#sessions) below.
 
 #### Creating Custom Modules
 
@@ -280,9 +283,70 @@ single task:
 | `task` | Name of a single task to run, e.g. `task=reversal`. The task's bonus is revealed at the end |
 | `participant_id` | Participant identifier. Containing `simulate` runs jsPsych's simulate mode, `debug` or `TST` relaxes the termination guard |
 | `context` | `relmed` (also used for mymeds) or `prolific` - governs where data is submitted |
-| `session` | Session label from the hosting site, e.g. `Session 1` or `Week 0`. Required; a run containing the reversal task also needs it to resolve to a trial sequence |
+| `session` | Session label from the hosting site, e.g. `Session 1` or `Week 0`. Required, and must resolve against the session registry - see [Sessions](#sessions) |
 
 `index.html` provides a form that builds these URLs for local runs.
+
+## Sessions
+
+A session is what the study is running today: which trial sequences load, which stimulus set
+is shown, which variant of the rules and instructions participants get, and how resumption is
+signalled back to the hosting site. All of that comes from one place,
+[`api/session-registry.js`](api/session-registry.js).
+
+The hosting site sends a **label** (`Session 2`, `Week 2`, `Training`). `experiment.html`
+resolves that label to a **canonical session key** exactly once, at launch, and the key is
+then applied to every task in the run - single task or whole module alike. Six keys exist:
+`screening`, `wk0`, `wk2`, `wk4`, `wk24`, `wk28`.
+
+Resolution accepts, in order: the raw key (`wk2`), an alias a session declares (`Training` →
+`screening`), a week label (`Week 2` → `wk2`), and an ordinal (`Session 2` → the session whose
+`order` is 2). `Session N` follows the `order` field, not position in the file, and `screening`
+has `order: null` so it never answers to an ordinal. **A label that doesn't resolve stops the
+run before any task loads**, with an error listing what is accepted.
+
+### What the registry controls
+
+| Field | Controls |
+| --- | --- |
+| `aliases`, `order` | Which hosting-site labels resolve to this session |
+| `name` | How the session is described in error messages |
+| `variant` | `screening` vs `full`: rule sets, instruction wording, coin values, practice length |
+| `stimulusSet` | The asset folder segment for pavlovian, control, card-choosing and PIT images |
+| `resumePolicy` | `standard` vs `restricted`: which resumption signal open-text and WM send to the site |
+| the key itself | Which trial sequence each task loads, via that task's own `sequences` map |
+
+Tasks read these through `settings.sessionInfo` (attached once in `createTaskTimeline`), so no
+task compares session names itself.
+
+### What is *not* in the registry
+
+Adding or changing a session means adding an entry **and** working through this list. None of
+it is enforced by the registry:
+
+- **Asset folders must exist** for the `stimulusSet`: `assets/images/pavlovian-stims/<set>/`
+  and `assets/images/control/session-specific/<set>/`. A missing folder shows up as a 404
+  mid-task, not as a startup error. Known gap: `pavlovian-stims/` has no `screening` folder
+  while control's does - harmless only because no screening run reaches pavlovian stimuli.
+- **Sequence files must exist** for the new key in every task with a `sequences` map: PILT,
+  WM, both post-learning tests, reversal. A task with a `sequences` map and no entry for the
+  running session throws at setup, so a half-added session fails loudly rather than mid-run.
+  WM and the post-learning tests deliberately have no `screening` sequence.
+- **Control's per-session tables** stay in [`tasks/control/configuration.js`](tasks/control/configuration.js):
+  the island fruit names (`i1_name`) are keyed by session key and need a new entry. The
+  `baseRule` / `controlRule` maps switch on `variant` and need nothing.
+- **Random seeds.** `shuffleArray(..., settings.session)` in card-choosing instructions seeds
+  practice-trial order from the session key, so renaming an existing key silently changes what
+  participants saw. Keys are append-only in practice.
+- **A new `variant` is a code change.** Adding a session that reuses `screening` or `full`
+  needs no task edits; introducing a third variant means revisiting the branches in
+  card-choosing, control and reversal.
+- **The hosting site is the other half of the contract.** `aliases` and `order` have to match
+  the labels My RELMED and mymeds actually send; adding a key here doesn't make a site offer it.
+- **REDCap.** `window.session` stays the raw label the site sent, so existing exports are
+  unchanged. The resolved key is recorded alongside it in the trial data as `session_key`.
+- **Modules can't pin a session.** A module that must always run one specific session is not
+  expressible - the launch URL decides. That would need a new mechanism.
 
 ## Examples
 

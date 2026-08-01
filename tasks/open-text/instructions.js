@@ -81,7 +81,7 @@ export function openTextInstructions(settings) {
         // Update application state when instructions complete
         on_finish: () => {
             // Disable resume functionality for specific sessions
-            if (["wk24", "wk28"].includes(settings.session)){
+            if (settings.sessionInfo.resumePolicy === 'restricted'){
                 updateState("no_resume");
             }
             // Mark that open text task has started

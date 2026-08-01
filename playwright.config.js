@@ -59,6 +59,17 @@ const journeyProjects = JOURNEY_DEVICES.map((name) => ({
   testMatch: /.*-journey\.spec\.js/,
 }));
 
+/**
+ * Checks that don't depend on the device at all - session label resolution, registry shape -
+ * run once in a single browser rather than across the matrix. Name a spec `*-api.spec.js` to
+ * land here.
+ */
+const apiProjects = [{
+  name: 'api',
+  use: { ...devices['Desktop Chrome'] },
+  testMatch: /.*-api\.spec\.js/,
+}];
+
 export default defineConfig({
   testDir: './validation/playwright',
   fullyParallel: true,
@@ -71,7 +82,7 @@ export default defineConfig({
     trace: 'retain-on-failure',
   },
 
-  projects: [...deviceProjects, ...journeyProjects],
+  projects: [...deviceProjects, ...journeyProjects, ...apiProjects],
 
   /* Serves the repo root statically - required since the app resolves absolute
      paths (/core, /tasks, /assets) and import maps against the server root. */

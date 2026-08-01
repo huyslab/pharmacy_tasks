@@ -24,7 +24,6 @@ export const TaskRegistry = {
         valence: "mixed",
         present_pavlovian: true,
         include_instructions: true,
-        sequence: 'wk0',
         session: 'wk0'
     },
     sequences: {
@@ -53,7 +52,6 @@ export const TaskRegistry = {
         valence: "Valence of the stimuli - can be 'both' (includes both punishment and reward blocks), 'mixed' (includes mixed valence blocks), 'punishment', or 'reward'. Default is 'mixed'.",
         present_pavlovian: "Whether to present stimuli for pavlovian conditioning along with trial outcomes. Default is true.",
         include_instructions: "Whether to show instructions before the task. Default is true.",
-        sequence: "The key for the sequence to use for the learning phase. Default is 'wk0'.",
         session: "Session identifier to govern session-specific behaviour. Default is 'wk0'. Should be deprecated, with settings exposed."
     }
   },
@@ -68,7 +66,6 @@ export const TaskRegistry = {
         valence: "reward",
         present_pavlovian: false,
         include_instructions: true,
-        sequence: 'wk0',
         session: 'wk0'
     },
     sequences: {
@@ -96,7 +93,6 @@ export const TaskRegistry = {
         valence: "Valence of the stimuli - can be 'both' (includes both punishment and reward blocks), 'mixed' (includes mixed valence blocks), 'punishment', or 'reward'. Default is 'mixed'.",
         present_pavlovian: "Whether to present stimuli for pavlovian conditioning along with trial outcomes. Default is true.",
         include_instructions: "Whether to show instructions before the task. Default is true.",
-        sequence: "The key for the sequence to use for the learning phase. Default is 'wk0'.",
         session: "Session identifier to govern session-specific behaviour. Default is 'wk0'. Should be deprecated, with settings exposed."
     }
   },
@@ -107,7 +103,7 @@ export const TaskRegistry = {
     defaultConfig: {
         task_name: "pilt_test",
         test_confidence_every: 4,
-        sequence: 'wk0'
+        session: 'wk0'
     },
     requirements: {
       css: ['@tasks/card-choosing/styles.css'],
@@ -125,7 +121,6 @@ export const TaskRegistry = {
     configOptions: {
         task_name: "The name of the test phase - can be 'pilt_test' or 'wm_test'. Default is 'pilt_test'.",
         test_confidence_every: "How often (in trials) to elicit confidence ratings in the test phase. Default is every 4 trials.",
-        sequence: "The key for the sequence to use for the test phase - should match the learning phase. Default is 'wk0'.",
     }
   },
   post_WM_test: {
@@ -135,7 +130,7 @@ export const TaskRegistry = {
     defaultConfig: {
         task_name: "wm_test",
         test_confidence_every: 4,
-        sequence: 'wk0'
+        session: 'wk0'
     },
     requirements: {
       css: ['@tasks/card-choosing/styles.css'],
@@ -153,7 +148,6 @@ export const TaskRegistry = {
     configOptions: {
         task_name: "The name of the test phase - can be 'pilt_test' or 'wm_test'. Default is 'wm_test'.",
         test_confidence_every: "How often (in trials) to elicit confidence ratings in the test phase. Default is every 4 trials.",
-        sequence: "The key for the sequence to use for the test phase - should match the learning phase. Default is 'wk0'.",
     }
   },
   vigour_test: {
@@ -180,7 +174,6 @@ export const TaskRegistry = {
     defaultConfig: {
       task_name: "reversal",
       n_trials: 150,
-      sequence: 'wk0',
       session: 'wk0',
       preferredOrientation: "landscape"
     },
@@ -201,7 +194,6 @@ export const TaskRegistry = {
     configOptions: {
         task_name: "The name of the task as it would appear in the bonus object. Default is 'reversal'.",
         n_trials: "Total number of trials in the reversal task. Default is 150.",
-        sequence: "The key for the sequence to use for the reversal task. Default is 'wk0'.",
         session: "Session identifier to govern session-specific behaviour. Default is 'wk0'. Should be deprecated, with settings exposed.",
         preferredOrientation: "Preferred device orientation on phones ('portrait' or 'landscape'). On a phone held in the other orientation, a 'please rotate' overlay blocks the task until it is rotated; tablets and desktop are exempt. Default is 'landscape' for reversal."
     }
