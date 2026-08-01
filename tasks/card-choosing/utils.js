@@ -531,7 +531,7 @@ function buildCardChoosingTask(structure, insert_msg = true, settings = {task_na
         ];
 
         // Add pre-block instructions for numbered blocks
-        if (isValidNumber(block_number) & settings.task_name === "pilt" && (settings.sessionInfo.variant !== 'screening')){
+        if (isValidNumber(block_number) && settings.task_name === "pilt" && (settings.sessionInfo.variant !== 'screening')){
             block.push(
                 createPressBothTrial(
                     `
