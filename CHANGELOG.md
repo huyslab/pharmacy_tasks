@@ -1,3 +1,22 @@
+# [1.6.0](https://github.com/huyslab/pharmacy_tasks/compare/v1.5.4...v1.6.0) (2026-08-01)
+
+
+### Bug Fixes
+
+* don't use participant text as is, escape for safety ([6a14a5b](https://github.com/huyslab/pharmacy_tasks/commit/6a14a5b94fcab8289d34c272f4e3f8d7d46d445f))
+* intro text ([cf649a2](https://github.com/huyslab/pharmacy_tasks/commit/cf649a2edf7e52431d303cb1357e1574d47eaad2))
+* issue with doage input ([d3d90b4](https://github.com/huyslab/pharmacy_tasks/commit/d3d90b427d4ce262d7b97446eaa7316415a975f3))
+* **medication-questionnaire:** order start date fields day, month, year ([c592563](https://github.com/huyslab/pharmacy_tasks/commit/c59256301755defb3d346e7da52067f07f0d172c))
+* **medication-questionnaire:** stop the focus ring being clipped at the screen edges ([dde6fef](https://github.com/huyslab/pharmacy_tasks/commit/dde6fefe3d7348f72077f574061539ae66a6d3dd))
+* misleading comment ([48f96a8](https://github.com/huyslab/pharmacy_tasks/commit/48f96a8e1b0dfbc10c43751a90bfb59279fa5377))
+* parameter typing in jspsych plugin ([0c5d7b6](https://github.com/huyslab/pharmacy_tasks/commit/0c5d7b61317258d78df789f3357165e7a695ac54))
+
+
+### Features
+
+* **medication-questionnaire:** adapt controls to mouse and keyboard devices ([92bfdf0](https://github.com/huyslab/pharmacy_tasks/commit/92bfdf0dda4ec144571985e88f12c69bde9ab5c9))
+* **medication-questionnaire:** add touchscreen questionnaire for session start ([e985521](https://github.com/huyslab/pharmacy_tasks/commit/e98552169dc98019ed215a1f0f459678f2750025))
+
 ## [1.5.4](https://github.com/huyslab/pharmacy_tasks/compare/v1.5.3...v1.5.4) (2026-07-29)
 
 
