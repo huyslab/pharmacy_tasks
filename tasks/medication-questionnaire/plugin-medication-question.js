@@ -387,9 +387,9 @@ var jsPsychMedicationQuestion = (function (jspsych) {
             let digits = '';
 
             const submit = () => {
-                if (trial.required && digits === '') return;
                 // "50." is a valid state to be in mid-entry, but not to record
                 const entered = digits.replace(/\.$/, '');
+                if (trial.required && entered === '') return;
                 const value = entered === '' ? null : parseFloat(entered);
                 endTrial({
                     response: value,
