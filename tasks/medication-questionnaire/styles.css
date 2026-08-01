@@ -8,13 +8,20 @@
     --medq-line: #d3dbe8;
     --medq-muted: #5b6b83;
     --medq-transition: 350ms;
+    --medq-focus-ring: 3px;
+    --medq-focus-offset: 2px;
+    --medq-gutter: 6px;
 
     box-sizing: border-box;
-    width: min(640px, 94vw);
+    width: min(648px, 94vw);
     max-height: 100%;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    padding: 16px 0 24px;
+    /* Side padding is the room the focus rings sit in. Scrolling on one axis makes the
+       other axis scroll too, which clips anything drawn outside the box - without this,
+       the ring on a full-width field is cut off at both edges. Keep it at or above the
+       ring's reach (--medq-focus-ring + --medq-focus-offset). */
+    padding: 16px var(--medq-gutter) 24px;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     color: var(--medq-navy);
     text-align: left;
@@ -395,8 +402,8 @@
 .medq-chip-remove:focus-visible,
 .medq-input:focus-visible,
 .medq-select:focus-visible {
-    outline: 3px solid var(--medq-blue);
-    outline-offset: 2px;
+    outline: var(--medq-focus-ring) solid var(--medq-blue);
+    outline-offset: var(--medq-focus-offset);
 }
 
 /* Sized for a cursor rather than a fingertip. Still generous - the questionnaire opens a
