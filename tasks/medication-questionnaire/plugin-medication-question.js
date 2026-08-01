@@ -59,7 +59,7 @@ var jsPsychMedicationQuestion = (function (jspsych) {
                     value: {
                         type: jspsych.ParameterType.STRING | jspsych.ParameterType.INT | jspsych.ParameterType.FLOAT,
                         default: undefined
-                    }
+                    },
                     reveals: {
                         type: jspsych.ParameterType.STRING,
                         default: null

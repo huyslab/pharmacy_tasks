@@ -16,6 +16,11 @@ export function orientationOf({ width, height }) {
  * accurate even if a project's `use` block is tweaked later.
  */
 export function expectedGate(preferredOrientation, viewport, hasTouch) {
+  // A task that declares no preference is never gated: api/utils.js only builds the overlay
+  // for 'portrait' or 'landscape'. Without this, a null preference would read as "always the
+  // wrong orientation" and the gate would be expected on every phone.
+  if (preferredOrientation !== 'portrait' && preferredOrientation !== 'landscape') return false;
+
   const minDimension = Math.min(viewport.width, viewport.height);
   const gateEligible = hasTouch && minDimension <= GATE_MIN_DIMENSION_THRESHOLD;
   const wrongOrientation = orientationOf(viewport) !== preferredOrientation;

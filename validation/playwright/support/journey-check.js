@@ -127,9 +127,158 @@ async function reversalJourney(page, testInfo, hasTouch) {
   await captureShot(page, testInfo, 'reversal', 'feedback');
 }
 
+/**
+ * Drives a real (non-simulate) run of the medication questionnaire through all five
+ * questions, taking whichever path the plugin chose for this device: the on-screen keypad
+ * and taps, or a typed field and the keyboard (plugin-medication-question.js usesKeyboard).
+ * The answers entered here are read back out of jsPsych at the end, so this covers the
+ * screens, the input-mode branch, and what each branch actually records.
+ */
+async function medicationQuestionnaireJourney(page, testInfo, hasTouch) {
+  const screen = page.locator('.medq-screen');
+  await expect(screen, 'the first screen should appear').toBeVisible({ timeout: 15000 });
+
+  // Ask the page which branch it took rather than guessing from the device: emulated
+  // pointer/hover media features are not a reliable stand-in for the real decision.
+  const keyboardMode = await screen.evaluate((el) => el.classList.contains('medq-keyboard'));
+  const advance = async () => {
+    if (keyboardMode) {
+      await page.keyboard.press('Enter');
+    } else {
+      await tapOrClick(page.locator('#medq-continue'), hasTouch);
+    }
+  };
+
+  // Screens slide in by adding this class a frame after they are built; a screen stuck
+  // without it would be invisible or mid-transition.
+  await expect(screen, 'the screen should have slid in').toHaveClass(/medq-screen-in/, { timeout: 5000 });
+  await captureShot(page, testInfo, 'medication-questionnaire', 'intro');
+  await advance();
+
+  // 1. Name of the medicine - typed on whichever keyboard the device has.
+  const nameField = page.locator('#medq-text');
+  await expect(nameField, 'the medicine name field should appear').toBeVisible({ timeout: 15000 });
+  await expect(
+    page.locator('#medq-continue'),
+    'continue should stay disabled until the name has been entered'
+  ).toBeDisabled();
+  if (!keyboardMode) await nameField.tap();
+  await nameField.fill('Sertraline');
+  await expect(page.locator('#medq-continue'), 'continue should unlock once a name is entered').toBeEnabled();
+  await advance();
+
+  // 2. Strength of one pill - the keypad on a touchscreen, a typed field otherwise.
+  const keypad = page.locator('.medq-keypad');
+  const typedNumber = page.locator('#medq-number');
+  if (keyboardMode) {
+    await expect(typedNumber, 'keyboard mode should offer a typed number field').toBeVisible({ timeout: 15000 });
+    await expect(keypad, 'keyboard mode should not render the keypad').toHaveCount(0);
+    await typedNumber.fill('12a5');
+    await expect(typedNumber, 'letters should be dropped as the number is typed').toHaveValue('125');
+  } else {
+    await expect(keypad, 'touch mode should offer the on-screen keypad').toBeVisible({ timeout: 15000 });
+    await expect(typedNumber, 'touch mode should not render the typed number field').toHaveCount(0);
+    await page.locator('.medq-key[data-key="1"]').tap();
+    await page.locator('.medq-key[data-key="2"]').tap();
+    await page.locator('.medq-key[data-key="9"]').tap();
+    await page.locator('.medq-key[data-key="del"]').tap();
+    await page.locator('.medq-key[data-key="5"]').tap();
+    await expect(page.locator('#medq-keypad-value'), 'the keypad readout should track the keys pressed').toHaveText(
+      '125'
+    );
+  }
+  await captureShot(page, testInfo, 'medication-questionnaire', 'dose');
+  await advance();
+
+  // 3. Pills per day - take the "5 or more" option, which swaps this same screen for a
+  // number entry rather than moving on.
+  const options = page.locator('.medq-choice');
+  await expect(options.first(), 'the pills-per-day options should appear').toBeVisible({ timeout: 15000 });
+  await captureShot(page, testInfo, 'medication-questionnaire', 'options');
+  if (keyboardMode) {
+    await page.keyboard.press('5'); // number keys pick an option outright
+    await expect(typedNumber, '"5 or more" should reveal a number entry').toBeVisible({ timeout: 5000 });
+    await typedNumber.fill('7');
+  } else {
+    await options.last().tap();
+    await expect(keypad, '"5 or more" should reveal the keypad').toBeVisible({ timeout: 5000 });
+    await page.locator('.medq-key[data-key="7"]').tap();
+  }
+  await advance();
+
+  // 4. Start date - day, month and year, each optional.
+  await expect(page.locator('.medq-date'), 'the date selects should appear').toBeVisible({ timeout: 15000 });
+  await page.locator('#medq-day').selectOption('3');
+  await page.locator('#medq-month').selectOption('11');
+  await page.locator('#medq-year').selectOption('2022');
+  await captureShot(page, testInfo, 'medication-questionnaire', 'date');
+  await advance();
+
+  // 5. Other medicines - the yes/no gate, then the list built one item at a time.
+  const yesButton = page.locator('#medq-list-yes');
+  await expect(yesButton, 'the yes/no gate should appear').toBeVisible({ timeout: 15000 });
+  if (keyboardMode) {
+    await page.keyboard.press('1');
+  } else {
+    await yesButton.tap();
+  }
+
+  const listField = page.locator('#medq-list-input');
+  await expect(listField, 'answering yes should reveal the list field').toBeVisible({ timeout: 5000 });
+  for (const medicine of ['Ibuprofen', 'Metformin', 'Mistake']) {
+    if (!keyboardMode) await listField.tap();
+    await listField.fill(medicine);
+    if (keyboardMode) {
+      await page.keyboard.press('Enter'); // adds the item without leaving the screen
+    } else {
+      await page.locator('#medq-list-add').tap();
+    }
+  }
+  await expect(page.locator('.medq-chip'), 'each added medicine should appear as a chip').toHaveCount(3);
+  await tapOrClick(page.locator('.medq-chip').last().locator('.medq-chip-remove'), hasTouch);
+  await expect(page.locator('.medq-chip'), 'removing a chip should drop that medicine').toHaveCount(2);
+  await captureShot(page, testInfo, 'medication-questionnaire', 'list');
+  await tapOrClick(page.locator('#medq-continue'), hasTouch);
+
+  // What the run actually recorded. Answers are committed as each screen leaves, so this is
+  // also where a screen that silently failed to record, or recorded twice, would show up.
+  await expect(page.locator('#display_element'), 'the questionnaire should finish').toContainText(
+    'Questionnaire complete',
+    { timeout: 15000 }
+  );
+  const recorded = await page.evaluate(() =>
+    window.jsPsych.data
+      .get()
+      .values()
+      .map((trial) => ({
+        name: trial.question_name,
+        response: trial.response,
+        input_mode: trial.input_mode,
+      }))
+  );
+
+  expect(recorded, 'every question should be recorded exactly once, in order').toEqual([
+    { name: 'medication_questionnaire_intro', response: null, input_mode: keyboardMode ? 'keyboard' : 'touch' },
+    { name: 'medication_name', response: 'Sertraline', input_mode: keyboardMode ? 'keyboard' : 'touch' },
+    { name: 'medication_dose_mg', response: 125, input_mode: keyboardMode ? 'keyboard' : 'touch' },
+    { name: 'pills_per_day', response: 7, input_mode: keyboardMode ? 'keyboard' : 'touch' },
+    {
+      name: 'medication_start_date',
+      response: { day: 3, month: 11, year: 2022 },
+      input_mode: keyboardMode ? 'keyboard' : 'touch',
+    },
+    {
+      name: 'other_medications',
+      response: ['Ibuprofen', 'Metformin'],
+      input_mode: keyboardMode ? 'keyboard' : 'touch',
+    },
+  ]);
+}
+
 const JOURNEYS = {
   vigour: vigourJourney,
   reversal: reversalJourney,
+  'medication-questionnaire': medicationQuestionnaireJourney,
 };
 
 /**
@@ -141,7 +290,12 @@ const JOURNEYS = {
  * simulate-mode rendering check.
  */
 export function defineTaskJourneyTest(taskKey, taskConfig) {
-  test(`${taskKey} instructions and feedback render correctly`, async ({ page }, testInfo) => {
+  // Most journeys capture instructions text and an in-task feedback moment; a task whose
+  // walkthrough covers something else (the questionnaire answers every question) can name
+  // its own checkpoints via journeyTitle.
+  const title = taskConfig.journeyTitle || `${taskKey} instructions and feedback render correctly`;
+
+  test(title, async ({ page }, testInfo) => {
     const errors = trackPageErrors(page);
     await patchWebkitTouchPoints(page);
 
@@ -156,7 +310,7 @@ export function defineTaskJourneyTest(taskKey, taskConfig) {
     // rotate-overlay gate for reversal (landscape-preferred) and hang waiting for content
     // that's blocked behind it.
     const viewport = page.viewportSize();
-    if (viewport && orientationOf(viewport) !== taskConfig.preferredOrientation) {
+    if (viewport && taskConfig.preferredOrientation && orientationOf(viewport) !== taskConfig.preferredOrientation) {
       await page.setViewportSize({ width: viewport.height, height: viewport.width });
     }
 

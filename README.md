@@ -308,12 +308,14 @@ const fullTimeline = [
 
 ## Testing
 
-Cross-device checks for the vigour and reversal tasks live under `validation/playwright/`, in two parts:
+Cross-device checks for the vigour, reversal and medication questionnaire tasks live under `validation/playwright/`, in two parts:
 
-- **Rendering matrix** (`*-rendering.spec.js`, `support/render-check.js`): runs each task (via `examples/vigour.html` / `examples/reversal.html`, driven by jsPsych's simulate mode) across all 21 device projects - common phones, tablets, and desktop browsers - asserting it actually renders (no console errors, no collapsed/overflowing layout, the orientation "please rotate" gate shows only where expected).
-- **Journey checks** (`*-journey.spec.js`, `support/journey-check.js`): drives a real (non-simulate) run - real clicks/taps/keypresses through the actual instructions flow - on a small curated subset of 5 devices, to deterministically capture the static instructions text and an in-task feedback/coin moment (checkpoints simulate mode can't reliably land on, since it auto-advances through everything).
+- **Rendering matrix** (`*-rendering.spec.js`, `support/render-check.js`): runs each task (via its page in `examples/`, driven by jsPsych's simulate mode) across all 21 device projects - common phones, tablets, and desktop browsers - asserting it actually renders (no console errors, no collapsed/overflowing layout, the orientation "please rotate" gate shows only where expected). A task can add its own assertions through `extraChecks` - the questionnaire uses this to check that each screen commits to exactly one input mode and renders only that mode's controls.
+- **Journey checks** (`*-journey.spec.js`, `support/journey-check.js`): drives a real (non-simulate) run - real clicks/taps/keypresses through the actual flow - on a small curated subset of 5 devices, to deterministically capture checkpoints simulate mode can't reliably land on, since it auto-advances through everything. For vigour and reversal that is the static instructions text and an in-task feedback/coin moment; for the questionnaire it is all five questions answered on whichever path the device was given (keypad and taps, or typed field and keyboard), with the recorded answers read back out of jsPsych at the end.
 
 Both save a screenshot per device/checkpoint to `validation/playwright/screenshots/`.
+
+Per-task settings (page URL, preferred orientation, the selector that pins the real trial) live in `support/task-config.js`. A task with no `preferredOrientation` is never orientation-gated, which is how the questionnaire is treated.
 
 ```bash
 npm install
