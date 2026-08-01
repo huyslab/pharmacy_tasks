@@ -211,7 +211,7 @@
         // Get parameters from URL (populated by index.html's setup form redirect)
         window.context = urlParams.get('context') || 'relmed';
         window.participantID = urlParams.get('participant_id') || '';
-        window.simulating = window.participantID.includes("simulate") || false;
+        window.simulating = urlParams.get('simulate') === '1' || window.participantID.includes("simulate");
         window.debug = window.participantID.includes("debug") || window.participantID.includes("TST");
         // Resolves the website's `module_state`, falling back to the older `state` name
         window.last_state = getResumptionState();
