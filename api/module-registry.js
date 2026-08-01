@@ -38,6 +38,28 @@ export const ModuleRegistry = {
         max_bonus: 5.0,
         min_prop_bonus: 0.6
     },
+    pilot: {
+        name: "Pilot Module",
+        moduleConfig: { // Settings that apply to all tasks in the module unless overridden
+            session: "wk0",
+            sequence: "wk0"
+        },
+        elements: [
+            { type: "instructions", config: { text: "start_message" } },
+            { type: "task", name: "medication_questionnaire" },
+            { type: "task", name: "reversal" },
+            { type: "task", name: "acceptability_judgment", config: { task_name: "reversal", game_description: "squirrel game" } },
+            { type: "task", name: "vigour" },
+            { type: "task", name: "acceptability_judgment", config: { task_name: "vigour", game_description: "piggy-bank game" } },
+            { type: "bonus" },
+            { type: "instructions", config: { text: "end_message" } }
+        ],
+        // Both games promise a bonus in their instructions, so the module reveals one:
+        // £1 per game, matching what each earns when run on its own (experiment.html
+        // bonusRules).
+        max_bonus: 2.0,
+        min_prop_bonus: 0.0
+    },
     screening: {
         name: "Screening Module",
         moduleConfig: { // Settings that apply to all tasks in the module unless overridden

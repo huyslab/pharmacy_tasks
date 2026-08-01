@@ -266,7 +266,23 @@ Use these exact strings when calling `createTaskTimeline()`:
 
 Use these exact strings when calling `createModuleTimeline()`:
 - `'full_battery'` - Complete RELMED task battery 
+- `'pilot'` - Medication questionnaire, then reversal and vigour, each followed by its acceptability rating
 - `'screening'` - Shortened screening version
+
+### Launching a Session
+
+`experiment.html` is the entry point a hosting website loads, and it runs either a module or a
+single task:
+
+| Parameter | Description |
+| --- | --- |
+| `module` | Name of a module to run, e.g. `module=pilot`. Takes precedence: when both are given, `task` is ignored |
+| `task` | Name of a single task to run, e.g. `task=reversal`. The task's bonus is revealed at the end |
+| `participant_id` | Participant identifier. Containing `simulate` runs jsPsych's simulate mode, `debug` or `TST` relaxes the termination guard |
+| `context` | `relmed` (also used for mymeds) or `prolific` - governs where data is submitted |
+| `session` | Session label from the hosting site, e.g. `Session 1` or `Week 0`. Required; a run containing the reversal task also needs it to resolve to a trial sequence |
+
+`index.html` provides a form that builds these URLs for local runs.
 
 ## Examples
 
