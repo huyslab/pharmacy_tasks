@@ -54,8 +54,8 @@ export const ModuleRegistry = {
         // Both games promise a bonus in their instructions, so the module reveals one:
         // £1 per game, matching what each earns when run on its own (experiment.html
         // bonusRules).
-        max_bonus: 2.0,
-        min_prop_bonus: 0.0
+        max_bonus: 5.0,
+        min_prop_bonus: 0.6
     },
     screening: {
         name: "Screening Module",
