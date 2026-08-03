@@ -67,6 +67,16 @@ export const messages = {
             <br><p>It is perfectly natural to take a bit longer when you are learning something new. However, if you see this message a few times, it may be a sign that you are overthinking your choices.</p>
             <p>If at any point you feel like you need some assistance, you can find our contact details by pressing the question mark in the top right corner. We are happy to help.</p>`
         ],
+        // Where to get help, shown at the end of the session. The wording is fixed - only the
+        // markup around it belongs to us, so the URLs are the same strings, made clickable.
+        signposting_message: `
+            <p>If you are feeling low, anxious, or having upsetting thoughts or images, you can get help from your GP or these websites:</p>
+            <ul>
+                <li>NHS mental health: <a href="https://www.nhs.uk/mental-health/" target="_blank" rel="noopener noreferrer">https://www.nhs.uk/mental-health/</a></li>
+                <li>Mind: <a href="https://www.mind.org.uk" target="_blank" rel="noopener noreferrer">https://www.mind.org.uk</a></li>
+                <li>Samaritans: <a href="https://www.samaritans.org.uk" target="_blank" rel="noopener noreferrer">https://www.samaritans.org.uk</a></li>
+            </ul>
+            <p><b>If you ever think about harming yourself or someone else, go to your nearest hospital emergency department or call 999 straight away.</b></p>`,
         end_message: {
             message:
                 `<p>Thank you for completing this session!</p>
