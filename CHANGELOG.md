@@ -1,3 +1,15 @@
+# [1.7.0](https://github.com/huyslab/pharmacy_tasks/compare/v1.6.0...v1.7.0) (2026-08-03)
+
+
+### Bug Fixes
+
+* **validation:** add a waiting-to-check-text for ending the task ([1676ecd](https://github.com/huyslab/pharmacy_tasks/commit/1676ecdcebf469105e15aa5b974e1367ee164f9f))
+
+
+### Features
+
+* support URL-triggered task simulation ([5f6123f](https://github.com/huyslab/pharmacy_tasks/commit/5f6123facd77b92891294110da5364718ee2bf13))
+
 # [1.6.0](https://github.com/huyslab/pharmacy_tasks/compare/v1.5.4...v1.6.0) (2026-08-01)
 
 
