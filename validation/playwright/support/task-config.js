@@ -39,4 +39,14 @@ export const TASKS = {
     // empty. Requiring a child of the body is what pins this to a real question screen.
     readySelector: '.medq-screen:has(.medq-body > *)',
   },
+  // Like the medication questionnaire, the self-report battery reads and taps equally well
+  // either way up, so it declares no preferredOrientation and is never orientation-gated.
+  self_report: {
+    url: '/examples/self-report.html',
+    preferredOrientation: null,
+    journeyTitle: 'self-report questionnaires record every answer on this device',
+    // .srq-screen also wraps the intro and per-questionnaire instructions screens, whose
+    // body holds a single continue button. Only a real item screen renders the options.
+    readySelector: '.srq-screen:has(.srq-options)',
+  },
 };

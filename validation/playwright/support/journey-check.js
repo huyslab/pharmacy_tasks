@@ -275,10 +275,110 @@ async function medicationQuestionnaireJourney(page, testInfo, hasTouch) {
   ]);
 }
 
+/**
+ * Drives a real (non-simulate) run of the self-report battery through every item of both
+ * questionnaires, taking whichever path the plugin chose for this device: tapping the option,
+ * or picking it with a number key (plugin-self-report-item.js usesKeyboard). The answers are
+ * read back out of jsPsych at the end, so this covers the screens, the input-mode branch, and
+ * that each item is recorded once, in order, with the option that was actually chosen.
+ */
+async function selfReportJourney(page, testInfo, hasTouch) {
+  // tasks/self-report/questionnaires.js: PHQ-9 runs to 10 items (a consistency catch at 9),
+  // GAD-7 to 8 (an infrequency catch at 7). Both use the same four-point frequency scale.
+  const QUESTIONNAIRES = [
+    { key: 'PHQ9', items: 10, catches: { 9: 'consistency' } },
+    { key: 'GAD7', items: 8, catches: { 7: 'infrequency' } },
+  ];
+
+  const screen = page.locator('.srq-screen');
+  await expect(screen, 'the first screen should appear').toBeVisible({ timeout: 15000 });
+
+  // Ask the page which branch it took rather than guessing from the device: emulated
+  // pointer/hover media features are not a reliable stand-in for the real decision.
+  const keyboardMode = await screen.evaluate((el) => el.classList.contains('srq-keyboard'));
+
+  // Screens slide in by adding this class a frame after they are built; a screen stuck
+  // without it would be invisible or mid-transition.
+  await expect(screen, 'the screen should have slid in').toHaveClass(/srq-screen-in/, { timeout: 5000 });
+
+  /** Waits for a "something to read" screen carrying `prompt`, then takes its one way forward */
+  const passMessage = async (prompt) => {
+    await expect(page.locator('.srq-prompt'), 'the message screen should appear').toContainText(prompt, {
+      timeout: 15000,
+    });
+    if (keyboardMode) {
+      await page.keyboard.press('Enter'); // the continue button is focused on arrival
+    } else {
+      await tapOrClick(page.locator('#srq-continue'), hasTouch);
+    }
+  };
+
+  await captureShot(page, testInfo, 'self-report', 'intro');
+  await passMessage('short questionnaires about how you have been feeling');
+
+  const expected = [];
+  for (const questionnaire of QUESTIONNAIRES) {
+    await passMessage('how often have you been bothered');
+
+    for (let i = 0; i < questionnaire.items; i++) {
+      // Only the progress label distinguishes one item screen from the next reliably, and
+      // waiting on it is also what keeps this from answering the outgoing screen twice.
+      await expect(page.locator('.srq-progress-label'), 'the item counter should track progress').toHaveText(
+        `Question ${i + 1} of ${questionnaire.items}`,
+        { timeout: 15000 }
+      );
+
+      const options = page.locator('.srq-option');
+      await expect(options, 'the whole scale should be on screen').toHaveCount(4);
+
+      // Cycle through the scale, so every option position is exercised at least twice
+      const choice = i % 4;
+      if (keyboardMode) {
+        await page.keyboard.press(String(choice + 1)); // number keys pick an option outright
+      } else {
+        await options.nth(choice).tap();
+      }
+
+      expected.push({
+        questionnaire: questionnaire.key,
+        item_id: `${questionnaire.key}_Q${String(i + 1).padStart(2, '0')}`,
+        response: choice,
+        catch_type: questionnaire.catches[i + 1] || null,
+        input_mode: keyboardMode ? 'keyboard' : 'touch',
+      });
+
+      if (i === 0) await captureShot(page, testInfo, 'self-report', `${questionnaire.key}-item`);
+    }
+  }
+
+  // What the run actually recorded. Answers are committed as each screen leaves, so this is
+  // also where an item that silently failed to record, or recorded twice, would show up.
+  await expect(page.locator('#display_element'), 'the questionnaires should finish').toContainText(
+    'Questionnaires complete',
+    { timeout: 15000 }
+  );
+  const recorded = await page.evaluate(() =>
+    window.jsPsych.data
+      .get()
+      .values()
+      .filter((trial) => trial.item_id)
+      .map((trial) => ({
+        questionnaire: trial.questionnaire,
+        item_id: trial.item_id,
+        response: trial.response,
+        catch_type: trial.catch_type,
+        input_mode: trial.input_mode,
+      }))
+  );
+
+  expect(recorded, 'every item should be recorded exactly once, in order, with the option chosen').toEqual(expected);
+}
+
 const JOURNEYS = {
   vigour: vigourJourney,
   reversal: reversalJourney,
   'medication-questionnaire': medicationQuestionnaireJourney,
+  'self-report': selfReportJourney,
 };
 
 /**
