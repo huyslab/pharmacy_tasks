@@ -30,6 +30,15 @@ test('website Session 2 selects the wk2 reversal sequence', async ({ page }, tes
   await expect(page.locator('#jspsych-content')).toBeAttached({ timeout: 15000 });
 });
 
+test('simulate query parameter preserves the participant ID', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'Pixel 7 landscape', 'one project is sufficient for simulation routing');
+
+  await page.goto('/experiment.html?participant_id=flag-check&context=relmed&task=reversal&session=Session%201&simulate=1');
+
+  await expect.poll(() => page.evaluate(() => window.simulating)).toBe(true);
+  await expect(page.getByText('Thank you for participating!')).toBeVisible({ timeout: 30000 });
+  await expect.poll(() => page.evaluate(() => window.participantID)).toBe('flag-check');
+
 test('reversal preloads stimuli before showing the orientation hint', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'Pixel 7 landscape', 'one touch project is sufficient for timeline ordering');
 
