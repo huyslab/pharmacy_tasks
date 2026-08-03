@@ -261,6 +261,11 @@ var jsPsychSelfReportItem = (function (jspsych) {
         buildFrame(trial) {
             let progress = '';
             if (trial.progress_label || trial.item_index !== null) {
+                // The bar measures items *answered*, not items reached, so it is empty on the
+                // first item and nine tenths full on the tenth. Counting the item on screen
+                // instead would show a full bar over an unanswered last item, which reads as
+                // "done" while the participant still has one to answer. The exact position is
+                // in the label beside it ("Question 10 of 10").
                 const proportion = (trial.item_index !== null && trial.n_items)
                     ? (trial.item_index / trial.n_items) * 100
                     : null;

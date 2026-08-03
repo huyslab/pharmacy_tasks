@@ -57,10 +57,13 @@ function questionnaireScreens(questionnaire, position, total, settings) {
             data: { trialphase: questionnaire.key },
             // Save as we go, so a session interrupted part way still has the earlier answers.
             // Every item would mean a full data post per tap, which is a lot of traffic for a
-            // long questionnaire, so this is throttled - the last item always saves, through
-            // the timeline's on_timeline_finish below.
+            // long questionnaire, so this is throttled. The last item is skipped rather than
+            // counted: the questionnaire's own on_timeline_finish saves right after it, and
+            // whether that would have been a double post depends on the item count dividing
+            // by save_every (PHQ-9's ten items and the default five do).
             on_finish: () => {
-                if ((i + 1) % settings.save_every === 0) saveDataREDCap();
+                const isLastItem = i === questionnaire.items.length - 1;
+                if (!isLastItem && (i + 1) % settings.save_every === 0) saveDataREDCap();
             }
         });
     });
