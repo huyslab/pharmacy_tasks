@@ -58,9 +58,12 @@ function computeTotalBonus(module) {
                 
                 // Handle the result (could be 0, object, or array)
                 if (bonusResult && typeof bonusResult === 'object') {
-                    totalEarned += bonusResult.earned || 0;
-                    totalMin += bonusResult.min || 0;
-                    totalMax += bonusResult.max || 0;
+                    const taskName = element.config?.task_name || task.defaultConfig?.task_name || element.name;
+                    const savedBonus = window.session_state?.[taskName] || {};
+
+                    totalEarned += (Number(savedBonus.earned) || 0) + (bonusResult.earned || 0);
+                    totalMin += (Number(savedBonus.min) || 0) + (bonusResult.min || 0);
+                    totalMax += (Number(savedBonus.max) || 0) + (bonusResult.max || 0);
                 }
             }
         }
@@ -112,11 +115,8 @@ function updateBonusState(settings) {
 
     // Update the task-specific values in the session state
     updated_session_state_obj[settings.task_name].earned = roundDigits(newBonus.earned);
-    if (settings.task_name !== "reversal") {
-        // For all tasks except reversal, we update the min and max in bonus state
-        updated_session_state_obj[settings.task_name].min = roundDigits(newBonus.min);
-        updated_session_state_obj[settings.task_name].max = roundDigits(newBonus.max);
-    }
+    updated_session_state_obj[settings.task_name].min = roundDigits(newBonus.min);
+    updated_session_state_obj[settings.task_name].max = roundDigits(newBonus.max);
 
     // Send the updated state back to the parent window
     console.log("To-be-updated bonus:", updated_session_state_obj);
