@@ -171,7 +171,7 @@ function reversalInstructions(settings) {
     var _revReadyCleanup = null;
     var touchCapable = navigator.maxTouchPoints > 0;
 
-    var sessionPrefix = settings.session !== "screening" ? "<p>Let's start with the first game!</p>" : "";
+    var sessionPrefix = settings.sessionInfo.variant !== 'screening' ? "<p>Let's start with the first game!</p>" : "";
     var duration = settings.n_trials == 50 ? "three" : "five";
 
     var pageRules = `<p>One squirrel has higher-value coins, and the other has lower-value coins.
@@ -211,7 +211,7 @@ function reversalInstructions(settings) {
         data: {trialphase: "reversal_instruction"},
         on_start: () => { updateState(`reversal_instructions_start`) },
         on_finish: () => {
-            if (settings.session !== "screening") {
+            if (settings.sessionInfo.variant !== 'screening') {
                 updateState(`no_resume_10_minutes`)
             }
             updateState(`reversal_task_start`)

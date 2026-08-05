@@ -39,6 +39,7 @@
     <script src="tasks/reversal/plugin-reversal.js"></script>
     <script src="tasks/open-text/plugin-open-text.js"></script>
     <script src="tasks/medication-questionnaire/plugin-medication-question.js"></script>
+    <script src="tasks/self-report/plugin-self-report-item.js"></script>
 
     
     <!-- Core utilities -->
@@ -79,6 +80,24 @@
         .instructions td {
             padding-left: 20px;
             padding-right: 20px
+        }
+
+        /* Lists sit in the same column as the paragraphs around them, rather than stretching
+           across the centred instructions container */
+        .instructions ul {
+            max-width: min(700px, 92vw);
+            text-align: left;
+            margin: 1em 0;
+            padding-left: 1.4em;
+        }
+
+        .instructions li {
+            margin: 0.4em 0;
+        }
+
+        /* A full URL is longer than a phone is wide */
+        .instructions a {
+            word-break: break-word;
         }
 
         /* Orientation gate: on phones, block the wrong orientation for the active task; tablets/
@@ -186,7 +205,8 @@
 
     <script type="module">
         // Import task registry functions
-        import { createTaskTimeline, getTask, getTaskInfo } from '@api/index.js';
+        import { createModuleTimeline, createTaskTimeline, describeAcceptedSessions,
+                 getModuleInfo, getTask, getTaskInfo, resolveSession } from '@api/index.js';
         import { bonusTrial, enterExperiment, getResumptionState, saveDataREDCap,
                  signalLoadSuccess } from '@utils/index.js';
 
@@ -223,72 +243,36 @@
             version: "1.7.0"
         });
 
-        // Which task to run. Vigour and reversal don't vary by session, but
-        // session is still a required field, and will be provided by the
-        // website.
+        // The session label as the website sent it ("Session 1", "Week 0", "Training"). Kept
+        // in its original form because this is the value REDCap already stores; the canonical
+        // key the run actually uses is resolved from it below.
         window.session = urlParams.get('session') || '';
+
+        // The one place a label becomes a session. Everything downstream - trial sequences,
+        // stimulus sets, rule variants, resumption policy - is driven by this key, for both
+        // module and single-task runs. Null when the label isn't recognised; runExperiment
+        // refuses to start in that case.
+        window.sessionKey = resolveSession(window.session);
+
+        // The label goes to REDCap as `session`; the key it resolved to is stamped onto every
+        // trial alongside it, so the data says which stimuli and sequences were actually used.
+        // Must come after the resolution above, or every trial records a null key.
+        jsPsych.data.addProperties({
+            session_key: window.sessionKey
+        });
+
+        // Two ways in: `module` runs a collection of tasks from the module registry, `task`
+        // runs a single task from the task registry. A module is the more specific
+        // instruction, so when both arrive the task parameter is ignored.
+        const moduleName = urlParams.get('module') || '';
         const taskName = urlParams.get('task') || '';
-        window.module = taskName;
-
-        // Order in which the study runs its reversal sequences, so the website's default
-        // "Session N" labels can select one. Week-style labels and raw sequence keys are
-        // matched against the registry directly and don't depend on this.
-        const sessionOrder = ['wk0', 'wk2', 'wk4', 'wk24', 'wk28'];
-
-        /**
-         * Resolves a session label to a reversal sequence key from TaskRegistry.
-         *
-         * The label is whatever the study admin named the session in StudyManagement, so
-         * accept mymeds' default ("Session 1"), RELMED-style week labels ("Week 0"), and the
-         * raw keys ("wk0", "screening"). Availability comes from the registry rather than a
-         * hand-maintained list here, so adding a sequence there is enough.
-         *
-         * @param {string} label - The session label from the URL
-         * @returns {string|null} A key of TaskRegistry.reversal.sequences, or null
-         */
-        function resolveReversalSequence(label) {
-            const sequences = getTask('reversal').sequences || {};
-            const normalized = label.trim().toLowerCase().replace(/[\s_-]+/g, '');
-
-            // Raw sequence key, e.g. "wk0" or "screening"
-            if (sequences[normalized]) return normalized;
-
-            // mymeds maps its "Training" session onto the screening sequence
-            if (normalized === 'training' && sequences.screening) return 'screening';
-
-            // Week label, e.g. "Week 24" -> "wk24"
-            const week = normalized.match(/^week(\d+)$/);
-            if (week && sequences[`wk${week[1]}`]) return `wk${week[1]}`;
-
-            // Ordinal label, e.g. "Session 2" -> the 2nd sequence the study runs
-            const session = normalized.match(/^session(\d+)$/);
-            if (session) {
-                const key = sessionOrder[parseInt(session[1], 10) - 1];
-                if (key && sequences[key]) return key;
-            }
-
-            return null;
+        const runningModule = Boolean(moduleName);
+        if (runningModule && taskName) {
+            console.warn(`Both "module" and "task" given; running the module ("${moduleName}") and ignoring the task ("${taskName}").`);
         }
 
-        /**
-         * Describes the session labels resolveReversalSequence accepts, derived from the same
-         * registry it resolves against so the error message can't drift from the behaviour.
-         *
-         * @returns {string} Human-readable list of accepted labels
-         */
-        function describeAcceptedSessions() {
-            const keys = Object.keys(getTask('reversal').sequences || {});
-            const weekLabels = keys.filter((key) => /^wk\d+$/.test(key))
-                                   .map((key) => `"Week ${key.slice(2)}"`);
-            const sessionCount = sessionOrder.filter((key) => keys.includes(key)).length;
-
-            return [
-                sessionCount ? `"Session 1"-"Session ${sessionCount}"` : null,
-                weekLabels.length ? weekLabels.join(', ') : null,
-                keys.includes('screening') ? '"Training"' : null,
-                `or a sequence key (${keys.join(', ')})`
-            ].filter(Boolean).join(', ');
-        }
+        // Recorded against every submission, so the data says which run this was
+        window.module = moduleName || taskName;
 
         const bonusRules = {
             reversal: {
@@ -308,34 +292,34 @@
                 // provides - otherwise createTaskTimeline throws deep in the call stack for a
                 // missing task, and an unrecognized context fails silently later (saveDataREDCap
                 // only saves data for "relmed"/"prolific" contexts).
-                if (!taskName) {
-                    throw new Error('Missing "task" URL parameter. Launch this page via index.html rather than directly.');
+                if (!runningModule && !taskName) {
+                    throw new Error('Missing "module" or "task" URL parameter. Launch this page via index.html rather than directly.');
                 }
                 if (window.context !== 'relmed' && window.context !== 'prolific') {
                     throw new Error(`Missing or unrecognized "context" URL parameter ("${window.context}"). Expected "relmed" (also used for mymeds) or "prolific".`);
                 }
-                // REDCap rejects a submission with no session (post-data requires it), so this
-                // is fatal for every task even though only reversal maps it to a sequence.
+                // REDCap rejects a submission with no session (post-data requires it), and
+                // every task's stimuli, rules and trial sequence are chosen by session, so a
+                // label that doesn't resolve is fatal for any run rather than reversal alone.
                 if (!window.session) {
                     throw new Error('Missing "session" URL parameter. Launch this page via index.html rather than directly.');
                 }
-
-                const sequence = resolveReversalSequence(window.session);
-                if (taskName === "reversal" && !sequence) {
-                    throw new Error(`Unrecognized "session" URL parameter ("${window.session}") - the reversal task needs it to pick a trial sequence. Accepted: ${describeAcceptedSessions()}.`);
+                if (!window.sessionKey) {
+                    throw new Error(`Unrecognized "session" URL parameter ("${window.session}"). Accepted: ${describeAcceptedSessions()}.`);
                 }
 
-                // Get task information
-                const taskInfo = getTaskInfo(taskName);
-                console.log('Task info:', taskInfo);
+                // The resolved session drives the whole run. Passed as runtime config, which
+                // is applied last, so it holds for every task in a module too.
+                const runConfig = { session: window.sessionKey };
 
-                // Reversal selects a week-specific sequence; vigour uses session as metadata only.
-                const taskConfig =
-                    taskName === "reversal"
-                        ? { sequence }
-                        : {};
-
-                const timeline = await createTaskTimeline(taskName, taskConfig);
+                let timeline;
+                if (runningModule) {
+                    console.log('Module info:', getModuleInfo(moduleName));
+                    timeline = await createModuleTimeline(moduleName, runConfig);
+                } else {
+                    console.log('Task info:', getTaskInfo(taskName));
+                    timeline = await createTaskTimeline(taskName, runConfig);
+                }
                 console.log('Timeline created:', timeline);
 
                 // Report success only once all fallible task setup has completed. If timeline
@@ -343,23 +327,23 @@
                 // the participant with its normal recovery dialog.
                 signalLoadSuccess();
 
-                const standaloneModule = {
-                    elements: [
-                        {
-                            type: "task",
-                            name: taskName,
-                            __task: getTask(taskName)
-                        }
-                    ],
-                    ...bonusRules[taskName]
-                };
-
-                // Create the complete timeline
-                const fullTimeline = [
-                    enterExperiment,
-                    ...timeline,
-                    bonusTrial(standaloneModule)
-                ];
+                // A module decides for itself where its bonus is revealed, through a "bonus"
+                // element in its own definition. A single task has no such definition, so it
+                // is wrapped in a one-task module here to reveal its bonus at the end.
+                const fullTimeline = [enterExperiment, ...timeline];
+                if (!runningModule) {
+                    const singleTaskModule = {
+                        elements: [
+                            {
+                                type: "task",
+                                name: taskName,
+                                __task: getTask(taskName)
+                            }
+                        ],
+                        ...bonusRules[taskName]
+                    };
+                    fullTimeline.push(bonusTrial(singleTaskModule));
+                }
 
                 // Run the experiment
                 if (window.simulating) {
@@ -391,7 +375,7 @@
                 errorContainer.innerHTML = `
                     <div style="text-align: center; padding: 50px;">
                         <h2>Error Loading Experiment</h2>
-                        <p>There was an error loading the ${taskName || 'requested'} task:</p>
+                        <p>There was an error loading the ${runningModule ? `${moduleName} module` : `${taskName || 'requested'} task`}:</p>
                         <p><strong>${error.message}</strong></p>
                         <p>Please check the console for more details.</p>
                     </div>

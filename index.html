@@ -138,11 +138,20 @@
             </div>
 
             <div class="form-group">
-                <label for="task">Task:</label>
+                <label for="task">What to run:</label>
+                <!-- Values carry which registry the name comes from; the redirect below turns
+                     that into either a module= or a task= parameter for experiment.html. -->
                 <select id="task" name="task" required>
-                    <option value="">Select task</option>
-                    <option value="vigour">Vigour</option>
-                    <option value="reversal">Reversal</option>
+                    <option value="">Select a task or module</option>
+                    <optgroup label="Modules">
+                        <option value="module:pilot_1">Pilot 1 (medicine questionnaire, reversal)</option>
+                        <option value="module:pilot_2">Pilot 2 (vigour, PHQ-9 and GAD-7)</option>
+                    </optgroup>
+                    <optgroup label="Single tasks">
+                        <option value="task:vigour">Vigour</option>
+                        <option value="task:reversal">Reversal</option>
+                        <option value="task:self_report">Questionnaires (PHQ-9, GAD-7)</option>
+                    </optgroup>
                 </select>
             </div>
 
@@ -201,7 +210,7 @@
 
             // Validate task selection
             if (!task) {
-                errorMessage.textContent = 'Please select a task';
+                errorMessage.textContent = 'Please select a task or module';
                 errorMessage.style.display = 'block';
                 return;
             }
@@ -213,8 +222,10 @@
                 return;
             }
 
-            // Redirect to experiment.html with participant_id, context, task, and session parameters
-            window.location.href = `experiment.html?participant_id=${encodeURIComponent(participantId)}&context=${encodeURIComponent(context)}&task=${encodeURIComponent(task)}&session=${encodeURIComponent(session)}`;
+            // Redirect to experiment.html with participant_id, context, session, and either a
+            // module or a task - experiment.html accepts one or the other.
+            const [kind, name] = task.split(':');
+            window.location.href = `experiment.html?participant_id=${encodeURIComponent(participantId)}&context=${encodeURIComponent(context)}&${kind}=${encodeURIComponent(name)}&session=${encodeURIComponent(session)}`;
         });
 
         // Enable real-time validation
