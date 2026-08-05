@@ -1,3 +1,18 @@
+# [1.8.0](https://github.com/huyslab/pharmacy_tasks/compare/v1.7.0...v1.8.0) (2026-08-05)
+
+
+### Bug Fixes
+
+* address review findings on the pilot split ([2fd1e42](https://github.com/huyslab/pharmacy_tasks/commit/2fd1e42546d69fba4e59cb4875424f4d55b6b36c))
+* correct bonus numbers for mymeds pilot ([35d1059](https://github.com/huyslab/pharmacy_tasks/commit/35d1059c8796f90ff508707c2c86b82f7657905b))
+
+
+### Features
+
+* **experiment:** run either a module or a single task ([85ad679](https://github.com/huyslab/pharmacy_tasks/commit/85ad6792cf59a865eac6afa0b6a3392a771f2ff7))
+* **pilot:** add help signposting page before the end message ([8a6767e](https://github.com/huyslab/pharmacy_tasks/commit/8a6767e5ff442c459e1af6808c7685b3efcc49ff))
+* **pilot:** split the pilot into two modules, with PHQ-9 and GAD-7 ([0cb8cfa](https://github.com/huyslab/pharmacy_tasks/commit/0cb8cfaad30c9d5744d1ab43c8f2593d60a46e14))
+
 # [1.7.0](https://github.com/huyslab/pharmacy_tasks/compare/v1.6.0...v1.7.0) (2026-08-03)
 
 
