@@ -221,6 +221,28 @@ function flushPauseResumeEvents(data) {
 // re-running setup would discard events already buffered but not yet flushed.
 let parentMessageListenerInstalled = false;
 
+// jsPsych exposes a single timeline pause state, but more than one feature can own it. Only
+// transition the timeline when the first reason is added or the final reason is removed.
+const experimentPauseReasons = new Set();
+
+function setExperimentPauseReason(reason, paused) {
+    const wasPaused = experimentPauseReasons.size > 0;
+    if (paused) {
+        experimentPauseReasons.add(reason);
+    } else {
+        experimentPauseReasons.delete(reason);
+    }
+
+    const isPaused = experimentPauseReasons.size > 0;
+    if (isPaused === wasPaused) return;
+
+    if (isPaused) {
+        jsPsych.pauseExperiment();
+    } else {
+        jsPsych.resumeExperiment();
+    }
+}
+
 /**
  * Listens for control messages from the embedding website.
  *
@@ -263,16 +285,16 @@ function listenToParentMessages() {
 
         if (msg === "pause_task" && !experimentPausedByParent) {
             experimentPausedByParent = true;
-            console.log("Experiment paused");
+            console.log("Experiment pause requested by parent");
             window.pause_resume_events.push({ time: jsPsych.getTotalTime(), event: "pause" });
-            jsPsych.pauseExperiment();
+            setExperimentPauseReason('parent', true);
         }
 
         if (msg === "resume_task" && experimentPausedByParent) {
             experimentPausedByParent = false;
-            console.log("Experiment resumed");
+            console.log("Parent experiment pause released");
             window.pause_resume_events.push({ time: jsPsych.getTotalTime(), event: "resume" });
-            jsPsych.resumeExperiment();
+            setExperimentPauseReason('parent', false);
         }
     }, false);
 }
@@ -361,7 +383,7 @@ export {
     createPreloadTrial,
     saveUrlParameters,
     listenToParentMessages,
+    setExperimentPauseReason,
     enterExperiment,
     loadCSS
 };
-

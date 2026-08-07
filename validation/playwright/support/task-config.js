@@ -1,7 +1,5 @@
-// Mirrors the CSS gate thresholds in examples/vigour.html and examples/reversal.html:
-// `@media (orientation: landscape) and (max-height: 500px)` and
-// `@media (orientation: portrait) and (max-width: 500px)`. Keep this in sync if those
-// thresholds ever change - see support/render-check.js for how it's used.
+// Mirrors api/utils.js' physical-screen phone threshold. CSS still checks the viewport's
+// live orientation, but this threshold decides whether the body gate is enabled at all.
 export const GATE_MIN_DIMENSION_THRESHOLD = 500;
 
 export const TASKS = {

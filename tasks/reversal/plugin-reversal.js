@@ -167,6 +167,16 @@ var jsPsychReversal = (function (jspsych) {
                 wrongOrientationTimes.push(0);  // offset from trial onset is 0
             }
 
+            var syncGateState = function () {
+                var now = performance.now();
+                var nowVisible = isRotateGateVisible();
+                if (nowVisible && !gateVisible) {
+                    wrongOrientation = true;
+                    wrongOrientationTimes.push(Math.round(now - trialOnset));
+                }
+                gateVisible = nowVisible;
+            };
+
             // Create stimuli. Reveal is handled below: synchronously when images are already
             // loaded (the normal case after preload — no blank frame), or after img.decode()
             // when they are not yet ready (slow/uncached load — avoids Safari half-paint flash).
@@ -180,16 +190,14 @@ var jsPsychReversal = (function (jspsych) {
             var rightTapHandler = null;
             var suppressContextMenu = null;
             var resizeHandler = null;
-            var resizeDebounce = null;
-
-            // Pending response-deadline timer (deadline_warning or ITI); cleared on first response
-            var deadlineTimer = null;
+            var resizeFrame = null;
+            var responseDeadlineTimeout = null;
 
             // Collect all active DOM references for cleanup
             var tapLeft = document.getElementById('rev-tap-left');
             var tapRight = document.getElementById('rev-tap-right');
 
-            // Unified cleanup: removes all listeners and cancels stray keyboard responses
+            // Unified cleanup: removes all listeners and cancels stray keyboard responses.
             var cleaned = false;
             var cleanupAll = () => {
                 if (cleaned) return;
@@ -211,18 +219,10 @@ var jsPsychReversal = (function (jspsych) {
                     window.removeEventListener('resize', resizeHandler);
                     window.removeEventListener('orientationchange', resizeHandler);
                 }
-                if (resizeDebounce) {
-                    clearTimeout(resizeDebounce);
-                    resizeDebounce = null;
+                if (resizeFrame !== null) {
+                    cancelAnimationFrame(resizeFrame);
+                    resizeFrame = null;
                 }
-                // Cancel the pending response deadline so a valid response can't trigger a
-                // stale deadline_warning during the coin animation / ITI window.
-                if (deadlineTimer) {
-                    clearTimeout(deadlineTimer);
-                    deadlineTimer = null;
-                }
-
-                // Safety: cancel any lingering keyboard listeners from other trials
                 this.jsPsych.pluginAPI.cancelAllKeyboardResponses();
             };
 
@@ -283,18 +283,24 @@ var jsPsychReversal = (function (jspsych) {
                 this.jsPsych.pluginAPI.setTimeout(end_trial, simulating ? 20 : trial.ITI);
             };
 
-            // Post response procedure — accepts either (side, pointerType) from pointer events
-            // or (side, pointerType, rt) from keyboard events
-            var after_response = (chosen_side, pointerType, rt) => {
-                // Only process the first response
-                if (response.key == null) {
-                    response.rt = rt != null ? rt : Math.round(performance.now() - trialOnset);
-                    response.key = chosen_side;   // 'left' or 'right'
-                    response.pointer_type = pointerType;
-                }
+            // Post response procedure — accepts (side, pointerType) from pointer or keyboard.
+            // Ignore input while the rotate gate covers the task. A response made after the
+            // phone returns records total wall-clock time, including the rotation interval.
+            var after_response = (chosen_side, pointerType) => {
+                syncGateState();
+                if (gateVisible || response.key !== null) return;
+
+                response.rt = Math.max(0, Math.round(performance.now() - trialOnset));
+                response.key = chosen_side;   // 'left' or 'right'
+                response.pointer_type = pointerType;
 
                 // Set deadline warning to false, since response was made
                 response.response_deadline_warning = false;
+
+                if (responseDeadlineTimeout !== null) {
+                    clearTimeout(responseDeadlineTimeout);
+                    responseDeadlineTimeout = null;
+                }
 
                 this.triggerCoinAnimation(chosen_side);
 
@@ -402,12 +408,13 @@ var jsPsychReversal = (function (jspsych) {
                 callback_function: function (resp) {
                     var side = this.keys[resp.key.toLowerCase()];
                     if (side) {
-                        after_response(side, 'keyboard', resp.rt);
+                        after_response(side, 'keyboard');
                     }
                 }.bind(this),
                 valid_responses: trial.choices,
                 rt_method: "performance",
-                persist: false,
+                // A valid key pressed behind the rotate overlay must not consume the listener.
+                persist: true,
                 allow_held_key: false
             });
 
@@ -415,16 +422,12 @@ var jsPsychReversal = (function (jspsych) {
 
             resizeHandler = function () {
                 viewportChanged = true;
-                if (resizeDebounce) clearTimeout(resizeDebounce);
-                resizeDebounce = setTimeout(function () {
-                    var nowVisible = isRotateGateVisible();
-                    if (nowVisible && !gateVisible) {
-                        // Transitioned INTO the wrong orientation during this trial
-                        wrongOrientation = true;
-                        wrongOrientationTimes.push(Math.round(performance.now() - trialOnset));
-                    }
-                    gateVisible = nowVisible;
-                }, 150);  // 150ms debounce, matching vigour pattern
+                syncGateState();
+                if (resizeFrame !== null) cancelAnimationFrame(resizeFrame);
+                resizeFrame = requestAnimationFrame(function () {
+                    resizeFrame = null;
+                    syncGateState();
+                });
             };
             window.addEventListener('resize', resizeHandler);
             window.addEventListener('orientationchange', resizeHandler);
@@ -433,12 +436,19 @@ var jsPsychReversal = (function (jspsych) {
             // RT is measured from actual stimulus visibility, not DOM creation.
             var startDeadline = () => {
                 trialOnset = performance.now();
+                viewportWidth = window.innerWidth;
+                viewportHeight = window.innerHeight;
+                viewportChanged = false;
+                gateVisible = isRotateGateVisible();
+                wrongOrientation = gateVisible;
+                wrongOrientationTimes = gateVisible ? [0] : [];
+
                 if (trial.response_deadline > 0) {
-                    if (trial.show_warning) {
-                        deadlineTimer = this.jsPsych.pluginAPI.setTimeout(deadline_warning, trial.response_deadline);
-                    } else {
-                        deadlineTimer = this.jsPsych.pluginAPI.setTimeout(ITI, trial.response_deadline);
-                    }
+                    var deadlineCallback = trial.show_warning ? deadline_warning : ITI;
+                    responseDeadlineTimeout = this.jsPsych.pluginAPI.setTimeout(() => {
+                        responseDeadlineTimeout = null;
+                        deadlineCallback();
+                    }, trial.response_deadline);
                 }
             };
 

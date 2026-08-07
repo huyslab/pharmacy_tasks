@@ -176,7 +176,8 @@ export const TaskRegistry = {
       task_name: "reversal",
       n_trials: 150,
       session: 'wk0',
-      preferredOrientation: "landscape"
+      preferredOrientation: "landscape",
+      pauseTimelineOnWrongOrientation: true
     },
     sequences: {
         screening: '@tasks/reversal/sequences/trial1_screening.js',
@@ -196,7 +197,8 @@ export const TaskRegistry = {
         task_name: "The name of the task as it would appear in the bonus object. Default is 'reversal'.",
         n_trials: "Total number of trials in the reversal task. Default is 150.",
         session: "Session identifier to govern session-specific behaviour. Default is 'wk0'. Should be deprecated, with settings exposed.",
-        preferredOrientation: "Preferred device orientation on phones ('portrait' or 'landscape'). On a phone held in the other orientation, a 'please rotate' overlay blocks the task until it is rotated; tablets and desktop are exempt. Default is 'landscape' for reversal."
+        preferredOrientation: "Preferred device orientation on phones ('portrait' or 'landscape'). On a phone held in the other orientation, a 'please rotate' overlay blocks the task until it is rotated; tablets and desktop are exempt. Default is 'landscape' for reversal.",
+        pauseTimelineOnWrongOrientation: "Whether the timeline should wait before starting the next trial while the phone is held in the wrong orientation. The active trial and its response deadline continue running. Default is true for reversal."
     }
   },
   delay_discounting: {
@@ -468,4 +470,3 @@ export const globalConfigOptions = {
     interimWarning: "Show message about abiding by instructions after participant receives this many warnings in a task. Default is 5.",
     finalWarning: "Show message about abiding by instructions after participant receives this many warnings in a task. Default is 15."
 }
-

@@ -10,18 +10,18 @@ export function orientationOf({ width, height }) {
 
 /**
  * Re-derives whether the rotate-overlay gate should be active, from the same signals
- * the app itself uses (api/utils.js: `navigator.maxTouchPoints > 0` gates eligibility at
- * all; the CSS media query then further restricts to phone-sized viewports). Reading
+ * the app itself uses (api/utils.js: touch capability plus the physical screen size gates
+ * eligibility; the CSS media query then checks the current viewport orientation). Reading
  * real page signals here - rather than trusting Playwright project config - keeps this
  * accurate even if a project's `use` block is tweaked later.
  */
-export function expectedGate(preferredOrientation, viewport, hasTouch) {
+export function expectedGate(preferredOrientation, viewport, screen, hasTouch) {
   // A task that declares no preference is never gated: api/utils.js only builds the overlay
   // for 'portrait' or 'landscape'. Without this, a null preference would read as "always the
   // wrong orientation" and the gate would be expected on every phone.
   if (preferredOrientation !== 'portrait' && preferredOrientation !== 'landscape') return false;
 
-  const minDimension = Math.min(viewport.width, viewport.height);
+  const minDimension = Math.min(screen.width, screen.height);
   const gateEligible = hasTouch && minDimension <= GATE_MIN_DIMENSION_THRESHOLD;
   const wrongOrientation = orientationOf(viewport) !== preferredOrientation;
   return gateEligible && wrongOrientation;
