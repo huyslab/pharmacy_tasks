@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <base href="../../">
+    <title>Fixture: entry and per-trial viewport data</title>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "@utils/": "./core/utils/",
+                "@jspsych/": "./core/jspsych/",
+                "@tasks/": "./tasks/",
+                "@api/": "./api/",
+                "@images/": "./assets/images/"
+            }
+        }
+    </script>
+
+    <script src="./core/jspsych/jspsych.js"></script>
+    <script src="./core/jspsych/plugin-html-keyboard-response.js"></script>
+    <script src="./core/jspsych/plugin-call-function.js"></script>
+    <script src="./core/jspsych/plugin-fullscreen.js"></script>
+</head>
+<body>
+    <div id="display_element"></div>
+
+    <script type="module">
+        import { enterExperiment } from './core/utils/setup.js';
+
+        window.participantID = 'debug_data_properties_fixture';
+        window.context = 'test';
+        window.jsPsych = initJsPsych({ display_element: 'display_element' });
+
+        const viewportTrial = (trialphase) => ({
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: '<p class="fixture-trial">fixture trial</p>',
+            choices: 'NO_KEYS',
+            trial_duration: 50,
+            data: {
+                trialphase,
+                viewport_width: () => window.innerWidth,
+                viewport_height: () => window.innerHeight
+            }
+        });
+
+        // Pause between two trials so Playwright can resize the viewport. The second row
+        // must contain the new geometry while deviceInfo keeps the original entry snapshot.
+        const waitForResize = {
+            type: jsPsychCallFunction,
+            async: true,
+            func: (done) => {
+                window.RESUME_AFTER_RESIZE = done;
+                window.RESIZE_READY = true;
+            }
+        };
+
+        jsPsych.run([
+            enterExperiment,
+            viewportTrial('fixture_before_resize'),
+            waitForResize,
+            viewportTrial('fixture_after_resize')
+        ]).then(() => {
+            window.FIXTURE_DONE = true;
+            document.body.insertAdjacentHTML('beforeend', '<div id="fixture-done"></div>');
+        });
+    </script>
+</body>
+</html>
