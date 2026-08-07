@@ -95,21 +95,15 @@ test('a narrow tablet pane is not treated as a phone rotation gate', async ({ pa
   await expect(page.locator('#jspsych-instructions-next'), 'the task should advance normally in the narrow pane').toBeVisible();
 });
 
-test('reversal response deadline pauses while the phone is being rotated', async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name !== 'Pixel 7 landscape', 'one phone project is sufficient for timer coverage');
+test('reversal response time includes time spent rotating the phone', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'Pixel 7 landscape', 'one phone project is sufficient for RT coverage');
 
-  const stimulus = await advanceToReversalTrial(page, 'rotation-deadline-check');
-  const trialIndex = await page.evaluate(() => window.jsPsych.getProgress().current_trial_global);
+  await advanceToReversalTrial(page, 'rotation-rt-check');
 
   await page.setViewportSize({ width: 412, height: 915 });
   await expect(page.locator('#rotate-overlay'), 'portrait should gate this landscape task').toBeVisible();
-
-  // The normal response deadline is 3.5 seconds. A key pressed behind the overlay should
-  // neither answer the trial nor consume the persistent keyboard listener.
   await page.keyboard.press('ArrowRight');
-  await page.waitForTimeout(3900);
-  expect(await page.evaluate(() => window.jsPsych.getProgress().current_trial_global)).toBe(trialIndex);
-  await expect(stimulus, 'the blocked trial should not expire behind the overlay').toBeAttached();
+  await page.waitForTimeout(900);
 
   await page.setViewportSize({ width: 915, height: 412 });
   await expect(page.locator('#rotate-overlay')).toBeHidden();
@@ -130,5 +124,47 @@ test('reversal response deadline pauses while the phone is being rotated', async
     response_deadline_warning: false,
     wrong_orientation: true,
   });
-  expect(result.rt, 'time behind the rotate prompt should be excluded from RT').toBeLessThan(3500);
+  expect(result.rt, 'wall-clock RT should include time behind the rotate prompt').toBeGreaterThanOrEqual(800);
+  expect(result.rt).toBeLessThan(3500);
+});
+
+test('reversal records a missed response but waits to start the next trial while rotated', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'Pixel 7 landscape', 'one phone project is sufficient for pause coverage');
+
+  await advanceToReversalTrial(page, 'rotation-deadline-check');
+  const reversalCount = await page.evaluate(() =>
+    window.jsPsych.data.get().values().filter((trial) => trial.trial_type === 'reversal').length
+  );
+
+  await page.setViewportSize({ width: 412, height: 915 });
+  const overlay = page.locator('#rotate-overlay');
+  await expect(overlay, 'portrait should gate this landscape task').toBeVisible();
+
+  // The active trial keeps its normal 3.5-second response deadline. Input behind the overlay
+  // is ignored, then pauseExperiment prevents the following trial from starting.
+  await page.keyboard.press('ArrowRight');
+  await expect.poll(() => page.evaluate(() =>
+    window.jsPsych.data.get().values().filter((trial) => trial.trial_type === 'reversal').length
+  ), { timeout: 8000 }).toBe(reversalCount + 1);
+
+  const result = await page.evaluate(() =>
+    window.jsPsych.data.get().values().filter((trial) => trial.trial_type === 'reversal').at(-1)
+  );
+  expect(result).toMatchObject({
+    response: null,
+    rt: null,
+    response_deadline_warning: true,
+    wrong_orientation: true,
+  });
+
+  const trialIndex = await page.evaluate(() => window.jsPsych.getProgress().current_trial_global);
+  await page.waitForTimeout(800);
+  expect(await page.evaluate(() => window.jsPsych.getProgress().current_trial_global)).toBe(trialIndex);
+  await expect(page.locator('.reversal-stimuli'), 'no new trial should start behind the overlay').toHaveCount(0);
+
+  await page.setViewportSize({ width: 915, height: 412 });
+  await expect(overlay).toBeHidden();
+  await expect(page.locator('.reversal-stimuli'), 'the next trial should start after resumeExperiment').toBeVisible({
+    timeout: 5000,
+  });
 });

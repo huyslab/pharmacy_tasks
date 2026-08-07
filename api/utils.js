@@ -148,6 +148,57 @@ export async function createTaskTimeline(taskName, config = {}) {
         const taskTimeline = Array.isArray(timeline) ? timeline : [timeline];
         const preloadTrial = taskTimeline[0]?.type === jsPsychPreload ? taskTimeline[0] : null;
         const gatedTimeline = preloadTrial ? taskTimeline.slice(1) : taskTimeline;
+        const pauseTimelineOnWrongOrientation = mergedConfig.pauseTimelineOnWrongOrientation === true;
+        let timelinePausedForOrientation = false;
+        let orientationChangeHandler = null;
+        let orientationChangeFrame = null;
+
+        const syncOrientationPause = () => {
+            if (!pauseTimelineOnWrongOrientation) return;
+
+            const overlay = document.getElementById('rotate-overlay');
+            const gateVisible = !!overlay && getComputedStyle(overlay).display !== 'none';
+            if (gateVisible === timelinePausedForOrientation) return;
+
+            timelinePausedForOrientation = gateVisible;
+            if (gateVisible) {
+                window.jsPsych.pauseExperiment();
+            } else {
+                window.jsPsych.resumeExperiment();
+            }
+        };
+
+        const startOrientationPauseController = () => {
+            if (!pauseTimelineOnWrongOrientation) return;
+
+            orientationChangeHandler = () => {
+                syncOrientationPause();
+                if (orientationChangeFrame !== null) cancelAnimationFrame(orientationChangeFrame);
+                orientationChangeFrame = requestAnimationFrame(() => {
+                    orientationChangeFrame = null;
+                    syncOrientationPause();
+                });
+            };
+            window.addEventListener('resize', orientationChangeHandler);
+            window.addEventListener('orientationchange', orientationChangeHandler);
+            orientationChangeHandler();
+        };
+
+        const stopOrientationPauseController = () => {
+            if (orientationChangeHandler) {
+                window.removeEventListener('resize', orientationChangeHandler);
+                window.removeEventListener('orientationchange', orientationChangeHandler);
+                orientationChangeHandler = null;
+            }
+            if (orientationChangeFrame !== null) {
+                cancelAnimationFrame(orientationChangeFrame);
+                orientationChangeFrame = null;
+            }
+            if (timelinePausedForOrientation) {
+                timelinePausedForOrientation = false;
+                window.jsPsych.resumeExperiment();
+            }
+        };
 
         return [
             ...(preloadTrial ? [preloadTrial] : []),
@@ -158,10 +209,12 @@ export async function createTaskTimeline(taskName, config = {}) {
                     if (!phoneSizedDevice) return;
 
                     document.body.setAttribute('data-preferred-orientation', orientation);
+                    startOrientationPauseController();
                 },
                 on_timeline_finish: () => {
                     if (!phoneSizedDevice) return;
 
+                    stopOrientationPauseController();
                     document.body.removeAttribute('data-preferred-orientation');
                 }
             }
