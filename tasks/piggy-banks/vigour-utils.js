@@ -179,6 +179,7 @@ function setupPointerListener(callback) {
   if (!piggyContainer) return null;
   const handler = function (event) {
     if (!event.isPrimary) return; // ignore secondary touches (multi-touch contamination)
+    if (event.button !== 0) return; // ignore right-click, middle-click, and stylus barrel buttons
     event.preventDefault();
     callback(event);
   };
@@ -206,7 +207,12 @@ function cleanupPointerListener(handler, element) {
 function simulatePointerTap(element, delay) {
   setTimeout(() => {
     if (element) {
-      element.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, isPrimary: true, pointerType: 'touch' }));
+      element.dispatchEvent(new PointerEvent('pointerdown', {
+        bubbles: true,
+        isPrimary: true,
+        pointerType: 'touch',
+        button: 0
+      }));
     }
   }, delay);
 }
@@ -219,6 +225,7 @@ let vigourPiggyContainer = null;
 let vigourResizeHandler = null;
 let vigourResizeTimer = null;
 let vigourResizeObserver = null;
+let vigourGateFrame = null;
 
 /**
  * Creates a single vigour trial with piggy bank shaking mechanics
@@ -298,6 +305,15 @@ function piggyBankTrial(settings) {
         trialState.wrongOrientation = true;
         trialState.wrongOrientationTimes.push(Math.round(performance.now() - trialOnset));
       }
+      const syncGateState = () => {
+        const now = performance.now();
+        const nowVisible = isRotateGateVisible();
+        if (nowVisible && !gateVisible) {
+          trialState.wrongOrientation = true;
+          trialState.wrongOrientationTimes.push(Math.round(now - trialOnset));
+        }
+        gateVisible = nowVisible;
+      };
 
       // Add magnitudes and ratios to settings for piggy tails
       settings.magnitudes = magnitudes;
@@ -320,12 +336,12 @@ function piggyBankTrial(settings) {
       // Tails are positioned in px from the piggy's measured width, so they must be recomputed.
       vigourResizeHandler = () => {
         trialState.viewportChanged = true; // geometry changed mid-trial (rotation or mobile toolbar)
-        const nowVisible = isRotateGateVisible();
-        if (nowVisible && !gateVisible) { // transitioned INTO the portrait gate this trial
-          trialState.wrongOrientation = true;
-          trialState.wrongOrientationTimes.push(Math.round(performance.now() - trialOnset));
-        }
-        gateVisible = nowVisible;
+        syncGateState();
+        if (vigourGateFrame !== null) cancelAnimationFrame(vigourGateFrame);
+        vigourGateFrame = requestAnimationFrame(() => {
+          vigourGateFrame = null;
+          syncGateState();
+        });
         if (vigourResizeTimer) clearTimeout(vigourResizeTimer);
         vigourResizeTimer = setTimeout(() => {
           updatePiggyTails(magnitude, ratio, settings);
@@ -344,6 +360,9 @@ function piggyBankTrial(settings) {
 
       vigourPointerHandler = function (event) {
         if (!event.isPrimary) return; // ignore secondary touches (multi-touch contamination)
+        if (event.button !== 0) return; // ignore right-click, middle-click, and stylus barrel buttons
+        syncGateState();
+        if (gateVisible) return;
         event.preventDefault();
         const now = performance.now();
 
@@ -420,6 +439,10 @@ function piggyBankTrial(settings) {
       if (vigourResizeTimer) {
         clearTimeout(vigourResizeTimer);
         vigourResizeTimer = null;
+      }
+      if (vigourGateFrame !== null) {
+        cancelAnimationFrame(vigourGateFrame);
+        vigourGateFrame = null;
       }
       if (vigourResizeObserver) {
         vigourResizeObserver.disconnect();

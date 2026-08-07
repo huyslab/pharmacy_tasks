@@ -216,6 +216,7 @@ const startConfirmation = {
     const piggyContainer = document.getElementById('piggy-container');
     if (piggyContainer) {
       piggyContainer.addEventListener('pointerdown', function handler(event) {
+        if (!event.isPrimary || event.button !== 0) return;
         event.preventDefault();
         finishOnce('b');
         piggyContainer.removeEventListener('pointerdown', handler);
@@ -314,4 +315,3 @@ function updateInstructionText(shakeCount) {
   }
   document.getElementById('instruction-text').innerHTML = messages[messageIndex];
 }
-

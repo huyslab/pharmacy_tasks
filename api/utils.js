@@ -4,6 +4,21 @@ import { messages } from './messages.js';
 import { ModuleRegistry } from './module-registry.js';
 import { getSession, listSessions } from './session-registry.js';
 
+const PHONE_MIN_SCREEN_DIMENSION = 500;
+
+/**
+ * Classifies the physical device rather than the current browser pane. On tablets,
+ * split-screen and Stage Manager can make the viewport phone-width without turning the
+ * device into a phone that should be orientation-gated.
+ * @param {{width: number, height: number}} screenSize - Device screen dimensions in CSS px
+ * @returns {boolean} Whether the device has a phone-sized physical screen
+ */
+export function isPhoneSizedScreen(screenSize) {
+    const width = Number(screenSize?.width);
+    const height = Number(screenSize?.height);
+    return width > 0 && height > 0 && Math.min(width, height) <= PHONE_MIN_SCREEN_DIMENSION;
+}
+
 /**
  * Get a task from the registry with global config merged
  * @param {string} taskName - Name of the task to retrieve
@@ -93,8 +108,10 @@ export async function createTaskTimeline(taskName, config = {}) {
     // live in the experiment entry HTML, keyed off <body data-preferred-orientation="...">;
     // vigour's wrong_orientation logging keys off the overlay's actual visibility.
     const orientation = mergedConfig.preferredOrientation;
-    // Only gate orientation on touch-capable devices (phones/tablets); desktop is exempt
+    // Touch devices get an orientation hint, but only physical phone screens get the blocking
+    // gate. A tablet's viewport may become narrow in split-screen without requiring rotation.
     const touchCapable = navigator.maxTouchPoints > 0;
+    const phoneSizedDevice = touchCapable && isPhoneSizedScreen(window.screen);
     if (touchCapable && (orientation === 'portrait' || orientation === 'landscape')) {
         // Phone SVG shapes shared by both orientations
         const shapes = `
@@ -113,9 +130,7 @@ export async function createTaskTimeline(taskName, config = {}) {
         const orientationHintTrial = {
             type: jsPsychHtmlButtonResponse,
             stimulus: function() {
-                // Mirror the CSS gate threshold: phones have min(width, height) ≤ 500px
-                const isPhone = Math.min(window.innerWidth, window.innerHeight) <= 500;
-                if (isPhone) {
+                if (phoneSizedDevice) {
                     return `<div style="text-align:center;max-width:min(500px,92vw);margin:0 auto;">
                         ${phoneIcon}
                         <p>For this task, please hold your phone in <strong>${orientationLabel}</strong> mode.</p>
@@ -139,8 +154,16 @@ export async function createTaskTimeline(taskName, config = {}) {
             orientationHintTrial,
             {
                 timeline: gatedTimeline,
-                on_timeline_start: () => { document.body.setAttribute('data-preferred-orientation', orientation); },
-                on_timeline_finish: () => { document.body.removeAttribute('data-preferred-orientation'); }
+                on_timeline_start: () => {
+                    if (!phoneSizedDevice) return;
+
+                    document.body.setAttribute('data-preferred-orientation', orientation);
+                },
+                on_timeline_finish: () => {
+                    if (!phoneSizedDevice) return;
+
+                    document.body.removeAttribute('data-preferred-orientation');
+                }
             }
         ];
     }

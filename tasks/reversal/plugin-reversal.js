@@ -162,10 +162,89 @@ var jsPsychReversal = (function (jspsych) {
             var gateVisible = isRotateGateVisible();
             var wrongOrientation = false;
             var wrongOrientationTimes = [];
+            var gatePauseStarted = gateVisible ? performance.now() : null;
+            var gatePausedDuration = 0;
             if (gateVisible) {
                 wrongOrientation = true;
                 wrongOrientationTimes.push(0);  // offset from trial onset is 0
             }
+
+            // Reversal owns one phase timer at a time (response deadline, feedback, warning,
+            // or ITI). Keeping it local avoids changing jsPsych's timeout API.
+            var taskTimerHandle = null;
+            var taskTimerCallback = null;
+            var taskTimerRemaining = 0;
+            var taskTimerStartedAt = null;
+            var taskTimerPaused = gateVisible;
+
+            var clearTaskTimer = function () {
+                if (taskTimerHandle !== null) {
+                    window.clearTimeout(taskTimerHandle);
+                }
+                taskTimerHandle = null;
+                taskTimerCallback = null;
+                taskTimerRemaining = 0;
+                taskTimerStartedAt = null;
+            };
+
+            var scheduleTaskTimer = function () {
+                if (taskTimerCallback === null || taskTimerPaused) return;
+                taskTimerStartedAt = performance.now();
+                taskTimerHandle = window.setTimeout(function () {
+                    var callback = taskTimerCallback;
+                    taskTimerHandle = null;
+                    taskTimerCallback = null;
+                    taskTimerRemaining = 0;
+                    taskTimerStartedAt = null;
+                    callback();
+                }, taskTimerRemaining);
+            };
+
+            var startTaskTimer = function (callback, delay) {
+                clearTaskTimer();
+                taskTimerCallback = callback;
+                taskTimerRemaining = Math.max(0, Number(delay) || 0);
+                scheduleTaskTimer();
+            };
+
+            var pauseTaskTimer = function (pausedAt) {
+                if (taskTimerPaused) return;
+                taskTimerPaused = true;
+                if (taskTimerHandle !== null) {
+                    window.clearTimeout(taskTimerHandle);
+                    taskTimerHandle = null;
+                    taskTimerRemaining = Math.max(0, taskTimerRemaining - (pausedAt - taskTimerStartedAt));
+                    taskTimerStartedAt = null;
+                }
+            };
+
+            var resumeTaskTimer = function () {
+                if (!taskTimerPaused) return;
+                taskTimerPaused = false;
+                scheduleTaskTimer();
+            };
+
+            var syncGateState = function () {
+                var now = performance.now();
+                var nowVisible = isRotateGateVisible();
+                if (nowVisible && !gateVisible) {
+                    wrongOrientation = true;
+                    wrongOrientationTimes.push(Math.round(now - trialOnset));
+                    gatePauseStarted = now;
+                    pauseTaskTimer(now);
+                } else if (!nowVisible && gateVisible && gatePauseStarted !== null) {
+                    gatePausedDuration += now - gatePauseStarted;
+                    gatePauseStarted = null;
+                    resumeTaskTimer();
+                }
+                gateVisible = nowVisible;
+            };
+
+            var activeElapsed = function () {
+                var now = performance.now();
+                var currentPause = gatePauseStarted === null ? 0 : now - gatePauseStarted;
+                return Math.max(0, Math.round(now - trialOnset - gatePausedDuration - currentPause));
+            };
 
             // Create stimuli. Reveal is handled below: synchronously when images are already
             // loaded (the normal case after preload — no blank frame), or after img.decode()
@@ -180,20 +259,18 @@ var jsPsychReversal = (function (jspsych) {
             var rightTapHandler = null;
             var suppressContextMenu = null;
             var resizeHandler = null;
-            var resizeDebounce = null;
-
-            // Pending response-deadline timer (deadline_warning or ITI); cleared on first response
-            var deadlineTimer = null;
+            var resizeFrame = null;
 
             // Collect all active DOM references for cleanup
             var tapLeft = document.getElementById('rev-tap-left');
             var tapRight = document.getElementById('rev-tap-right');
 
-            // Unified cleanup: removes all listeners and cancels stray keyboard responses
-            var cleaned = false;
-            var cleanupAll = () => {
-                if (cleaned) return;
-                cleaned = true;
+            // Response cleanup happens as soon as a choice/deadline is reached. The resize
+            // listener remains until the trial ends so feedback and ITI timers also pause.
+            var responseCleaned = false;
+            var cleanupResponseListeners = () => {
+                if (responseCleaned) return;
+                responseCleaned = true;
 
                 if (tapLeft && leftTapHandler) {
                     tapLeft.removeEventListener('pointerdown', leftTapHandler);
@@ -207,23 +284,25 @@ var jsPsychReversal = (function (jspsych) {
                 if (tapRight && suppressContextMenu) {
                     tapRight.removeEventListener('contextmenu', suppressContextMenu);
                 }
+                this.jsPsych.pluginAPI.cancelAllKeyboardResponses();
+            };
+
+            // Unified final cleanup: removes viewport listeners and the task-owned timer.
+            var cleaned = false;
+            var cleanupAll = () => {
+                if (cleaned) return;
+                cleaned = true;
+
+                cleanupResponseListeners();
                 if (resizeHandler) {
                     window.removeEventListener('resize', resizeHandler);
                     window.removeEventListener('orientationchange', resizeHandler);
                 }
-                if (resizeDebounce) {
-                    clearTimeout(resizeDebounce);
-                    resizeDebounce = null;
+                if (resizeFrame !== null) {
+                    cancelAnimationFrame(resizeFrame);
+                    resizeFrame = null;
                 }
-                // Cancel the pending response deadline so a valid response can't trigger a
-                // stale deadline_warning during the coin animation / ITI window.
-                if (deadlineTimer) {
-                    clearTimeout(deadlineTimer);
-                    deadlineTimer = null;
-                }
-
-                // Safety: cancel any lingering keyboard listeners from other trials
-                this.jsPsych.pluginAPI.cancelAllKeyboardResponses();
+                clearTaskTimer();
             };
 
             // Trial end procedure
@@ -262,7 +341,7 @@ var jsPsychReversal = (function (jspsych) {
 
             // ITI blur
             var ITI = () => {
-                cleanupAll();
+                cleanupResponseListeners();
 
                 var bg = document.getElementById('rev-squirrel-bg');
                 var fg = document.getElementById('rev-squirrel-fg');
@@ -280,27 +359,29 @@ var jsPsychReversal = (function (jspsych) {
                 coin_right.style.opacity = '0';
                 coin_left.style.opacity = '0';
 
-                this.jsPsych.pluginAPI.setTimeout(end_trial, simulating ? 20 : trial.ITI);
+                startTaskTimer(end_trial, simulating ? 20 : trial.ITI);
             };
 
-            // Post response procedure — accepts either (side, pointerType) from pointer events
-            // or (side, pointerType, rt) from keyboard events
-            var after_response = (chosen_side, pointerType, rt) => {
-                // Only process the first response
-                if (response.key == null) {
-                    response.rt = rt != null ? rt : Math.round(performance.now() - trialOnset);
-                    response.key = chosen_side;   // 'left' or 'right'
-                    response.pointer_type = pointerType;
-                }
+            // Post response procedure — accepts (side, pointerType) from pointer or keyboard.
+            // Ignore keyboard input while the rotate gate is covering the task, and exclude
+            // any gated interval from the recorded RT once the participant returns.
+            var after_response = (chosen_side, pointerType) => {
+                syncGateState();
+                if (gateVisible || response.key !== null) return;
+
+                response.rt = activeElapsed();
+                response.key = chosen_side;   // 'left' or 'right'
+                response.pointer_type = pointerType;
 
                 // Set deadline warning to false, since response was made
                 response.response_deadline_warning = false;
 
                 this.triggerCoinAnimation(chosen_side);
 
-                cleanupAll();
+                clearTaskTimer();
+                cleanupResponseListeners();
 
-                this.jsPsych.pluginAPI.setTimeout(ITI, simulating ? 80 : trial.animation_duration);
+                startTaskTimer(ITI, simulating ? 80 : trial.animation_duration);
             };
 
             function showTemporaryWarning(message, duration) {
@@ -352,7 +433,7 @@ var jsPsychReversal = (function (jspsych) {
 
             // Warn that responses need to be quicker
             var deadline_warning = () => {
-                cleanupAll();
+                cleanupResponseListeners();
 
                 // Document that warning was shown
                 response.response_deadline_warning = true;
@@ -361,7 +442,7 @@ var jsPsychReversal = (function (jspsych) {
                 showTemporaryWarning("Didn't catch a response - moving on", trial.warning_duration - 200);
 
                 // End trial
-                this.jsPsych.pluginAPI.setTimeout(() => {
+                startTaskTimer(() => {
                     // Remove message
                     var el = document.getElementById('rev-deadline-warning');
                     if (el) el.innerText = '';
@@ -402,12 +483,13 @@ var jsPsychReversal = (function (jspsych) {
                 callback_function: function (resp) {
                     var side = this.keys[resp.key.toLowerCase()];
                     if (side) {
-                        after_response(side, 'keyboard', resp.rt);
+                        after_response(side, 'keyboard');
                     }
                 }.bind(this),
                 valid_responses: trial.choices,
                 rt_method: "performance",
-                persist: false,
+                // A valid key pressed behind the rotate overlay must not consume the listener.
+                persist: true,
                 allow_held_key: false
             });
 
@@ -415,16 +497,12 @@ var jsPsychReversal = (function (jspsych) {
 
             resizeHandler = function () {
                 viewportChanged = true;
-                if (resizeDebounce) clearTimeout(resizeDebounce);
-                resizeDebounce = setTimeout(function () {
-                    var nowVisible = isRotateGateVisible();
-                    if (nowVisible && !gateVisible) {
-                        // Transitioned INTO the wrong orientation during this trial
-                        wrongOrientation = true;
-                        wrongOrientationTimes.push(Math.round(performance.now() - trialOnset));
-                    }
-                    gateVisible = nowVisible;
-                }, 150);  // 150ms debounce, matching vigour pattern
+                syncGateState();
+                if (resizeFrame !== null) cancelAnimationFrame(resizeFrame);
+                resizeFrame = requestAnimationFrame(function () {
+                    resizeFrame = null;
+                    syncGateState();
+                });
             };
             window.addEventListener('resize', resizeHandler);
             window.addEventListener('orientationchange', resizeHandler);
@@ -433,11 +511,13 @@ var jsPsychReversal = (function (jspsych) {
             // RT is measured from actual stimulus visibility, not DOM creation.
             var startDeadline = () => {
                 trialOnset = performance.now();
+                gatePausedDuration = 0;
+                gatePauseStarted = gateVisible ? trialOnset : null;
                 if (trial.response_deadline > 0) {
                     if (trial.show_warning) {
-                        deadlineTimer = this.jsPsych.pluginAPI.setTimeout(deadline_warning, trial.response_deadline);
+                        startTaskTimer(deadline_warning, trial.response_deadline);
                     } else {
-                        deadlineTimer = this.jsPsych.pluginAPI.setTimeout(ITI, trial.response_deadline);
+                        startTaskTimer(ITI, trial.response_deadline);
                     }
                 }
             };
