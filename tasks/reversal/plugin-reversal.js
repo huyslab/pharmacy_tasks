@@ -191,6 +191,7 @@ var jsPsychReversal = (function (jspsych) {
             var suppressContextMenu = null;
             var resizeHandler = null;
             var resizeFrame = null;
+            var responseDeadlineTimeout = null;
 
             // Collect all active DOM references for cleanup
             var tapLeft = document.getElementById('rev-tap-left');
@@ -295,6 +296,11 @@ var jsPsychReversal = (function (jspsych) {
 
                 // Set deadline warning to false, since response was made
                 response.response_deadline_warning = false;
+
+                if (responseDeadlineTimeout !== null) {
+                    clearTimeout(responseDeadlineTimeout);
+                    responseDeadlineTimeout = null;
+                }
 
                 this.triggerCoinAnimation(chosen_side);
 
@@ -430,12 +436,19 @@ var jsPsychReversal = (function (jspsych) {
             // RT is measured from actual stimulus visibility, not DOM creation.
             var startDeadline = () => {
                 trialOnset = performance.now();
+                viewportWidth = window.innerWidth;
+                viewportHeight = window.innerHeight;
+                viewportChanged = false;
+                gateVisible = isRotateGateVisible();
+                wrongOrientation = gateVisible;
+                wrongOrientationTimes = gateVisible ? [0] : [];
+
                 if (trial.response_deadline > 0) {
-                    if (trial.show_warning) {
-                        this.jsPsych.pluginAPI.setTimeout(deadline_warning, trial.response_deadline);
-                    } else {
-                        this.jsPsych.pluginAPI.setTimeout(ITI, trial.response_deadline);
-                    }
+                    var deadlineCallback = trial.show_warning ? deadline_warning : ITI;
+                    responseDeadlineTimeout = this.jsPsych.pluginAPI.setTimeout(() => {
+                        responseDeadlineTimeout = null;
+                        deadlineCallback();
+                    }, trial.response_deadline);
                 }
             };
 

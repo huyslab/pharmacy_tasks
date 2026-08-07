@@ -1,4 +1,4 @@
-import { loadSequence, loadCSS, bonusTrial } from '@utils/index.js';
+import { loadSequence, loadCSS, bonusTrial, setExperimentPauseReason } from '@utils/index.js';
 import { TaskRegistry, globalConfig, globalConfigOptions } from './task-registry.js';
 import { messages } from './messages.js';
 import { ModuleRegistry } from './module-registry.js';
@@ -161,11 +161,7 @@ export async function createTaskTimeline(taskName, config = {}) {
             if (gateVisible === timelinePausedForOrientation) return;
 
             timelinePausedForOrientation = gateVisible;
-            if (gateVisible) {
-                window.jsPsych.pauseExperiment();
-            } else {
-                window.jsPsych.resumeExperiment();
-            }
+            setExperimentPauseReason('orientation', gateVisible);
         };
 
         const startOrientationPauseController = () => {
@@ -196,7 +192,7 @@ export async function createTaskTimeline(taskName, config = {}) {
             }
             if (timelinePausedForOrientation) {
                 timelinePausedForOrientation = false;
-                window.jsPsych.resumeExperiment();
+                setExperimentPauseReason('orientation', false);
             }
         };
 
