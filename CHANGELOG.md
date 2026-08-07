@@ -1,3 +1,12 @@
+## [1.8.1](https://github.com/huyslab/pharmacy_tasks/compare/v1.8.0...v1.8.1) (2026-08-07)
+
+
+### Bug Fixes
+
+* coordinate reversal pauses and deadlines ([9dbdb7f](https://github.com/huyslab/pharmacy_tasks/commit/9dbdb7f8d6a12dcf76be7188f78bf2cb64d10b06))
+* improve mobile touch and rotation handling ([40ea294](https://github.com/huyslab/pharmacy_tasks/commit/40ea294d88148f7c0ffe6d3b89ecb5721c677c3b))
+* include rotation time in reversal responses ([88a6061](https://github.com/huyslab/pharmacy_tasks/commit/88a60616b7405114b5bf8344e9fb5c1a11a3f02f))
+
 # [1.8.0](https://github.com/huyslab/pharmacy_tasks/compare/v1.7.0...v1.8.0) (2026-08-05)
 
 
