@@ -13,7 +13,7 @@ import {
  * Registers a single "does this task render correctly" test that runs once per device
  * project (see playwright.config.js). Behaviour branches on real page signals so the
  * same test body is correct for phones, tablets, and desktop without per-device cases:
- *  - Touch-capable + phone-sized viewport + wrong orientation -> rotate-overlay gate is
+ *  - Touch-capable + phone-sized physical screen + wrong orientation -> rotate-overlay gate is
  *    expected; assert it and screenshot it.
  *  - Otherwise -> the task should load and progress normally (jsPsych.simulate(), driven
  *    by "simulate" in participant_id, auto-advances instructions/trials); wait for the
@@ -28,13 +28,20 @@ export function defineTaskRenderingTest(taskKey, taskConfig) {
 
     await page.goto(`${taskConfig.url}?participant_id=${participantId}`);
 
-    const { width, height, maxTouchPoints } = await page.evaluate(() => ({
+    const { width, height, screenWidth, screenHeight, maxTouchPoints } = await page.evaluate(() => ({
       width: window.innerWidth,
       height: window.innerHeight,
+      screenWidth: window.screen.width,
+      screenHeight: window.screen.height,
       maxTouchPoints: navigator.maxTouchPoints || 0,
     }));
     const hasTouch = maxTouchPoints > 0;
-    const gateExpected = expectedGate(taskConfig.preferredOrientation, { width, height }, hasTouch);
+    const gateExpected = expectedGate(
+      taskConfig.preferredOrientation,
+      { width, height },
+      { width: screenWidth, height: screenHeight },
+      hasTouch
+    );
 
     if (gateExpected) {
       const overlay = page.locator('#rotate-overlay');
