@@ -3,7 +3,7 @@
  * Handles bonus computation and payment tracking across different experimental modules
  */
 
-import { postToParent, endExperiment, updateState, saveDataREDCap } from "./data-handling.js";
+import { postToParent, updateState, saveDataREDCap } from "./data-handling.js";
 
 /**
  * Rounds a numeric value to a specified number of decimal places
@@ -158,10 +158,12 @@ function bonusTrial(module) {
         
         saveDataREDCap();
     },
+    // The module is not over here - every module that reveals a bonus goes on to at least an
+    // end message, and it is that last screen which ends the experiment. Ending it from the
+    // bonus trial as well uploaded the data and told the host the module was finished while
+    // the participant still had screens in front of them.
     on_finish: (data) => {
         updateState('bonus_trial_end');
-
-        endExperiment();
     },
     simulation_options: {
       simulate: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' // Simulate the bonus trial in development mode
