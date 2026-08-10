@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <base href="../">
-    <title>Medication Questionnaire</title>
+    <title>Demographics</title>
 
     <script type="importmap">
         {
@@ -82,14 +82,14 @@
         // Function to run the experiment
         async function runExperiment() {
             try {
-                console.log('Starting medication questionnaire...');
+                console.log('Starting demographics questionnaire...');
 
                 // Get task information
-                const taskInfo = getTaskInfo('medication_questionnaire');
+                const taskInfo = getTaskInfo('demographics');
                 console.log('Task info:', taskInfo);
 
                 // Create the task timeline with default settings
-                const timeline = await createTaskTimeline('medication_questionnaire', {});
+                const timeline = await createTaskTimeline('demographics', {});
                 console.log('Timeline created:', timeline);
 
                 // No fullscreen entry here - the questionnaire uses the device keyboard,
@@ -107,7 +107,7 @@
                 jsPsych.getDisplayElement().innerHTML = `
                     <div style="text-align: center; padding: 50px;">
                         <h2>Error Loading Experiment</h2>
-                        <p>There was an error loading the medication questionnaire:</p>
+                        <p>There was an error loading the demographics questionnaire:</p>
                         <p><strong>${error.message}</strong></p>
                         <p>Please check the console for more details.</p>
                     </div>
