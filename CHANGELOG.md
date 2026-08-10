@@ -1,3 +1,10 @@
+## [1.8.2](https://github.com/huyslab/pharmacy_tasks/compare/v1.8.1...v1.8.2) (2026-08-10)
+
+
+### Bug Fixes
+
+* **data:** preserve per-trial viewport geometry ([e3488b6](https://github.com/huyslab/pharmacy_tasks/commit/e3488b65f2aa9a4d8442a79cb3a88a0581aa8821))
+
 ## [1.8.1](https://github.com/huyslab/pharmacy_tasks/compare/v1.8.0...v1.8.1) (2026-08-07)
 
 
