@@ -3,5 +3,5 @@
  * Provides a single entry point for importing session feedback functions across the experiment
  */
 
-// Import and re-export all utility modules
+// Re-export the task module's public API
 export * from './task.js';
