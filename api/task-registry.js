@@ -11,6 +11,7 @@ import { createOpenTextTimeline } from '@tasks/open-text/index.js';
 import { createReversalTimeline, computeRelativeReversalBonus } from '@tasks/reversal/index.js';
 import { createAcceptabilityTimeline } from '@tasks/acceptability-judgment/index.js';
 import { createMedicationQuestionnaireTimeline } from '@tasks/medication-questionnaire/index.js';
+import { createDemographicsTimeline } from '@tasks/demographics/index.js';
 import { createSelfReportTimeline } from '@tasks/self-report/index.js';
 
 export const TaskRegistry = {
@@ -382,6 +383,7 @@ export const TaskRegistry = {
       task_name: "medication_questionnaire",
       include_intro: true,
       allow_unsure: true,
+      allow_not_started: true,
       max_pill_buttons: 5,
       earliest_year: 1970,
       transition_duration: 350,
@@ -391,14 +393,44 @@ export const TaskRegistry = {
       task_name: "The name of the task, used for state updates and data field prefixes. Default is 'medication_questionnaire'.",
       include_intro: "Whether to open with a short welcome screen explaining the questionnaire. Default is true.",
       allow_unsure: "Whether the medicine name and dose questions offer an \"I'm not sure\" button, which records a missing answer rather than blocking the participant. Default is true.",
+      allow_not_started: "Whether the start date question offers an \"I haven't started taking it yet\" button, which records a blank date flagged with not_started. Default is true.",
       max_pill_buttons: "Pills-per-day is answered with buttons 1 to this number minus one, plus an 'N or more' button that opens a keypad. Default is 5.",
       earliest_year: "Earliest year offered in the start date question. Default is 1970.",
       transition_duration: "Duration of the slide transition between questions, in milliseconds. Default is 350.",
       input_mode: "Which controls to show: 'touch' for tap targets and an on-screen keypad, 'keyboard' for typed entry on a machine with a mouse and keyboard, or 'auto' to pick from the device. Default is 'auto'."
     },
     requirements: {
-      css: ['@tasks/medication-questionnaire/styles.css'],
+      css: ['@tasks/question-screen/styles.css'],
     },
+    resumptionRules: {
+        enabled: false,
+    }
+  },
+  demographics: {
+    name: 'Demographics',
+    description: 'A three-question touchscreen questionnaire covering age, sex registered at birth, and gender',
+    createTimeline: createDemographicsTimeline,
+    computeBonus: () => 0, // No bonus computation for this task
+    defaultConfig: {
+      task_name: "demographics",
+      include_intro: true,
+      allow_decline: true,
+      allow_self_describe: true,
+      transition_duration: 350,
+      input_mode: "auto"
+    },
+    configOptions: {
+      task_name: "The name of the task, used for state updates and data field prefixes. Default is 'demographics'.",
+      include_intro: "Whether to open with a short welcome screen explaining the questionnaire. Default is true.",
+      allow_decline: "Whether every question offers a way to move on without giving the detail - a button on the age question, an option on the others. Default is true.",
+      allow_self_describe: "Whether the gender question offers an option that opens a text field, so a gender outside the listed options can be given in the participant's own words. Default is true.",
+      transition_duration: "Duration of the slide transition between questions, in milliseconds. Default is 350.",
+      input_mode: "Which controls to show: 'touch' for tap targets and an on-screen keypad, 'keyboard' for typed entry on a machine with a mouse and keyboard, or 'auto' to pick from the device. Default is 'auto'."
+    },
+    requirements: {
+      css: ['@tasks/question-screen/styles.css'],
+    },
+    // Short, and a resumed session would skip questions whose answers were never recorded
     resumptionRules: {
         enabled: false,
     }

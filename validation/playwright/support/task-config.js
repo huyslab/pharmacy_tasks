@@ -33,9 +33,17 @@ export const TASKS = {
     url: '/examples/medication-questionnaire.html',
     preferredOrientation: null,
     journeyTitle: 'medication questionnaire records every answer on this device',
-    // .medq-screen wraps every screen including the intro message, whose .medq-body is
+    // .qsc-screen wraps every screen including the intro message, whose .qsc-body is
     // empty. Requiring a child of the body is what pins this to a real question screen.
-    readySelector: '.medq-screen:has(.medq-body > *)',
+    readySelector: '.qsc-screen:has(.qsc-body > *)',
+  },
+  // Built on the same question-screen plugin as the medication questionnaire, so the same
+  // .qsc-* selectors pin it to a real question screen, and it is never orientation-gated.
+  demographics: {
+    url: '/examples/demographics.html',
+    preferredOrientation: null,
+    journeyTitle: 'demographics questionnaire records every answer on this device',
+    readySelector: '.qsc-screen:has(.qsc-body > *)',
   },
   // Like the medication questionnaire, the self-report battery reads and taps equally well
   // either way up, so it declares no preferredOrientation and is never orientation-gated.
