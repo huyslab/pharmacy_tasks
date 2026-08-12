@@ -20,7 +20,7 @@ function loadSequence(scriptSrc) {
         // Resolve any path aliases using the import map
         const resolvedPath = resolvePath(scriptSrc);
 
-        // A script element being in the document does not mean it has run yet. One this
+        // A script element being in the document does not mean it has run yet. One that this
         // function added and is still fetching has to be waited on - resolving on sight
         // would hand the caller a sequence whose global is not defined yet, which surfaces
         // as "reversal_json is not defined" from whichever task asked for it second.
