@@ -1,3 +1,10 @@
+# [1.11.0](https://github.com/huyslab/pharmacy_tasks/compare/v1.10.0...v1.11.0) (2026-08-12)
+
+
+### Features
+
+* **modules:** add a questions-only pilot follow-up module ([0b01de9](https://github.com/huyslab/pharmacy_tasks/commit/0b01de93c8d6f29ce89ed1c495c680a66419e05f))
+
 # [1.10.0](https://github.com/huyslab/pharmacy_tasks/compare/v1.9.0...v1.10.0) (2026-08-12)
 
 
