@@ -1,4 +1,4 @@
-var jsPsychMedicationQuestion = (function (jspsych) {
+var jsPsychQuestionScreen = (function (jspsych) {
     "use strict";
 
     const MONTHS = [
@@ -7,7 +7,7 @@ var jsPsychMedicationQuestion = (function (jspsych) {
     ];
 
     const info = {
-        name: "medication-question",
+        name: "question-screen",
         version: "0.1.0",
         parameters: {
             /** Which kind of screen to render: 'message', 'text', 'number', 'choice', 'date' or 'list' */
@@ -45,8 +45,21 @@ var jsPsychMedicationQuestion = (function (jspsych) {
                 type: jspsych.ParameterType.STRING,
                 default: null
             },
-            /** Options for the 'choice' type. Each is {label, value, reveals}, where reveals:
-             *  'number' swaps the screen for the keypad instead of finishing the trial */
+            /** Label of the "not started yet" escape button ('date' type). Null hides it */
+            not_started_label: {
+                type: jspsych.ParameterType.STRING,
+                default: null
+            },
+            /** Label of the "prefer not to say" escape button ('text' and 'number' types).
+             *  Null hides it. Recorded as a missing answer with declined: true - a question
+             *  a participant could answer but chose not to, unlike unsure_label */
+            decline_label: {
+                type: jspsych.ParameterType.STRING,
+                default: null
+            },
+            /** Options for the 'choice' type. Each is {label, value, reveals}, where reveals
+             *  'number' or 'text' swaps the screen for that entry control instead of
+             *  finishing the trial - "5 or more", "prefer to self-describe" */
             choices: {
                 type: jspsych.ParameterType.COMPLEX,
                 array: true,
@@ -76,8 +89,9 @@ var jsPsychMedicationQuestion = (function (jspsych) {
                 type: jspsych.ParameterType.BOOL,
                 default: true
             },
-            /** Prompt shown on the keypad screen when it is revealed by a choice option */
-            keypad_prompt: {
+            /** Line shown above a typed or tapped entry, which is what a choice option
+             *  revealing a keypad or a text field has in place of its own question */
+            entry_prompt: {
                 type: jspsych.ParameterType.HTML_STRING,
                 default: ""
             },
@@ -145,6 +159,14 @@ var jsPsychMedicationQuestion = (function (jspsych) {
             unsure: {
                 type: jspsych.ParameterType.BOOL
             },
+            /** Whether the participant said they have not started the medicine yet */
+            not_started: {
+                type: jspsych.ParameterType.BOOL
+            },
+            /** Whether the participant preferred not to answer */
+            declined: {
+                type: jspsych.ParameterType.BOOL
+            },
             /** Which set of controls was shown, 'touch' or 'keyboard' */
             input_mode: {
                 type: jspsych.ParameterType.STRING
@@ -157,11 +179,14 @@ var jsPsychMedicationQuestion = (function (jspsych) {
     };
 
     /**
-     * **medication-question**
+     * **question-screen**
      *
      * jsPsych plugin presenting a single questionnaire screen: one question per screen, a
      * slide-in / slide-out transition between screens, and no way back to a previous screen -
      * each screen is its own trial and answers are committed when it slides away.
+     *
+     * The plugin knows nothing about any particular questionnaire; the questions live in the
+     * timeline of whichever task uses it (the medication questionnaire, demographics).
      *
      * The controls adapt to the device. On a touchscreen the screen offers large tap targets
      * and an on-screen keypad for numbers; on a machine with a mouse and keyboard, numbers are
@@ -170,7 +195,7 @@ var jsPsychMedicationQuestion = (function (jspsych) {
      *
      * @author {Yaniv Abir}
      */
-    class MedicationQuestionPlugin {
+    class QuestionScreenPlugin {
         constructor(jsPsych) {
             this.jsPsych = jsPsych;
         }
@@ -185,14 +210,14 @@ var jsPsychMedicationQuestion = (function (jspsych) {
 
             display_element.innerHTML = this.buildFrame(trial);
 
-            const screen = display_element.querySelector('.medq-screen');
-            const body = display_element.querySelector('.medq-body');
-            const footer = display_element.querySelector('.medq-footer');
-            screen.style.setProperty('--medq-transition', duration + 'ms');
-            screen.classList.add(keyboardMode ? 'medq-keyboard' : 'medq-touch');
+            const screen = display_element.querySelector('.qsc-screen');
+            const body = display_element.querySelector('.qsc-body');
+            const footer = display_element.querySelector('.qsc-footer');
+            screen.style.setProperty('--qsc-transition', duration + 'ms');
+            screen.classList.add(keyboardMode ? 'qsc-keyboard' : 'qsc-touch');
 
             // Slide the screen in from the right on the frame after it is in the DOM
-            requestAnimationFrame(() => screen.classList.add('medq-screen-in'));
+            requestAnimationFrame(() => screen.classList.add('qsc-screen-in'));
 
             /**
              * Slides the screen out to the left, then hands the answer to jsPsych.
@@ -207,12 +232,14 @@ var jsPsychMedicationQuestion = (function (jspsych) {
                     response: response.response,
                     response_label: response.response_label,
                     unsure: response.unsure || false,
+                    not_started: response.not_started || false,
+                    declined: response.declined || false,
                     input_mode: keyboardMode ? 'keyboard' : 'touch',
                     rt: Math.round(performance.now() - startTime)
                 };
 
-                screen.classList.remove('medq-screen-in');
-                screen.classList.add('medq-screen-out');
+                screen.classList.remove('qsc-screen-in');
+                screen.classList.add('qsc-screen-out');
 
                 this.jsPsych.pluginAPI.setTimeout(
                     () => this.jsPsych.finishTrial(trial_data),
@@ -228,7 +255,7 @@ var jsPsychMedicationQuestion = (function (jspsych) {
                 if (event.key !== 'Enter' || event.repeat || event.defaultPrevented) return;
                 if (document.activeElement && document.activeElement.tagName === 'BUTTON') return;
 
-                const continueButton = footer.querySelector('#medq-continue');
+                const continueButton = footer.querySelector('#qsc-continue');
                 if (continueButton && !continueButton.disabled) {
                     event.preventDefault();
                     continueButton.click();
@@ -257,15 +284,15 @@ var jsPsychMedicationQuestion = (function (jspsych) {
                     this.setupList(body, footer, trial, endTrial, keyboardMode);
                     break;
                 default:
-                    throw new Error(`Unknown question_type "${trial.question_type}" in medication-question plugin.`);
+                    throw new Error(`Unknown question_type "${trial.question_type}" in question-screen plugin.`);
             }
 
             // Put the caret where the answer goes, so a keyboard user can start typing or
             // tabbing straight away. Left alone on touchscreens, where focusing a text field
             // would throw the on-screen keyboard over the question before it has been read.
             if (keyboardMode) {
-                const first = screen.querySelector('.medq-body input, .medq-body select, .medq-body button')
-                    || footer.querySelector('#medq-continue');
+                const first = screen.querySelector('.qsc-body input, .qsc-body select, .qsc-body button')
+                    || footer.querySelector('#qsc-continue');
                 if (first) first.focus({ preventScroll: true });
             }
         }
@@ -293,22 +320,22 @@ var jsPsychMedicationQuestion = (function (jspsych) {
             let progress = '';
             if (trial.question_index !== null && trial.n_questions !== null) {
                 const dots = Array.from({ length: trial.n_questions }, (_, i) => {
-                    const state = i < trial.question_index ? ' medq-dot-done'
-                        : (i === trial.question_index ? ' medq-dot-current' : '');
-                    return `<span class="medq-dot${state}"></span>`;
+                    const state = i < trial.question_index ? ' qsc-dot-done'
+                        : (i === trial.question_index ? ' qsc-dot-current' : '');
+                    return `<span class="qsc-dot${state}"></span>`;
                 }).join('');
-                progress = `<div class="medq-progress" aria-hidden="true">${dots}</div>`;
+                progress = `<div class="qsc-progress" aria-hidden="true">${dots}</div>`;
             }
 
-            const hint = trial.hint ? `<div class="medq-hint">${trial.hint}</div>` : '';
+            const hint = trial.hint ? `<div class="qsc-hint">${trial.hint}</div>` : '';
 
-            return `<div class="medq-screen">
+            return `<div class="qsc-screen">
                 ${progress}
-                <div class="medq-card">
-                    <div class="medq-prompt">${trial.prompt}</div>
+                <div class="qsc-card">
+                    <div class="qsc-prompt">${trial.prompt}</div>
                     ${hint}
-                    <div class="medq-body"></div>
-                    <div class="medq-footer"></div>
+                    <div class="qsc-body"></div>
+                    <div class="qsc-footer"></div>
                 </div>
             </div>`;
         }
@@ -316,20 +343,39 @@ var jsPsychMedicationQuestion = (function (jspsych) {
         /** Creates the large forward button, disabled until the screen has a usable answer */
         addContinueButton(footer, trial, enabled, onClick) {
             footer.insertAdjacentHTML('beforeend',
-                `<button type="button" class="medq-btn medq-btn-primary" id="medq-continue"${enabled ? '' : ' disabled'}>${trial.button_label}</button>`);
-            const button = footer.querySelector('#medq-continue');
+                `<button type="button" class="qsc-btn qsc-btn-primary" id="qsc-continue"${enabled ? '' : ' disabled'}>${trial.button_label}</button>`);
+            const button = footer.querySelector('#qsc-continue');
             button.addEventListener('click', onClick);
             return button;
         }
 
-        /** Creates the quieter "I'm not sure" escape button, when the question allows one */
-        addUnsureButton(footer, trial, onClick) {
-            if (!trial.unsure_label) return null;
+        /**
+         * Creates a quieter escape button beside the forward button - "I'm not sure" on the
+         * name and dose questions, "I haven't started it yet" on the start date question.
+         * A null label means this question does not offer that way out, and nothing is drawn.
+         */
+        addQuietButton(footer, label, id, onClick) {
+            if (!label) return null;
             footer.insertAdjacentHTML('beforeend',
-                `<button type="button" class="medq-btn medq-btn-quiet" id="medq-unsure">${trial.unsure_label}</button>`);
-            const button = footer.querySelector('#medq-unsure');
+                `<button type="button" class="qsc-btn qsc-btn-quiet" id="${id}">${label}</button>`);
+            const button = footer.querySelector(`#${id}`);
             button.addEventListener('click', onClick);
             return button;
+        }
+
+        /**
+         * The escape buttons a typed or tapped entry can offer, both recording a missing
+         * answer: "I'm not sure" for something the participant cannot look up, and "prefer
+         * not to say" for something they can but would rather not give. Kept apart in the
+         * data, since the two mean different things about the value that is missing.
+         */
+        addEscapeButtons(footer, trial, endTrial) {
+            this.addQuietButton(footer, trial.unsure_label, 'qsc-unsure', () => {
+                endTrial({ response: null, response_label: trial.unsure_label, unsure: true });
+            });
+            this.addQuietButton(footer, trial.decline_label, 'qsc-decline', () => {
+                endTrial({ response: null, response_label: trial.decline_label, declined: true });
+            });
         }
 
         /** Screen with no question, just something to read and a button to move on */
@@ -341,11 +387,14 @@ var jsPsychMedicationQuestion = (function (jspsych) {
 
         /** Free text answer, typed on whichever keyboard the device has */
         setupText(body, footer, trial, endTrial, keyboardMode) {
-            body.innerHTML = `<input type="text" class="medq-input" id="medq-text"
+            const entryPrompt = trial.entry_prompt ? `<div class="qsc-hint">${trial.entry_prompt}</div>` : '';
+
+            body.innerHTML = `${entryPrompt}
+                <input type="text" class="qsc-input" id="qsc-text"
                 placeholder="${trial.placeholder}" autocomplete="off" autocapitalize="words"
                 autocorrect="off" spellcheck="false" enterkeyhint="done">`;
 
-            const input = body.querySelector('#medq-text');
+            const input = body.querySelector('#qsc-text');
 
             const answer = () => input.value.trim();
             const submit = () => {
@@ -354,9 +403,7 @@ var jsPsychMedicationQuestion = (function (jspsych) {
             };
 
             const continueButton = this.addContinueButton(footer, trial, !trial.required, submit);
-            this.addUnsureButton(footer, trial, () => {
-                endTrial({ response: null, response_label: trial.unsure_label, unsure: true });
-            });
+            this.addEscapeButtons(footer, trial, endTrial);
 
             input.addEventListener('input', () => {
                 continueButton.disabled = trial.required && answer() === '';
@@ -397,27 +444,25 @@ var jsPsychMedicationQuestion = (function (jspsych) {
                 });
             };
 
-            const keypadPrompt = trial.keypad_prompt ? `<div class="medq-hint">${trial.keypad_prompt}</div>` : '';
-            const unit = trial.unit ? `<span class="medq-number-unit">${trial.unit}</span>` : '';
+            const entryPrompt = trial.entry_prompt ? `<div class="qsc-hint">${trial.entry_prompt}</div>` : '';
+            const unit = trial.unit ? `<span class="qsc-number-unit">${trial.unit}</span>` : '';
 
             if (keyboardMode) {
-                body.innerHTML = `${keypadPrompt}
-                    <div class="medq-number-field">
-                        <input type="text" class="medq-input" id="medq-number"
+                body.innerHTML = `${entryPrompt}
+                    <div class="qsc-number-field">
+                        <input type="text" class="qsc-input" id="qsc-number"
                             inputmode="decimal" placeholder="${trial.placeholder}"
                             autocomplete="off" spellcheck="false" enterkeyhint="done">${unit}
                     </div>`;
             } else {
-                this.renderKeypad(body, trial, keypadPrompt);
+                this.renderKeypad(body, trial, entryPrompt);
             }
 
             const continueButton = this.addContinueButton(footer, trial, !trial.required, submit);
-            this.addUnsureButton(footer, trial, () => {
-                endTrial({ response: null, response_label: trial.unsure_label, unsure: true });
-            });
+            this.addEscapeButtons(footer, trial, endTrial);
 
             if (keyboardMode) {
-                const input = body.querySelector('#medq-number');
+                const input = body.querySelector('#qsc-number');
 
                 input.addEventListener('input', () => {
                     digits = this.cleanNumber(input.value, trial.allow_decimal);
@@ -436,14 +481,14 @@ var jsPsychMedicationQuestion = (function (jspsych) {
                 return;
             }
 
-            const readout = body.querySelector('#medq-keypad-value');
+            const readout = body.querySelector('#qsc-keypad-value');
             const render = () => {
                 readout.textContent = digits === '' ? '–' : digits;
-                readout.classList.toggle('medq-keypad-empty', digits === '');
+                readout.classList.toggle('qsc-keypad-empty', digits === '');
                 continueButton.disabled = trial.required && digits === '';
             };
 
-            body.querySelectorAll('.medq-key').forEach(key => {
+            body.querySelectorAll('.qsc-key').forEach(key => {
                 key.addEventListener('click', () => {
                     const value = key.dataset.key;
                     if (value === 'del') {
@@ -476,51 +521,64 @@ var jsPsychMedicationQuestion = (function (jspsych) {
         }
 
         /** Draws the keypad markup into a body element */
-        renderKeypad(body, trial, keypadPrompt) {
+        renderKeypad(body, trial, entryPrompt) {
             const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
             keys.push(trial.allow_decimal ? '.' : '');
             keys.push('0');
 
             const keyButtons = keys.map(key => key === ''
-                ? `<span class="medq-key medq-key-blank" aria-hidden="true"></span>`
-                : `<button type="button" class="medq-key" data-key="${key}">${key}</button>`
+                ? `<span class="qsc-key qsc-key-blank" aria-hidden="true"></span>`
+                : `<button type="button" class="qsc-key" data-key="${key}">${key}</button>`
             ).join('');
 
-            const unit = trial.unit ? `<span class="medq-keypad-unit">${trial.unit}</span>` : '';
+            const unit = trial.unit ? `<span class="qsc-keypad-unit">${trial.unit}</span>` : '';
 
-            body.innerHTML = `${keypadPrompt}
-                <div class="medq-keypad-readout">
-                    <span id="medq-keypad-value" class="medq-keypad-empty">–</span>${unit}
+            body.innerHTML = `${entryPrompt}
+                <div class="qsc-keypad-readout">
+                    <span id="qsc-keypad-value" class="qsc-keypad-empty">–</span>${unit}
                 </div>
-                <div class="medq-keypad">
+                <div class="qsc-keypad">
                     ${keyButtons}
-                    <button type="button" class="medq-key medq-key-del" data-key="del" aria-label="Delete">⌫</button>
+                    <button type="button" class="qsc-key qsc-key-del" data-key="del" aria-label="Delete">⌫</button>
                 </div>`;
         }
 
         /** One tap or click per answer: the options are the buttons, so there is nothing else to press */
         setupChoice(body, footer, trial, endTrial, keyboardMode) {
-            body.innerHTML = `<div class="medq-choices">${trial.choices.map((choice, i) =>
-                `<button type="button" class="medq-btn medq-choice" data-index="${i}">${choice.label}</button>`
+            body.innerHTML = `<div class="qsc-choices">${trial.choices.map((choice, i) =>
+                `<button type="button" class="qsc-btn qsc-choice" data-index="${i}">${choice.label}</button>`
             ).join('')}</div>`;
 
-            const buttons = Array.from(body.querySelectorAll('.medq-choice'));
+            const buttons = Array.from(body.querySelectorAll('.qsc-choice'));
 
             buttons.forEach(button => {
                 button.addEventListener('click', () => {
                     const choice = trial.choices[parseInt(button.dataset.index)];
 
-                    // An option such as "5 or more" hands over to the keypad on this same
-                    // screen, rather than ending the trial
-                    if (choice.reveals === 'number') {
+                    // An option such as "5 or more", or "I prefer to describe it myself",
+                    // hands this same screen over to an entry control rather than ending the
+                    // trial. Whatever is revealed has to be filled in - the option that
+                    // opened it is not an answer on its own - and the escape buttons of the
+                    // question are dropped, since they were never on offer here.
+                    if (choice.reveals === 'number' || choice.reveals === 'text') {
                         footer.innerHTML = '';
-                        this.setupNumber(
-                            body, footer,
-                            { ...trial, required: true, unit: '', allow_decimal: false },
-                            endTrial, keyboardMode
-                        );
+                        const revealed = {
+                            ...trial,
+                            required: true,
+                            unsure_label: null,
+                            decline_label: null,
+                            unit: '',
+                            allow_decimal: false
+                        };
+
+                        if (choice.reveals === 'number') {
+                            this.setupNumber(body, footer, revealed, endTrial, keyboardMode);
+                        } else {
+                            this.setupText(body, footer, revealed, endTrial, keyboardMode);
+                        }
+
                         if (keyboardMode) {
-                            const field = body.querySelector('#medq-number');
+                            const field = body.querySelector('#qsc-number, #qsc-text');
                             if (field) field.focus({ preventScroll: true });
                         }
                         return;
@@ -576,24 +634,24 @@ var jsPsychMedicationQuestion = (function (jspsych) {
                 Array.from({ length: thisYear - trial.earliest_year + 1 },
                     (_, i) => ({ value: String(thisYear - i), label: String(thisYear - i) })));
 
-            body.innerHTML = `<div class="medq-date">
-                <label class="medq-date-field">
-                    <span class="medq-date-label">Day</span>
-                    <select class="medq-select" id="medq-day">${options(days)}</select>
+            body.innerHTML = `<div class="qsc-date">
+                <label class="qsc-date-field">
+                    <span class="qsc-date-label">Day</span>
+                    <select class="qsc-select" id="qsc-day">${options(days)}</select>
                 </label>
-                <label class="medq-date-field">
-                    <span class="medq-date-label">Month</span>
-                    <select class="medq-select" id="medq-month">${options(months)}</select>
+                <label class="qsc-date-field">
+                    <span class="qsc-date-label">Month</span>
+                    <select class="qsc-select" id="qsc-month">${options(months)}</select>
                 </label>
-                <label class="medq-date-field">
-                    <span class="medq-date-label">Year</span>
-                    <select class="medq-select" id="medq-year">${options(years)}</select>
+                <label class="qsc-date-field">
+                    <span class="qsc-date-label">Year</span>
+                    <select class="qsc-select" id="qsc-year">${options(years)}</select>
                 </label>
             </div>`;
 
-            const day = body.querySelector('#medq-day');
-            const month = body.querySelector('#medq-month');
-            const year = body.querySelector('#medq-year');
+            const day = body.querySelector('#qsc-day');
+            const month = body.querySelector('#qsc-month');
+            const year = body.querySelector('#qsc-year');
 
             this.addContinueButton(footer, trial, true, () => {
                 const parts = {
@@ -611,27 +669,38 @@ var jsPsychMedicationQuestion = (function (jspsych) {
 
                 endTrial({ response: parts, response_label: label || null });
             });
+
+            // A participant who has been prescribed the medicine but has not taken any of it
+            // yet has no date to give. Recorded as a blank date carrying not_started, which
+            // separates it from a date simply left blank.
+            this.addQuietButton(footer, trial.not_started_label, 'qsc-not-started', () => {
+                endTrial({
+                    response: { day: null, month: null, year: null },
+                    response_label: trial.not_started_label,
+                    not_started: true
+                });
+            });
         }
 
         /** A yes/no gate, then a chip list built one item at a time */
         setupList(body, footer, trial, endTrial, keyboardMode) {
             const labels = trial.list_labels;
 
-            body.innerHTML = `<div class="medq-choices">
-                <button type="button" class="medq-btn medq-choice" id="medq-list-yes">${labels.yes}</button>
-                <button type="button" class="medq-btn medq-choice" id="medq-list-no">${labels.no}</button>
+            body.innerHTML = `<div class="qsc-choices">
+                <button type="button" class="qsc-btn qsc-choice" id="qsc-list-yes">${labels.yes}</button>
+                <button type="button" class="qsc-btn qsc-choice" id="qsc-list-no">${labels.no}</button>
             </div>`;
 
-            body.querySelector('#medq-list-no').addEventListener('click', () => {
+            body.querySelector('#qsc-list-no').addEventListener('click', () => {
                 endTrial({ response: [], response_label: labels.no });
             });
 
-            body.querySelector('#medq-list-yes').addEventListener('click', () => {
+            body.querySelector('#qsc-list-yes').addEventListener('click', () => {
                 this.setupListEditor(body, footer, trial, endTrial, keyboardMode);
             });
 
             if (keyboardMode) {
-                this.wireChoiceKeys(body, Array.from(body.querySelectorAll('.medq-choice')));
+                this.wireChoiceKeys(body, Array.from(body.querySelectorAll('.qsc-choice')));
             }
         }
 
@@ -640,18 +709,18 @@ var jsPsychMedicationQuestion = (function (jspsych) {
             const labels = trial.list_labels;
             const items = [];
 
-            body.innerHTML = `<div class="medq-hint">${labels.add_prompt}</div>
-                <div class="medq-add-row">
-                    <input type="text" class="medq-input" id="medq-list-input"
+            body.innerHTML = `<div class="qsc-hint">${labels.add_prompt}</div>
+                <div class="qsc-add-row">
+                    <input type="text" class="qsc-input" id="qsc-list-input"
                         placeholder="${trial.placeholder}" autocomplete="off" autocapitalize="words"
                         autocorrect="off" spellcheck="false" enterkeyhint="done">
-                    <button type="button" class="medq-btn medq-btn-add" id="medq-list-add" disabled>${labels.add}</button>
+                    <button type="button" class="qsc-btn qsc-btn-add" id="qsc-list-add" disabled>${labels.add}</button>
                 </div>
-                <ul class="medq-chips" id="medq-chips"><li class="medq-chips-empty">${labels.empty}</li></ul>`;
+                <ul class="qsc-chips" id="qsc-chips"><li class="qsc-chips-empty">${labels.empty}</li></ul>`;
 
-            const input = body.querySelector('#medq-list-input');
-            const addButton = body.querySelector('#medq-list-add');
-            const chips = body.querySelector('#medq-chips');
+            const input = body.querySelector('#qsc-list-input');
+            const addButton = body.querySelector('#qsc-list-add');
+            const chips = body.querySelector('#qsc-chips');
 
             footer.innerHTML = '';
             const continueButton = this.addContinueButton(footer, trial, !trial.required, () => {
@@ -668,18 +737,18 @@ var jsPsychMedicationQuestion = (function (jspsych) {
 
                 if (items.length === 0) {
                     const empty = document.createElement('li');
-                    empty.className = 'medq-chips-empty';
+                    empty.className = 'qsc-chips-empty';
                     empty.textContent = labels.empty;
                     chips.appendChild(empty);
                 } else {
                     items.forEach((item, i) => {
                         const li = document.createElement('li');
-                        li.className = 'medq-chip';
+                        li.className = 'qsc-chip';
                         li.textContent = item;
 
                         const remove = document.createElement('button');
                         remove.type = 'button';
-                        remove.className = 'medq-chip-remove';
+                        remove.className = 'qsc-chip-remove';
                         remove.dataset.index = String(i);
                         remove.setAttribute('aria-label', `Remove ${item}`);
                         remove.textContent = '×';
@@ -730,7 +799,7 @@ var jsPsychMedicationQuestion = (function (jspsych) {
             // A plausible answer per screen type, so a simulated run produces usable data
             const responses = {
                 message: { response: null, response_label: null },
-                text: { response: 'Sertraline', response_label: 'Sertraline' },
+                text: { response: 'Example answer', response_label: 'Example answer' },
                 number: { response: 50, response_label: `50${trial.unit ? ' ' + trial.unit : ''}` },
                 choice: {
                     response: trial.choices.length ? trial.choices[0].value : null,
@@ -747,6 +816,8 @@ var jsPsychMedicationQuestion = (function (jspsych) {
                 question_name: trial.name,
                 question_type: trial.question_type,
                 unsure: false,
+                not_started: false,
+                declined: false,
                 input_mode: this.usesKeyboard(trial) ? 'keyboard' : 'touch',
                 rt: this.jsPsych.randomization.sampleExGaussian(2000, 400, 1 / 800, true),
                 ...responses[trial.question_type]
@@ -787,39 +858,43 @@ var jsPsychMedicationQuestion = (function (jspsych) {
                 };
 
                 if (trial.question_type === 'text') {
-                    const input = display_element.querySelector('#medq-text');
+                    const input = display_element.querySelector('#qsc-text');
                     input.value = data.response === null ? '' : data.response;
                     input.dispatchEvent(new Event('input'));
                 } else if (trial.question_type === 'number') {
                     // Whichever number control this device was given
-                    const field = display_element.querySelector('#medq-number');
+                    const field = display_element.querySelector('#qsc-number');
                     if (field) {
                         field.value = data.response === null ? '' : String(data.response);
                         field.dispatchEvent(new Event('input'));
                     } else {
                         String(data.response === null ? '' : data.response).split('')
-                            .forEach(digit => click(`.medq-key[data-key="${digit}"]`));
+                            .forEach(digit => click(`.qsc-key[data-key="${digit}"]`));
                     }
                 } else if (trial.question_type === 'choice') {
-                    click('.medq-choice');
+                    click('.qsc-choice');
                     return;
                 } else if (trial.question_type === 'date') {
-                    const month = display_element.querySelector('#medq-month');
-                    const year = display_element.querySelector('#medq-year');
+                    if (data.not_started) {
+                        click('#qsc-not-started');
+                        return;
+                    }
+                    const month = display_element.querySelector('#qsc-month');
+                    const year = display_element.querySelector('#qsc-year');
                     if (data.response) {
                         month.value = data.response.month === null ? '' : String(data.response.month);
                         year.value = data.response.year === null ? '' : String(data.response.year);
                     }
                 } else if (trial.question_type === 'list') {
-                    click('#medq-list-no');
+                    click('#qsc-list-no');
                     return;
                 }
 
-                click('#medq-continue');
+                click('#qsc-continue');
             }, data.rt);
         }
     }
-    MedicationQuestionPlugin.info = info;
+    QuestionScreenPlugin.info = info;
 
-    return MedicationQuestionPlugin;
+    return QuestionScreenPlugin;
 })(jsPsychModule);

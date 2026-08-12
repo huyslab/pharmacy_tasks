@@ -1,3 +1,15 @@
+# [1.9.0](https://github.com/huyslab/pharmacy_tasks/compare/v1.8.2...v1.9.0) (2026-08-12)
+
+
+### Bug Fixes
+
+* **bonus:** stop the bonus reveal ending the experiment ([10039a8](https://github.com/huyslab/pharmacy_tasks/commit/10039a8df2b0abd55f614f6100f708230aeebddb))
+
+
+### Features
+
+* **demographics:** add an age, sex at birth and gender questionnaire ([f59f209](https://github.com/huyslab/pharmacy_tasks/commit/f59f209e34fce51db0fca5dcfd0c8b5e93b146d0))
+
 ## [1.8.2](https://github.com/huyslab/pharmacy_tasks/compare/v1.8.1...v1.8.2) (2026-08-10)
 
 

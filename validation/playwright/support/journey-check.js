@@ -130,46 +130,46 @@ async function reversalJourney(page, testInfo, hasTouch) {
 /**
  * Drives a real (non-simulate) run of the medication questionnaire through all five
  * questions, taking whichever path the plugin chose for this device: the on-screen keypad
- * and taps, or a typed field and the keyboard (plugin-medication-question.js usesKeyboard).
+ * and taps, or a typed field and the keyboard (plugin-question-screen.js usesKeyboard).
  * The answers entered here are read back out of jsPsych at the end, so this covers the
  * screens, the input-mode branch, and what each branch actually records.
  */
 async function medicationQuestionnaireJourney(page, testInfo, hasTouch) {
-  const screen = page.locator('.medq-screen');
+  const screen = page.locator('.qsc-screen');
   await expect(screen, 'the first screen should appear').toBeVisible({ timeout: 15000 });
 
   // Ask the page which branch it took rather than guessing from the device: emulated
   // pointer/hover media features are not a reliable stand-in for the real decision.
-  const keyboardMode = await screen.evaluate((el) => el.classList.contains('medq-keyboard'));
+  const keyboardMode = await screen.evaluate((el) => el.classList.contains('qsc-keyboard'));
   const advance = async () => {
     if (keyboardMode) {
       await page.keyboard.press('Enter');
     } else {
-      await tapOrClick(page.locator('#medq-continue'), hasTouch);
+      await tapOrClick(page.locator('#qsc-continue'), hasTouch);
     }
   };
 
   // Screens slide in by adding this class a frame after they are built; a screen stuck
   // without it would be invisible or mid-transition.
-  await expect(screen, 'the screen should have slid in').toHaveClass(/medq-screen-in/, { timeout: 5000 });
+  await expect(screen, 'the screen should have slid in').toHaveClass(/qsc-screen-in/, { timeout: 5000 });
   await captureShot(page, testInfo, 'medication-questionnaire', 'intro');
   await advance();
 
   // 1. Name of the medicine - typed on whichever keyboard the device has.
-  const nameField = page.locator('#medq-text');
+  const nameField = page.locator('#qsc-text');
   await expect(nameField, 'the medicine name field should appear').toBeVisible({ timeout: 15000 });
   await expect(
-    page.locator('#medq-continue'),
+    page.locator('#qsc-continue'),
     'continue should stay disabled until the name has been entered'
   ).toBeDisabled();
   if (!keyboardMode) await nameField.tap();
   await nameField.fill('Sertraline');
-  await expect(page.locator('#medq-continue'), 'continue should unlock once a name is entered').toBeEnabled();
+  await expect(page.locator('#qsc-continue'), 'continue should unlock once a name is entered').toBeEnabled();
   await advance();
 
   // 2. Strength of one pill - the keypad on a touchscreen, a typed field otherwise.
-  const keypad = page.locator('.medq-keypad');
-  const typedNumber = page.locator('#medq-number');
+  const keypad = page.locator('.qsc-keypad');
+  const typedNumber = page.locator('#qsc-number');
   if (keyboardMode) {
     await expect(typedNumber, 'keyboard mode should offer a typed number field').toBeVisible({ timeout: 15000 });
     await expect(keypad, 'keyboard mode should not render the keypad').toHaveCount(0);
@@ -178,12 +178,12 @@ async function medicationQuestionnaireJourney(page, testInfo, hasTouch) {
   } else {
     await expect(keypad, 'touch mode should offer the on-screen keypad').toBeVisible({ timeout: 15000 });
     await expect(typedNumber, 'touch mode should not render the typed number field').toHaveCount(0);
-    await page.locator('.medq-key[data-key="1"]').tap();
-    await page.locator('.medq-key[data-key="2"]').tap();
-    await page.locator('.medq-key[data-key="9"]').tap();
-    await page.locator('.medq-key[data-key="del"]').tap();
-    await page.locator('.medq-key[data-key="5"]').tap();
-    await expect(page.locator('#medq-keypad-value'), 'the keypad readout should track the keys pressed').toHaveText(
+    await page.locator('.qsc-key[data-key="1"]').tap();
+    await page.locator('.qsc-key[data-key="2"]').tap();
+    await page.locator('.qsc-key[data-key="9"]').tap();
+    await page.locator('.qsc-key[data-key="del"]').tap();
+    await page.locator('.qsc-key[data-key="5"]').tap();
+    await expect(page.locator('#qsc-keypad-value'), 'the keypad readout should track the keys pressed').toHaveText(
       '125'
     );
   }
@@ -192,7 +192,7 @@ async function medicationQuestionnaireJourney(page, testInfo, hasTouch) {
 
   // 3. Pills per day - take the "5 or more" option, which swaps this same screen for a
   // number entry rather than moving on.
-  const options = page.locator('.medq-choice');
+  const options = page.locator('.qsc-choice');
   await expect(options.first(), 'the pills-per-day options should appear').toBeVisible({ timeout: 15000 });
   await captureShot(page, testInfo, 'medication-questionnaire', 'options');
   if (keyboardMode) {
@@ -202,20 +202,20 @@ async function medicationQuestionnaireJourney(page, testInfo, hasTouch) {
   } else {
     await options.last().tap();
     await expect(keypad, '"5 or more" should reveal the keypad').toBeVisible({ timeout: 5000 });
-    await page.locator('.medq-key[data-key="7"]').tap();
+    await page.locator('.qsc-key[data-key="7"]').tap();
   }
   await advance();
 
   // 4. Start date - day, month and year, each optional.
-  await expect(page.locator('.medq-date'), 'the date selects should appear').toBeVisible({ timeout: 15000 });
-  await page.locator('#medq-day').selectOption('3');
-  await page.locator('#medq-month').selectOption('11');
-  await page.locator('#medq-year').selectOption('2022');
+  await expect(page.locator('.qsc-date'), 'the date selects should appear').toBeVisible({ timeout: 15000 });
+  await page.locator('#qsc-day').selectOption('3');
+  await page.locator('#qsc-month').selectOption('11');
+  await page.locator('#qsc-year').selectOption('2022');
   await captureShot(page, testInfo, 'medication-questionnaire', 'date');
   await advance();
 
   // 5. Other medicines - the yes/no gate, then the list built one item at a time.
-  const yesButton = page.locator('#medq-list-yes');
+  const yesButton = page.locator('#qsc-list-yes');
   await expect(yesButton, 'the yes/no gate should appear').toBeVisible({ timeout: 15000 });
   if (keyboardMode) {
     await page.keyboard.press('1');
@@ -223,7 +223,7 @@ async function medicationQuestionnaireJourney(page, testInfo, hasTouch) {
     await yesButton.tap();
   }
 
-  const listField = page.locator('#medq-list-input');
+  const listField = page.locator('#qsc-list-input');
   await expect(listField, 'answering yes should reveal the list field').toBeVisible({ timeout: 5000 });
   for (const medicine of ['Ibuprofen', 'Metformin', 'Mistake']) {
     if (!keyboardMode) await listField.tap();
@@ -231,14 +231,14 @@ async function medicationQuestionnaireJourney(page, testInfo, hasTouch) {
     if (keyboardMode) {
       await page.keyboard.press('Enter'); // adds the item without leaving the screen
     } else {
-      await page.locator('#medq-list-add').tap();
+      await page.locator('#qsc-list-add').tap();
     }
   }
-  await expect(page.locator('.medq-chip'), 'each added medicine should appear as a chip').toHaveCount(3);
-  await tapOrClick(page.locator('.medq-chip').last().locator('.medq-chip-remove'), hasTouch);
-  await expect(page.locator('.medq-chip'), 'removing a chip should drop that medicine').toHaveCount(2);
+  await expect(page.locator('.qsc-chip'), 'each added medicine should appear as a chip').toHaveCount(3);
+  await tapOrClick(page.locator('.qsc-chip').last().locator('.qsc-chip-remove'), hasTouch);
+  await expect(page.locator('.qsc-chip'), 'removing a chip should drop that medicine').toHaveCount(2);
   await captureShot(page, testInfo, 'medication-questionnaire', 'list');
-  await tapOrClick(page.locator('#medq-continue'), hasTouch);
+  await tapOrClick(page.locator('#qsc-continue'), hasTouch);
 
   // What the run actually recorded. Answers are committed as each screen leaves, so this is
   // also where a screen that silently failed to record, or recorded twice, would show up.
@@ -272,6 +272,114 @@ async function medicationQuestionnaireJourney(page, testInfo, hasTouch) {
       response: ['Ibuprofen', 'Metformin'],
       input_mode: keyboardMode ? 'keyboard' : 'touch',
     },
+  ]);
+}
+
+/**
+ * Drives a real (non-simulate) run of the demographics questionnaire, taking the same
+ * device branch as the medication questionnaire above - both are built on the shared
+ * question-screen plugin. The gender question is answered by self-describing, which is the
+ * path where a chosen option swaps the screen for a text field rather than ending the
+ * trial, and where what gets recorded is the typed words rather than an option value.
+ */
+async function demographicsJourney(page, testInfo, hasTouch) {
+  const screen = page.locator('.qsc-screen');
+  await expect(screen, 'the first screen should appear').toBeVisible({ timeout: 15000 });
+
+  const keyboardMode = await screen.evaluate((el) => el.classList.contains('qsc-keyboard'));
+  const advance = async () => {
+    if (keyboardMode) {
+      await page.keyboard.press('Enter');
+    } else {
+      await tapOrClick(page.locator('#qsc-continue'), hasTouch);
+    }
+  };
+
+  await expect(screen, 'the screen should have slid in').toHaveClass(/qsc-screen-in/, { timeout: 5000 });
+  await captureShot(page, testInfo, 'demographics', 'intro');
+  await advance();
+
+  // 1. Age - the keypad on a touchscreen, a typed field otherwise. Whole years only, so
+  // neither branch should offer a way to enter a decimal point.
+  const typedNumber = page.locator('#qsc-number');
+  if (keyboardMode) {
+    await expect(typedNumber, 'keyboard mode should offer a typed number field').toBeVisible({ timeout: 15000 });
+    await typedNumber.fill('34.5');
+    await expect(typedNumber, 'a decimal point should be dropped from an age').toHaveValue('345');
+    await typedNumber.fill('34');
+  } else {
+    await expect(page.locator('.qsc-keypad'), 'touch mode should offer the on-screen keypad').toBeVisible({
+      timeout: 15000,
+    });
+    await expect(
+      page.locator('.qsc-key[data-key="."]'),
+      'the keypad should have no decimal key for an age in whole years'
+    ).toHaveCount(0);
+    await page.locator('.qsc-key[data-key="3"]').tap();
+    await page.locator('.qsc-key[data-key="4"]').tap();
+  }
+  await expect(
+    page.locator('#qsc-decline'),
+    'age should offer a way past without giving it'
+  ).toBeVisible();
+  await captureShot(page, testInfo, 'demographics', 'age');
+  await advance();
+
+  // 2. Sex registered at birth - one tap per answer, so the option ends the screen itself.
+  const options = page.locator('.qsc-choice');
+  await expect(options.first(), 'the sex options should appear').toBeVisible({ timeout: 15000 });
+  await expect(options, 'female, male, and a way to decline').toHaveCount(3);
+  if (keyboardMode) {
+    await page.keyboard.press('1');
+  } else {
+    await options.first().tap();
+  }
+
+  // 3. Gender - self-describe, which swaps the options for a text field on the same screen.
+  // Both screens are in the DOM while one slides out over the other, so waiting on the
+  // gender screen's own option count is what pins this to it - a key pressed a moment early
+  // would otherwise be handled by the sex options still on their way out.
+  await expect(options, 'the five gender options should appear').toHaveCount(5, { timeout: 15000 });
+  await captureShot(page, testInfo, 'demographics', 'gender');
+  if (keyboardMode) {
+    await page.keyboard.press('4'); // "I describe it another way"
+  } else {
+    await options.nth(3).tap();
+  }
+
+  const describeField = page.locator('#qsc-text');
+  await expect(describeField, 'self-describing should reveal a text field').toBeVisible({ timeout: 5000 });
+  await expect(
+    page.locator('#qsc-continue'),
+    'continue should stay disabled until the description has been entered'
+  ).toBeDisabled();
+  if (!keyboardMode) await describeField.tap();
+  await describeField.fill('Genderfluid');
+  await captureShot(page, testInfo, 'demographics', 'self-describe');
+  await tapOrClick(page.locator('#qsc-continue'), hasTouch);
+
+  // What the run actually recorded. Answers are committed as each screen leaves, so this is
+  // also where a screen that silently failed to record, or recorded twice, would show up.
+  await expect(page.locator('#display_element'), 'the questionnaire should finish').toContainText(
+    'Questionnaire complete',
+    { timeout: 15000 }
+  );
+  const recorded = await page.evaluate(() =>
+    window.jsPsych.data
+      .get()
+      .values()
+      .map((trial) => ({
+        name: trial.question_name,
+        response: trial.response,
+        input_mode: trial.input_mode,
+      }))
+  );
+
+  expect(recorded, 'every question should be recorded exactly once, in order').toEqual([
+    { name: 'demographics_intro', response: null, input_mode: keyboardMode ? 'keyboard' : 'touch' },
+    { name: 'age', response: 34, input_mode: keyboardMode ? 'keyboard' : 'touch' },
+    { name: 'sex_at_birth', response: 'female', input_mode: keyboardMode ? 'keyboard' : 'touch' },
+    { name: 'gender', response: 'Genderfluid', input_mode: keyboardMode ? 'keyboard' : 'touch' },
   ]);
 }
 
@@ -452,6 +560,7 @@ const JOURNEYS = {
   vigour: vigourJourney,
   reversal: reversalJourney,
   'medication-questionnaire': medicationQuestionnaireJourney,
+  demographics: demographicsJourney,
   'self-report': selfReportJourney,
   'session-feedback': sessionFeedbackJourney,
 };

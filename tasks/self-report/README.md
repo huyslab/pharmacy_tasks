@@ -59,7 +59,7 @@ Response-quality checks that trial 1's grid computed per questionnaire (straight
 The plugin implements `simulate()` in both data-only and visual modes; visual mode drives the real controls.
 
 #### `styles.css`
-**Purpose**: Styling for the questionnaires, scoped under `.srq-*`, deliberately sharing the look of the medication questionnaire's `.medq-*`.
+**Purpose**: Styling for the questionnaires, scoped under `.srq-*`, deliberately sharing the look of the shared [question screen](../question-screen/README.md)'s `.qsc-*`.
 - 64px minimum control height, `touch-action: manipulation`, and no tap highlight, so taps land where they are aimed
 - The item font is a shade smaller than the medication questionnaire's prompt: the longest PHQ-9 item runs to four lines on a phone and has to sit above four options without scrolling
 - `.srq-keyboard` (set by the plugin on the screen) tightens the controls for a cursor, and a `(hover: hover) and (pointer: fine)` block adds hover states; `:focus-visible` rings apply everywhere

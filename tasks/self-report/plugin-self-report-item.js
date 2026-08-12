@@ -135,8 +135,8 @@ var jsPsychSelfReportItem = (function (jspsych) {
      * one large button per response option. A single tap answers and moves on - there is no
      * separate continue button on an item screen, and no way back to an answered item.
      *
-     * Built for the same devices as the medication questionnaire
-     * (tasks/medication-questionnaire/plugin-medication-question.js): finger-sized controls
+     * Built for the same devices as the shared question screen
+     * (tasks/question-screen/plugin-question-screen.js): finger-sized controls
      * that stack down the screen rather than the item x scale grid these questionnaires are
      * usually rendered as, which needs a wide screen and precise pointing. Where a keyboard
      * drives the run, the number keys pick an option outright and the arrow keys walk them.

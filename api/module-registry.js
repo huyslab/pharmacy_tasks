@@ -46,6 +46,7 @@ export const ModuleRegistry = {
         elements: [
             { type: "instructions", config: { text: "start_message" } },
             { type: "task", name: "medication_questionnaire" },
+            { type: "task", name: "demographics" },
             { type: "task", name: "reversal" },
             { type: "task", name: "acceptability_judgment", config: { task_name: "reversal", game_description: "squirrel game" } },
             { type: "bonus" },

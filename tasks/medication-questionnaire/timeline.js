@@ -52,7 +52,7 @@ function medicationQuestions(settings) {
             name: 'pills_per_day',
             prompt: 'How many of these pills do you take each day?',
             choices: pillChoices,
-            keypad_prompt: 'How many pills a day?'
+            entry_prompt: 'How many pills a day?'
         },
         {
             question_type: 'date',
@@ -60,7 +60,8 @@ function medicationQuestions(settings) {
             prompt: 'When did you start taking this medicine?',
             hint: 'If it was a long time ago, the year on its own is fine. Leave anything you are unsure about blank.',
             required: false,
-            earliest_year: settings.earliest_year
+            earliest_year: settings.earliest_year,
+            not_started_label: settings.allow_not_started ? "I haven't started taking it yet" : null
         },
         {
             question_type: 'list',
@@ -87,6 +88,8 @@ function medicationQuestions(settings) {
  * @param {string} settings.task_name - Name used for the state updates and data fields
  * @param {boolean} settings.include_intro - Whether to open with a short welcome screen
  * @param {boolean} settings.allow_unsure - Whether to offer an "I'm not sure" escape button
+ * @param {boolean} settings.allow_not_started - Whether the start date question offers an
+ *                                               "I haven't started taking it yet" button
  * @param {number} settings.max_pill_buttons - Highest pills-per-day button before the keypad
  * @param {number} settings.earliest_year - Earliest year offered in the start date question
  * @param {number} settings.transition_duration - Slide transition duration in ms
@@ -98,7 +101,7 @@ export function createMedicationQuestionnaireTimeline(settings) {
     const questions = medicationQuestions(settings);
 
     const screens = questions.map((question, i) => ({
-        type: jsPsychMedicationQuestion,
+        type: jsPsychQuestionScreen,
         question_index: i,
         n_questions: questions.length,
         transition_duration: settings.transition_duration,
@@ -113,7 +116,7 @@ export function createMedicationQuestionnaireTimeline(settings) {
 
     if (settings.include_intro) {
         screens.unshift({
-            type: jsPsychMedicationQuestion,
+            type: jsPsychQuestionScreen,
             question_type: 'message',
             name: 'medication_questionnaire_intro',
             prompt: 'First, a few questions about your medicine.',
