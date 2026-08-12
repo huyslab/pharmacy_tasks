@@ -90,7 +90,7 @@ export const messages = {
         end_message: {
             message:
                 `<p>Thank you for completing the first part of this session!</p>
-                <p>There is one more part to go: another game, and a few questions about how you have been feeling. Please start it when you are ready - you can take a short break first if you would like one.</p>
+                <p>There is one more part to go: another game, a few questions about how you have been feeling, and a few about how the session went for you. Please start it when you are ready - you can take a short break first if you would like one.</p>
                 <p>When you click next, your data will be uploaded to the secure server. This may take up to two minutes. Please don't close or refresh your browser at this time.</p>`,
             on_finish: endExperiment
         }
@@ -98,7 +98,7 @@ export const messages = {
     pilot_2: {
         start_message: [
             `<p><b>Welcome back!</b></p>
-            <p>This is the second and last part of the session. You will play one more game, and then answer a few short questions about how you have been feeling.</p>
+            <p>This is the second and last part of the session. You will play one more game, then answer a few short questions about how you have been feeling, and finally tell us how the session went for you.</p>
             <p>As before, your goal in the game is to win as many coins as possible, and you will earn a bonus payment based on the coins you collect.</p>`,
             pilot_warning_page
         ],

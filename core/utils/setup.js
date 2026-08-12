@@ -20,30 +20,47 @@ function loadSequence(scriptSrc) {
         // Resolve any path aliases using the import map
         const resolvedPath = resolvePath(scriptSrc);
 
-        // Check if script is already loaded
+        // A script element being in the document does not mean it has run yet. One that this
+        // function added and is still fetching has to be waited on - resolving on sight
+        // would hand the caller a sequence whose global is not defined yet, which surfaces
+        // as "reversal_json is not defined" from whichever task asked for it second.
         const existingScript = document.querySelector(`script[src="${resolvedPath}"]`);
         if (existingScript) {
-            console.log(`Script already loaded: ${resolvedPath}`);
-            resolve();
+            const stillLoading = existingScript.dataset.sequenceLoading === "true";
+            if (!stillLoading) {
+                console.log(`Script already loaded: ${resolvedPath}`);
+                resolve();
+                return;
+            }
+
+            console.log(`Script already loading, waiting for it: ${resolvedPath}`);
+            existingScript.addEventListener("load", () => resolve(), { once: true });
+            existingScript.addEventListener("error", () => {
+                reject(new Error(`Failed to load sequence script: ${resolvedPath}`));
+            }, { once: true });
             return;
         }
 
         // Create a new script element for dynamic loading
         const script = document.createElement("script");
-        
+
         // Set the src attribute to the provided script path
         script.src = resolvedPath;
         script.type = "text/javascript";
-        
+        // Marks this one as ours and in flight, so a second call waits rather than racing it
+        script.dataset.sequenceLoading = "true";
+
         // Success handler
         script.onload = () => {
             console.log("Script loaded successfully:", resolvedPath);
+            delete script.dataset.sequenceLoading;
             resolve();
         };
         
         // Error handler
         script.onerror = () => {
             console.error("Failed to load script:", resolvedPath);
+            delete script.dataset.sequenceLoading;
             reject(new Error(`Failed to load sequence script: ${resolvedPath}`));
         };
         

@@ -55,4 +55,15 @@ export const TASKS = {
     // body holds a single continue button. Only a real item screen renders the options.
     readySelector: '.srq-screen:has(.srq-options)',
   },
+  // Built from stock jsPsych survey plugins rather than a plugin of its own, so it is read
+  // and typed either way up and is never orientation-gated.
+  session_feedback: {
+    url: '/examples/session-feedback.html',
+    preferredOrientation: null,
+    journeyTitle: 'session feedback records every rating and every answer on this device',
+    // The intro is a plain instructions screen, so requiring the Likert form is what pins
+    // this to the ratings screen - the first screen that actually asks something. The form
+    // rather than its statements, since readySelector has to match exactly one element.
+    readySelector: '#jspsych-survey-likert-form',
+  },
 };
