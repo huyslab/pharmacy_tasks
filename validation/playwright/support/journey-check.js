@@ -276,6 +276,80 @@ async function medicationQuestionnaireJourney(page, testInfo, hasTouch) {
 }
 
 /**
+ * Drives a real (non-simulate) run of the end-of-session feedback questionnaire: the three
+ * ratings, then the three open questions. One of the open questions is deliberately left
+ * blank, since a participant with nothing to add is meant to be able to pass through, and a
+ * blank answer still has to reach the data rather than block the screen or go unrecorded.
+ */
+async function sessionFeedbackJourney(page, testInfo, hasTouch) {
+  const intro = page.getByRole('button', { name: 'Next' });
+  await expect(intro, 'the intro screen should appear').toBeVisible({ timeout: 15000 });
+  await captureShot(page, testInfo, 'session-feedback', 'intro');
+  await tapOrClick(intro, hasTouch);
+
+  // 1. The three ratings, on one screen. Each row is its own radio group, so picking a
+  // point on one scale must not disturb the others.
+  const statements = page.locator('.jspsych-survey-likert-statement');
+  await expect(statements, 'all three ratings should be on the one screen').toHaveCount(3, { timeout: 15000 });
+
+  // The ratings are required, which jsPsych leaves to the browser's own form validation
+  // rather than disabling the button - so pressing Continue with nothing chosen has to
+  // leave the participant here, with nothing recorded.
+  const ratingsButton = page.locator('#jspsych-survey-likert-next');
+  await tapOrClick(ratingsButton, hasTouch);
+  const recordedEarly = await page.evaluate(() =>
+    window.jsPsych.data.get().filter({ trialphase: 'session_feedback_ratings' }).count()
+  );
+  expect(recordedEarly, 'Continue with no ratings given should not record or advance').toBe(0);
+  await expect(page.locator('#jspsych-survey-likert-form'), 'the ratings should still be on screen').toBeVisible();
+
+  // Column indices are the scale points: 4, 2 and 1 here, so a mix-up between the three
+  // rows or between a row and its options would show up in the recorded answers.
+  const picks = [4, 2, 1];
+  for (const [row, point] of picks.entries()) {
+    await tapOrClick(page.locator('.jspsych-survey-likert-opts').nth(row).locator('input[type="radio"]').nth(point - 1), hasTouch);
+  }
+  await captureShot(page, testInfo, 'session-feedback', 'ratings');
+  await tapOrClick(ratingsButton, hasTouch);
+
+  // 2. The three open questions, one per screen, the last left blank.
+  const answers = ['The keypad was fiddly on my phone.', 'I said the coins out loud.', ''];
+  for (const [i, answer] of answers.entries()) {
+    const box = page.locator('#input-0');
+    await expect(box, `open question ${i + 1} should appear`).toBeVisible({ timeout: 15000 });
+    if (answer !== '') {
+      if (hasTouch) await box.tap();
+      await box.fill(answer);
+    }
+    if (i === 0) await captureShot(page, testInfo, 'session-feedback', 'open-question');
+    await tapOrClick(page.locator('#jspsych-survey-text-next'), hasTouch);
+  }
+
+  await expect(page.locator('#display_element'), 'the questionnaire should finish').toContainText(
+    'Feedback complete',
+    { timeout: 15000 }
+  );
+
+  const recorded = await page.evaluate(() =>
+    window.jsPsych.data
+      .get()
+      .values()
+      .map((trial) => ({ trialphase: trial.trialphase, response: trial.response }))
+  );
+
+  expect(recorded, 'every rating and every answer should be recorded exactly once, in order').toEqual([
+    { trialphase: 'session_feedback_intro', response: undefined },
+    {
+      trialphase: 'session_feedback_ratings',
+      response: { session_difficulty: 3, instructions_clarity: 1, website_difficulty: 0 },
+    },
+    { trialphase: 'session_feedback_difficulties', response: { difficulties: answers[0] } },
+    { trialphase: 'session_feedback_strategy', response: { strategy: answers[1] } },
+    { trialphase: 'session_feedback_message_to_researchers', response: { message_to_researchers: '' } },
+  ]);
+}
+
+/**
  * Drives a real (non-simulate) run of the self-report battery through every item of both
  * questionnaires, taking whichever path the plugin chose for this device: tapping the option,
  * or picking it with a number key (plugin-self-report-item.js usesKeyboard). The answers are
@@ -379,6 +453,7 @@ const JOURNEYS = {
   reversal: reversalJourney,
   'medication-questionnaire': medicationQuestionnaireJourney,
   'self-report': selfReportJourney,
+  'session-feedback': sessionFeedbackJourney,
 };
 
 /**

@@ -65,6 +65,9 @@ export const ModuleRegistry = {
             { type: "task", name: "vigour" },
             { type: "task", name: "acceptability_judgment", config: { task_name: "vigour", game_description: "piggy-bank game" } },
             { type: "task", name: "self_report", config: { questionnaires: ["PHQ9", "GAD7"] } },
+            // Last of the questions, and before the bonus reveal: once the payment is on
+            // screen there is little reason left to answer them
+            { type: "task", name: "session_feedback" },
             { type: "bonus" },
             { type: "instructions", config: { text: "signposting_message" } },
             { type: "instructions", config: { text: "end_message" } }

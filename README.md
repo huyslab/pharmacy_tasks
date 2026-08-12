@@ -26,6 +26,7 @@ The battery currently includes the following experimental tasks:
 - **Open Text** - Collects open-ended text responses with customizable time limits and validation
 - **Medication Questionnaire** - Touchscreen questionnaire about the participant's medication, asked at the start of a session
 - **Self-Report Questionnaires** - PHQ-9 and GAD-7, asked one item per screen on a touchscreen
+- **Session Feedback** - End-of-session ratings and open questions about how the session itself went
 
 ## Repository Structure
 
@@ -47,7 +48,8 @@ relmed_task_battery/
 │   ├── open-text/               # Open text questions
 │   ├── pavlovian-lottery/       # Pavlovian conditioning
 │   ├── piggy-banks/             # Vigour and PIT tasks
-│   └── self-report/             # PHQ-9 and GAD-7 questionnaires
+│   ├── self-report/             # PHQ-9 and GAD-7 questionnaires
+│   └── session-feedback/        # End-of-session feedback questionnaire
 ├── core/                        # Shared utilities and jsPsych
 │   ├── utils/                   # Common utility functions
 │   └── jspsych/                 # jsPsych library and plugins
@@ -267,14 +269,14 @@ Use these exact strings when calling `createTaskTimeline()`:
 - `'PILT'`, `'WM'`, `'post_learning_test'`, `'post_PILT_test'`, `'post_WM_test'`
 - `'delay_discounting'`, `'vigour'`, `'vigour_test'`, `'PIT'` 
 - `'control'`, `'max_press_test'`, `'pavlovian_lottery'`, `'open_text'`
-- `'reversal'`, `'acceptability_judgment'`, `'medication_questionnaire'`, `'self_report'`
+- `'reversal'`, `'acceptability_judgment'`, `'medication_questionnaire'`, `'self_report'`, `'session_feedback'`
 
 ### Module Names
 
 Use these exact strings when calling `createModuleTimeline()`:
 - `'full_battery'` - Complete RELMED task battery 
 - `'pilot_1'` - Medication questionnaire, then reversal and its acceptability rating
-- `'pilot_2'` - Vigour and its acceptability rating, then the PHQ-9 and GAD-7 questionnaires
+- `'pilot_2'` - Vigour and its acceptability rating, the PHQ-9 and GAD-7 questionnaires, then end-of-session feedback
 - `'screening'` - Shortened screening version
 
 `pilot_1` and `pilot_2` are the two halves of one mymeds pilot visit, sat one after the other.
@@ -398,10 +400,10 @@ const fullTimeline = [
 
 ## Testing
 
-Cross-device checks for the vigour, reversal, medication questionnaire and self-report tasks live under `validation/playwright/`, in two parts:
+Cross-device checks for the vigour, reversal, medication questionnaire, self-report and session feedback tasks live under `validation/playwright/`, in two parts:
 
 - **Rendering matrix** (`*-rendering.spec.js`, `support/render-check.js`): runs each task (via its page in `examples/`, driven by jsPsych's simulate mode) across all 21 device projects - common phones, tablets, and desktop browsers - asserting it actually renders (no console errors, no collapsed/overflowing layout, the orientation "please rotate" gate shows only where expected). A task can add its own assertions through `extraChecks` - the questionnaire uses this to check that each screen commits to exactly one input mode and renders only that mode's controls.
-- **Journey checks** (`*-journey.spec.js`, `support/journey-check.js`): drives a real (non-simulate) run - real clicks/taps/keypresses through the actual flow - on a small curated subset of 5 devices, to deterministically capture checkpoints simulate mode can't reliably land on, since it auto-advances through everything. For vigour and reversal that is the static instructions text and an in-task feedback/coin moment; for the medication questionnaire it is all five questions answered on whichever path the device was given (keypad and taps, or typed field and keyboard), and for the self-report battery every item of both questionnaires, answered by tap or by number key - both read the recorded answers back out of jsPsych at the end.
+- **Journey checks** (`*-journey.spec.js`, `support/journey-check.js`): drives a real (non-simulate) run - real clicks/taps/keypresses through the actual flow - on a small curated subset of 5 devices, to deterministically capture checkpoints simulate mode can't reliably land on, since it auto-advances through everything. For vigour and reversal that is the static instructions text and an in-task feedback/coin moment; for the medication questionnaire it is all five questions answered on whichever path the device was given (keypad and taps, or typed field and keyboard), for the self-report battery every item of both questionnaires, answered by tap or by number key; and for session feedback the three ratings and the three open questions, one of which is left blank on purpose - all three read the recorded answers back out of jsPsych at the end.
 
 Both save a screenshot per device/checkpoint to `validation/playwright/screenshots/`.
 

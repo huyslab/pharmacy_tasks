@@ -12,6 +12,7 @@ import { createReversalTimeline, computeRelativeReversalBonus } from '@tasks/rev
 import { createAcceptabilityTimeline } from '@tasks/acceptability-judgment/index.js';
 import { createMedicationQuestionnaireTimeline } from '@tasks/medication-questionnaire/index.js';
 import { createSelfReportTimeline } from '@tasks/self-report/index.js';
+import { createSessionFeedbackTimeline } from '@tasks/session-feedback/index.js';
 
 export const TaskRegistry = {
   PILT: {
@@ -447,6 +448,32 @@ export const TaskRegistry = {
       game_description: "Human-readable description of the game/task. Default is 'game you have just completed'."
     },
     resumptionRules: {
+        enabled: false,
+    }
+  },
+  session_feedback: {
+    name: 'Session Feedback',
+    description: 'End-of-session feedback about the session as a whole: three ratings, then three open questions in the participant\'s own words',
+    createTimeline: createSessionFeedbackTimeline,
+    computeBonus: () => 0, // No bonus computation for this task
+    defaultConfig: {
+      task_name: "session_feedback",
+      include_intro: true,
+      require_text: false,
+      text_rows: 5
+    },
+    configOptions: {
+      task_name: "The name of the task, used for state updates and data field prefixes. Default is 'session_feedback'.",
+      include_intro: "Whether to open with a short screen explaining what the questions are for. Default is true.",
+      require_text: "Whether the three open questions must be answered before moving on. Default is false, so a participant with nothing to add is not made to invent something.",
+      text_rows: "Height of each open answer box, in rows. Default is 5."
+    },
+    requirements: {
+      css: ['@tasks/session-feedback/styles.css'],
+    },
+    resumptionRules: {
+        // A resumed run would skip whichever questions were already passed, and the ratings
+        // are about the session as a whole, so it is asked once or not at all
         enabled: false,
     }
   }
