@@ -110,6 +110,23 @@ export const messages = {
             on_finish: endExperiment
         }
     },
+    // The follow-up is questions only, so it opens on a single page: there are no games to
+    // warn about taking too long over, and no bonus to promise.
+    pilot_followup: {
+        start_message: [
+            `<p><b>Welcome back!</b></p>
+            <p>This is a short follow-up to the session you took part in earlier. There are no games this time - just a few questions about how you have been feeling recently.</p>
+            <p>It should take about five minutes. There are no right or wrong answers; please answer as honestly as you can.</p>
+            <p>If at any point you feel like you need some assistance, you can find our contact details by pressing the question mark in the top right corner. We are happy to help.</p>`
+        ],
+        signposting_message: pilot_signposting_message,
+        end_message: {
+            message:
+                `<p>Thank you for completing this follow-up!</p>
+                <p>When you click next, your data will be uploaded to the secure server. This may take up to two minutes. Please don't close or refresh your browser at this time.</p>`,
+            on_finish: endExperiment
+        }
+    },
     screening: {
         start_message: [
             `<p><b>Welcome to the first RELMED training session!</b></p>

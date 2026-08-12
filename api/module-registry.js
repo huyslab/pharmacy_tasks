@@ -77,6 +77,18 @@ export const ModuleRegistry = {
         max_bonus: 2.5,
         min_prop_bonus: 0.6
     },
+    // Sat on its own at a later visit, to follow up on how a participant has been since the
+    // pilot. No games, so nothing to earn: it declares no max_bonus and has no bonus element,
+    // and its opening pages leave out the response-deadline warning, which is about the games.
+    pilot_followup: {
+        name: "Pilot Follow-Up",
+        elements: [
+            { type: "instructions", config: { text: "start_message" } },
+            { type: "task", name: "self_report", config: { questionnaires: ["PHQ9", "GAD7"] } },
+            { type: "instructions", config: { text: "signposting_message" } },
+            { type: "instructions", config: { text: "end_message" } }
+        ]
+    },
     screening: {
         name: "Screening Module",
         elements: [
