@@ -1,3 +1,15 @@
+# [1.10.0](https://github.com/huyslab/pharmacy_tasks/compare/v1.9.0...v1.10.0) (2026-08-12)
+
+
+### Bug Fixes
+
+* **setup:** wait for a sequence script that is still loading ([8287d35](https://github.com/huyslab/pharmacy_tasks/commit/8287d358f5e18b4fe582bd0d7719d2c946b72415))
+
+
+### Features
+
+* **session-feedback:** ask how the session went at the end of pilot 2 ([0c3a634](https://github.com/huyslab/pharmacy_tasks/commit/0c3a6345293fcd2d4624b228f8584484f4ff92a6))
+
 # [1.9.0](https://github.com/huyslab/pharmacy_tasks/compare/v1.8.2...v1.9.0) (2026-08-12)
 
 
