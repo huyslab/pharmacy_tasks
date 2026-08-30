@@ -56,7 +56,7 @@ export const ModuleRegistry = {
         // The game promises a bonus in its instructions, so the module reveals one. Half of
         // what the single pilot module paid across both games, so a participant who completes
         // both modules earns the same £3-£5 as before.
-        max_bonus: 2.5,
+        max_bonus: 3.0,
         min_prop_bonus: 0.6
     },
     pilot_2: {
@@ -74,7 +74,7 @@ export const ModuleRegistry = {
             { type: "instructions", config: { text: "end_message" } }
         ],
         // See pilot_1: one game, half the pilot's total bonus
-        max_bonus: 2.5,
+        max_bonus: 3.0,
         min_prop_bonus: 0.6
     },
     // Sat on its own at a later visit, to follow up on how a participant has been since the
