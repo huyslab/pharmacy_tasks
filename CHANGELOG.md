@@ -1,3 +1,10 @@
+## [1.11.1](https://github.com/huyslab/pharmacy_tasks/compare/v1.11.0...v1.11.1) (2026-08-30)
+
+
+### Bug Fixes
+
+* max bonus to £3 to match PIS ([4bd1afd](https://github.com/huyslab/pharmacy_tasks/commit/4bd1afda095085c709315487f3d558331d68a1e6))
+
 # [1.11.0](https://github.com/huyslab/pharmacy_tasks/compare/v1.10.0...v1.11.0) (2026-08-12)
 
 
