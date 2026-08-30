@@ -32,6 +32,25 @@ test('load success uses the explicit parent origin when referrer data is suppres
   ]);
 });
 
+test('opaque parent origins are normalized to null', async ({ page }) => {
+  await page.goto('/validation/fixtures/load-success.html');
+
+  const parentOrigin = await page.evaluate(async () => {
+    window.jsPsychFullscreen = {};
+    window.jsPsychHtmlButtonResponse = {};
+    window.jsPsychHtmlKeyboardResponse = {};
+    Object.defineProperty(window, 'parent', {
+      configurable: true,
+      value: { location: { origin: 'null' } },
+    });
+
+    const { getParentOrigin } = await import('/core/utils/data-handling.js');
+    return getParentOrigin();
+  });
+
+  expect(parentOrigin).toBeNull();
+});
+
 test('pilot module reports successful startup through the explicit parent origin', async ({ page }) => {
   await page.addInitScript(() => {
     window.parentMessages = [];

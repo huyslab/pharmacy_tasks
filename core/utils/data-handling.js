@@ -50,7 +50,8 @@ function getParentOrigin() {
     // No usable referrer or explicit origin: fall back to the parent's own origin, which is
     // only readable when we are same-origin with it.
     try {
-        return window.parent.location.origin;
+        const origin = window.parent.location.origin;
+        return origin === 'null' ? null : origin;
     } catch (error) {
         return null;
     }
@@ -298,4 +299,3 @@ export {
     saveDataREDCap,
     endExperiment
 };
-
