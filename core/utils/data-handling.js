@@ -23,29 +23,35 @@ const ALLOWED_PARENT_ORIGINS = [
 /**
  * Resolves the origin of the embedding page.
  *
- * document.referrer holds the parent page's URL. Cross-origin referrer policy trims it to
- * the bare origin ("https://mymeds.study/"), but same-origin embedding keeps the full path
- * ("https://mymeds.study/participant") - and the mymeds participant page lives at
- * /participant, not the domain root the way My RELMED does. Parsing out the origin rather
- * than string-matching the referrer is what makes both cases work.
+ * document.referrer normally holds the parent page's URL. Cross-origin referrer policy
+ * trims it to the bare origin ("https://mymeds.study/"), but some browsers suppress it
+ * entirely when the parent document uses no-referrer. Embedders can therefore provide
+ * parent_origin explicitly in the launch URL. The allowlist in postToParent still decides
+ * whether messages may be sent there.
  *
  * @returns {string|null} The parent origin, or null if it cannot be determined
  */
 function getParentOrigin() {
-    let candidate = document.referrer;
+    const candidates = [
+        document.referrer,
+        new URLSearchParams(window.location.search).get('parent_origin')
+    ];
 
-    if (!candidate) {
-        // No referrer (e.g. opened directly): fall back to the parent's own origin, which is
-        // only readable when we are same-origin with it.
+    for (const candidate of candidates) {
+        if (!candidate) continue;
         try {
-            candidate = window.parent.location.origin;
+            const origin = new URL(candidate).origin;
+            if (origin !== 'null') return origin;
         } catch (error) {
-            return null;
+            // Try the next source.
         }
     }
 
+    // No usable referrer or explicit origin: fall back to the parent's own origin, which is
+    // only readable when we are same-origin with it.
     try {
-        return new URL(candidate).origin;
+        const origin = window.parent.location.origin;
+        return origin === 'null' ? null : origin;
     } catch (error) {
         return null;
     }
@@ -293,5 +299,3 @@ export {
     saveDataREDCap,
     endExperiment
 };
-
-
