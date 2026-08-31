@@ -218,9 +218,12 @@
             // Last-ditch save if the participant closes or reloads mid-task - without this
             // everything since the last periodic save is lost.
             on_close: () => { saveDataREDCap(); },
-            on_finish: function(data) {
-                // Display results
-                jsPsych.getDisplayElement().innerHTML = '<p>Thank you for participating! You may now close this tab.</p>';
+            on_finish: function() {
+                // No sign-off here: endExperiment has already told the parent site the
+                // module is done, and the parent closes the iframe / navigates onwards.
+                // A "you may now close this tab" slide would contradict that, so just
+                // clear the last trial off the screen while the redirect happens.
+                jsPsych.getDisplayElement().innerHTML = '';
             }
         });
 
