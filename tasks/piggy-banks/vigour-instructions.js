@@ -200,7 +200,7 @@ const startConfirmation = {
     <div id="experiment-container">
       <div id="piggy-container">
         <img id="piggy-bank" src="./assets/images/piggy-banks/piggy-bank.png"
-             alt="${pressVerb(true)} the piggy bank to start">
+             alt="${pressVerb(true)} the piggy bank to begin">
       </div>
     </div>
     <div id="bottom-container" style="visibility: visible;">
@@ -315,7 +315,7 @@ function updateInstructionText(shakeCount) {
   const messages = [
     `<p>Welcome to the piggy bank game!</p><p>${pressVerb(true)} the piggy bank to shake it!</p>`,
     `<p>${pressVerb(true)} the piggy bank to shake it!</p><p>You can ${pressVerb()} it again to keep on shaking...</p>`,
-    `<p>Well done, You just got a coin out of the piggy bank!</p><p><span class="highlight-txt">You can always ${pressVerb()} again for more coins.</span> Try getting some more!</p>`
+    `<p>Well done, you just got a coin out of the piggy bank!</p><p><span class="highlight-txt">You can always ${pressVerb()} again for more coins.</span> Try getting some more!</p>`
   ];
   let messageIndex = 0;
   if (shakeCount < 1) {
