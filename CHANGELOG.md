@@ -1,3 +1,10 @@
+## [1.11.2](https://github.com/huyslab/pharmacy_tasks/compare/v1.11.1...v1.11.2) (2026-08-31)
+
+
+### Bug Fixes
+
+* remove final "close this tab" slide ([fc2c96e](https://github.com/huyslab/pharmacy_tasks/commit/fc2c96e3158fb14672d6c7fc4034249b6791bffb))
+
 ## [1.11.1](https://github.com/huyslab/pharmacy_tasks/compare/v1.11.0...v1.11.1) (2026-08-30)
 
 
