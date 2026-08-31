@@ -47,6 +47,12 @@ async function vigourJourney(page, testInfo, hasTouch) {
   // Interactive instructions demo: "Continue" only unlocks after DEMO_UNLOCK_TAPS taps.
   const demoPiggy = page.locator('#piggy-container');
   await expect(demoPiggy, 'instructions demo piggy bank should appear').toBeVisible({ timeout: 15000 });
+  // The wording follows the device rather than always saying "tap": see pressVerb in
+  // tasks/piggy-banks/vigour-instructions.js.
+  const verb = hasTouch ? 'Tap' : 'Click';
+  await expect(page.locator('#instruction-text'), 'demo wording should match the device').toContainText(
+    `${verb} the piggy bank to shake it!`
+  );
   for (let i = 0; i < DEMO_UNLOCK_TAPS; i++) {
     await tapOrClick(demoPiggy, hasTouch);
   }
@@ -60,8 +66,11 @@ async function vigourJourney(page, testInfo, hasTouch) {
   await page.locator('#jspsych-instructions-next').click(); // page 2 of 2
   await page.locator('#jspsych-instructions-next').click(); // -> startConfirmation
 
-  // "Tap the piggy bank to begin" confirmation screen.
+  // "Tap/Click the piggy bank to begin" confirmation screen.
   await expect(demoPiggy, 'start-confirmation piggy bank should appear').toBeVisible({ timeout: 15000 });
+  await expect(page.locator('#instruction-text'), 'confirmation wording should match the device').toContainText(
+    `${verb.toLowerCase()} the piggy bank to begin`
+  );
   await tapOrClick(demoPiggy, hasTouch);
 
   // Real trial: tap enough times to guarantee a reward regardless of this trial's ratio.
