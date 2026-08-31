@@ -1,3 +1,11 @@
+## [1.11.3](https://github.com/huyslab/pharmacy_tasks/compare/v1.11.2...v1.11.3) (2026-08-31)
+
+
+### Bug Fixes
+
+* address Copilot review on piggy bank instruction wording ([c1eac1b](https://github.com/huyslab/pharmacy_tasks/commit/c1eac1b38acfe3b82a2243a31960b2fa27975fce))
+* say "click" instead of "tap" on non-touch devices in piggy bank instructions ([102ca0c](https://github.com/huyslab/pharmacy_tasks/commit/102ca0cb286ff288aef654712906516dd26a03bb))
+
 ## [1.11.2](https://github.com/huyslab/pharmacy_tasks/compare/v1.11.1...v1.11.2) (2026-08-31)
 
 
