@@ -6,6 +6,18 @@ let instructionPointerListener = null;
 let instructionResizeObserver = null;
 
 /**
+ * The action word for shaking the piggy bank, matched to the participant's device:
+ * a touchscreen is tapped, a laptop is clicked. Uses the same device test as the
+ * reversal task's touch/keyboard instruction split (tasks/reversal/task.js).
+ * @param {boolean} [capitalized=false] - Capitalize it for the start of a sentence
+ * @returns {string} 'tap'/'Tap' on touch devices, 'click'/'Click' otherwise
+ */
+function pressVerb(capitalized = false) {
+  const verb = navigator.maxTouchPoints > 0 ? 'tap' : 'click';
+  return capitalized ? verb.charAt(0).toUpperCase() + verb.slice(1) : verb;
+}
+
+/**
  * Interactive instruction page that demonstrates the piggy bank shaking mechanism
  * Allows users to practice the task with immediate feedback
  */
@@ -177,18 +189,18 @@ const ruleInstruction = {
 const startConfirmation = {
   type: jsPsychHtmlKeyboardResponse,
   choices: 'NO_KEYS',
-  stimulus: `
+  stimulus: () => `
   <div class="experiment-wrapper">
     <div id="instruction-container">
       <div id="instruction-text">
         <p>You will now play the piggy-bank game without a break for about <strong>four minutes</strong>.</p>
-        <p>When you're ready, <span class="highlight-txt">tap the piggy bank</span> to begin.</p>
+        <p>When you're ready, <span class="highlight-txt">${pressVerb()} the piggy bank</span> to begin.</p>
       </div>
     </div>
     <div id="experiment-container">
       <div id="piggy-container">
         <img id="piggy-bank" src="./assets/images/piggy-banks/piggy-bank.png"
-             alt="Tap the piggy bank to start">
+             alt="${pressVerb(true)} the piggy bank to start">
       </div>
     </div>
     <div id="bottom-container" style="visibility: visible;">
@@ -301,9 +313,9 @@ function generateInstructStimulus() {
  */
 function updateInstructionText(shakeCount) {
   const messages = [
-    '<p>Welcome to the piggy bank game!</p><p>Tap the piggy bank to shake it!</p>',
-    '<p>Tap the piggy bank to shake it!</p><p>You can tap it again to keep on shaking...</p>',
-    '<p>Well done, You just got a coin out of the piggy bank!</p><p><span class="highlight-txt">You can always tap again for more coins.</span> Try getting some more!</p>'
+    `<p>Welcome to the piggy bank game!</p><p>${pressVerb(true)} the piggy bank to shake it!</p>`,
+    `<p>${pressVerb(true)} the piggy bank to shake it!</p><p>You can ${pressVerb()} it again to keep on shaking...</p>`,
+    `<p>Well done, You just got a coin out of the piggy bank!</p><p><span class="highlight-txt">You can always ${pressVerb()} again for more coins.</span> Try getting some more!</p>`
   ];
   let messageIndex = 0;
   if (shakeCount < 1) {
