@@ -1,5 +1,5 @@
 /*
- * jsPsych 8.0.2 stylesheet, as vendored - with one change.
+ * jsPsych 8.0.2 stylesheet, as vendored - with two changes, both marked in place.
  *
  * The published file bundles the Open Sans webfont as 32 @font-face rules carrying ~460KB of
  * base64 font data: 97% of its weight, downloaded before the first screen can paint. Nothing
@@ -8,8 +8,12 @@
  * the font data has been removed. The declarations that name the family are left exactly as
  * they were, and now fall back the way jsPsych's own stack says they should.
  *
- * Re-vendoring jsPsych brings the ~475KB file back: strip everything above the
- * ./src/index.scss banner again, unless the battery has taken up a webfont in the meantime.
+ * The second change is further down: the `input[type=text]` type rule is gone, for the
+ * reasons noted where it used to be.
+ *
+ * Re-vendoring jsPsych brings the ~475KB file and both rules back: strip everything above
+ * the ./src/index.scss banner again (unless the battery has taken up a webfont in the
+ * meantime), and drop the input rule again.
  */
 
 /*!*****************************************************************************************************************!*\
@@ -59,11 +63,11 @@
   line-height: 1.6em;
 }
 
-/* Form elements like input fields and buttons */
-.jspsych-display-element input[type=text] {
-  font-family: "Open Sans", "Arial", sans-serif;
-  font-size: 14px;
-}
+/* Form elements: the rule that set 14px "Open Sans" on text inputs is removed - see the
+   note at the top of this file. It outranked every task's own field styling on
+   specificity, and 14px is below the size at which iOS Safari zooms a focused field.
+   core/styles/theme.css sets the type for form fields instead, at a weight a task can
+   override. */
 
 /* Buttons and Button Groups */
 .jspsych-btn-group-flex {

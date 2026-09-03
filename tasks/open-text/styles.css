@@ -231,17 +231,13 @@
 }
 
 /* Submit is the shared primary button (core/styles/theme.css); all this adds is the room it
-   needs on these long, scrolling screens. The second rule below was written unscoped, so
-   from the moment this task's stylesheet loaded it turned the submit button of every survey
-   screen in the rest of the module green - it is scoped to this task's screens now. */
+   needs on these long, scrolling screens. There used to be a second, unscoped
+   `input[type="submit"]` rule here, which from the moment this stylesheet loaded turned the
+   submit button of every survey screen in the rest of the module green; it is deleted rather
+   than rescoped, because .lvlx_qs is the class this task's screens actually carry
+   (tasks/open-text/utils.js). */
 .lvlx_qs input[type="submit"] {
     margin-top: 0;
-    margin-bottom: 5vw;
-}
-
-.open-text input[type="submit"],
-.feedback_trial input[type="submit"] {
-    margin-top: var(--rlm-space-5);
     margin-bottom: 5vw;
 }
 

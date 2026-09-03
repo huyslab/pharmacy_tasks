@@ -48,7 +48,7 @@ export const messages = {
     full_battery: {
         start_message: (settings) => { 
             return [`<p><b>Thank you for taking part in this session!</b></p>
-                <p>The purpose of this session is to examine how people learn from positive and negative feedback while playing games.
+                <p>The purpose of this session is to examine how people learn from positive and negative feedback while playing games.</p>
                 <p>You will play a few simple trial-and-error learning games. Your goal in each game is to win as many coins as possible.</p>
                 <p>The games may feel a bit fast-paced because we're interested in your quick, intuitive decisions. Since they're designed around learning from experience, making mistakes is completely expected. Over time, you'll figure out better choices and improve your performance.</p>
                 ` + (settings.session === "wk0" ?  `<b>Please read the instructions carefully. They may differ from the training session.</b>` : ""),

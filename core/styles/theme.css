@@ -38,6 +38,9 @@
     --rlm-disabled-ink: #f2f5fa;
     --rlm-positive: #28a745;
     --rlm-negative: #dc3545;
+    /* The negative hue as a button ground: dark enough to carry white text */
+    --rlm-danger: #c0392f;
+    --rlm-danger-dark: #a32f26;
     --rlm-caution: rgba(244, 206, 92, 0.9);
 
     --rlm-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -95,19 +98,21 @@
     -webkit-font-smoothing: antialiased;
 }
 
-.jspsych-display-element input,
-.jspsych-display-element select,
-.jspsych-display-element textarea,
 .jspsych-display-element button {
     font-family: var(--rlm-font);
 }
 
-/* jspsych.css pins text inputs to 14px, which iOS Safari answers by zooming the page in
-   as soon as the field is focused */
-.jspsych-display-element input[type="text"],
-.jspsych-display-element input[type="number"],
-.jspsych-display-element textarea {
-    font-size: max(16px, var(--rlm-text-base));
+/* A form field takes none of the page's type by default - the browser gives it its own
+   ~13px face - and jspsych.css pinned text inputs to 14px, which iOS Safari answers by
+   zooming the page in as soon as the field is focused. Both are fixed here.
+
+   The element part sits in :where() so this whole selector weighs the same as a single
+   class: a task styling its own fields (.qsc-input, .srq-* and friends) then wins on
+   source order rather than losing to an element selector it cannot outrank. */
+.jspsych-display-element :where(input, select, textarea) {
+    font-family: var(--rlm-font);
+    /* The floor is 16px, which is what stops the iOS zoom */
+    font-size: var(--rlm-text-base);
 }
 
 /* ------------------------------------------------------------------ *
@@ -153,7 +158,6 @@
 .instructions h4 { font-size: var(--rlm-text-base); font-weight: 600; }
 
 .instructions p {
-    max-width: var(--rlm-measure);
     margin: 0 0 1em;
 }
 
@@ -165,7 +169,6 @@
    across the centred instructions container */
 .instructions ul,
 .instructions ol {
-    max-width: var(--rlm-measure);
     margin: 0 0 1em;
     padding-left: 1.4em;
 }
@@ -319,6 +322,31 @@
     color: var(--rlm-ink-faint);
 }
 
+/* "Start again" rather than "go on" - control's Restart, which sits beside Next. Its own
+   class rather than an inline background, so it keeps the hover and press feedback every
+   other button has. */
+.jspsych-btn-danger {
+    background-color: var(--rlm-danger);
+    border-color: var(--rlm-danger);
+    color: var(--rlm-surface);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .jspsych-btn-danger:hover:not(:disabled) {
+        background-color: var(--rlm-danger-dark);
+        border-color: var(--rlm-danger-dark);
+    }
+}
+
+.jspsych-btn-danger:active:not(:disabled) {
+    background-color: var(--rlm-danger-dark);
+    border-color: var(--rlm-danger-dark);
+}
+
+.jspsych-btn-danger:focus-visible {
+    outline-color: var(--rlm-danger);
+}
+
 /* Groups of buttons: jspsych.css centres them but leaves the spacing to each button's own
    margin, which is what makes button rows sit at different heights from screen to screen.
    The gap belongs to the group, so a row of two choices is spaced the same as a row of six. */
@@ -348,9 +376,11 @@
     margin-top: var(--rlm-space-5);
 }
 
-/* The plugin writes these two as inline styles, which the gap above replaces */
+/* The nav's spacing is the group's gap above. The plugin used to write a 5px margin on
+   each of these as an inline style; that is deleted at source in
+   core/jspsych/plugin-instructions.js, so no !important is needed to beat it. */
 .jspsych-instructions-nav .jspsych-btn {
-    margin: 0 !important;
+    margin: 0;
 }
 
 .jspsych-instructions-pagenum {
@@ -363,12 +393,10 @@
  * ------------------------------------------------------------------ */
 
 .instructions .jspsych-survey-multi-choice-preamble {
-    max-width: var(--rlm-measure);
     margin-bottom: var(--rlm-space-5);
 }
 
 .instructions .jspsych-survey-multi-choice-question {
-    max-width: var(--rlm-measure);
     margin: 0 0 var(--rlm-space-5);
     padding: var(--rlm-space-4) var(--rlm-space-4) var(--rlm-space-2);
     border: 1px solid var(--rlm-line);
@@ -396,7 +424,8 @@
 
 .instructions label.jspsych-survey-multi-choice-text input[type="radio"] {
     /* A browser's default radio is about 13px across - fiddly with a mouse, harder with a
-       fingertip. The plugin's own stylesheet sets the margin this replaces. */
+       fingertip. The margin replaces the 1em the plugin writes into the <style> block it
+       injects with each trial. */
     width: 22px;
     height: 22px;
     margin: 0;
@@ -404,7 +433,11 @@
     cursor: pointer;
 }
 
-/* Submit is a button, wherever the surrounding text happens to be aligned */
+/* A button sitting straight in the content div - a survey's submit, the fullscreen
+   plugin's "return to full screen" - has no group wrapper to centre it, so it would
+   follow the reading column's left alignment. It is a button; it belongs on the centre
+   line like every other one. */
+.instructions > .jspsych-btn,
 .instructions input[type="submit"].jspsych-btn {
     display: block;
     margin: var(--rlm-space-5) auto 0;
@@ -414,8 +447,10 @@
  * Instruction screens built by hand (piggy banks, max-press-test)
  *
  * These predate the `instructions` class and address the same block by id. The id lived in
- * the piggy-banks stylesheet, so the screens in max-press-test and pavlovian-lottery that
- * use it were styled only when a piggy-bank task happened to have run first.
+ * the piggy-banks stylesheet, so max-press-test's screens - which use it too - were styled
+ * only when a piggy-bank task happened to have run first. The inline widgets below had the
+ * same problem the other way round: pavlovian-lottery uses .spacebar-icon and
+ * .highlight-txt without ever having defined them.
  * ------------------------------------------------------------------ */
 
 #instruction-text {
@@ -453,7 +488,10 @@
 }
 
 /* A line or two of prompting over a live game surface, rather than a page to read: centred
-   over the piggy bank it refers to. */
+   over the piggy bank it refers to. This is what splits the two "ready to begin" screens:
+   vigour's sits inside .experiment-wrapper, over the piggy bank the participant is about to
+   tap, and stays centred; PIT's is four paragraphs and an illustration with no game surface
+   behind it, so it reads as a page and is set left like every other page of prose. */
 .experiment-wrapper #instruction-text {
     text-align: center;
 }
