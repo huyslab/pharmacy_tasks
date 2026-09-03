@@ -67,7 +67,7 @@ const fullscreen_prompt = {
     css_classes: ['instructions'],
     timeline: [
       {
-        message: `<p>This study only runs in full screen mode.<p>
+        message: `<p>This study only runs in full screen mode.</p>
             <p>Press the button below to return to full screen mode and continue.</p>`
       }
     ],

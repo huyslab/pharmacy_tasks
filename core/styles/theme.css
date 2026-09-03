@@ -455,6 +455,104 @@
 }
 
 /* ------------------------------------------------------------------ *
+ * Questionnaire screens built from stock jsPsych survey plugins
+ *
+ * The Likert and free-text plugins were written for a desktop browser: the plugin lays the
+ * five scale points out as inline blocks sized to whatever their labels say, and puts no
+ * width limit on the content, so with labels as long as "Not difficult at all" the row comes
+ * out wider than a phone screen. jsPsych centres the content with `margin: auto`, and an
+ * overflowing element centred that way is clipped on BOTH sides - which is what takes the
+ * question text off the edge of the screen.
+ *
+ * These rules started life scoped to the session feedback questionnaire, which meant the
+ * acceptability judgment - the same two plugins, met right after every game in both pilot
+ * modules - kept the broken layout. They are shared now: add `survey-screen` to a trial's
+ * css_classes and its scale fits the phone it is read on.
+ * ------------------------------------------------------------------ */
+
+/* jsPsych puts css_classes on the content div itself, so this is that div */
+.survey-screen {
+    max-width: min(700px, 100%);
+    box-sizing: border-box;
+    padding: 0 var(--rlm-space-4);
+    color: var(--rlm-ink);
+}
+
+/* The plugin gives each point an equal share of the row as an inline width, so all this
+   adds is room for a long label to wrap inside its own column rather than against its
+   neighbour's */
+.survey-screen .jspsych-survey-likert-opts li {
+    box-sizing: border-box;
+    padding: 0 2px;
+}
+
+/* A browser's default radio is around 13px across, which is small to hit with a fingertip
+   and fiddly with a mouse. The plugin centres it over its column with `left: 50%` and a
+   margin of minus half its width, written for that default - so the offset has to grow
+   with the dot, or the whole scale sits off to one side. */
+.survey-screen .jspsych-survey-likert-opts li input[type="radio"] {
+    width: 24px;
+    height: 24px;
+    margin-left: -12px;
+    accent-color: var(--rlm-accent);
+    cursor: pointer;
+}
+
+/* The label wraps the radio and its text, so the number and the anchor wording are part of
+   the target too - worth having on a phone, where the dot alone is the hardest part to hit */
+.survey-screen .jspsych-survey-likert-opt-label {
+    display: block;
+    padding: 4px 0 2px;
+    color: var(--rlm-ink-muted);
+    cursor: pointer;
+}
+
+/* The grey line the points sit on is drawn by the plugin at a fixed offset chosen for the
+   default-sized radio, so a bigger dot leaves it grazing the tops rather than running
+   through the middle. Measured against the enlarged radio's centre. */
+.survey-screen .jspsych-survey-likert-opts:before {
+    top: 21px;
+}
+
+/* Questions read as prose, so they are set left rather than centred under the scale */
+.survey-screen .jspsych-survey-likert-preamble,
+.survey-screen .jspsych-survey-likert-statement,
+.survey-screen .jspsych-survey-text-preamble,
+.survey-screen .jspsych-survey-text-question p {
+    text-align: left;
+}
+
+.survey-screen .jspsych-survey-likert-statement {
+    /* 40px of it is the plugin's own padding above each statement, which stacks up over
+       three questions on a screen that has to fit in a phone */
+    padding-top: var(--rlm-space-5);
+    font-size: var(--rlm-text-base);
+    font-weight: 600;
+}
+
+/* The answer box is sized in columns, which on a narrow screen is wider than the screen */
+.survey-screen textarea {
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: 12px 14px;
+    border: 2px solid var(--rlm-line);
+    border-radius: var(--rlm-radius);
+    color: var(--rlm-ink);
+    line-height: 1.5;
+}
+
+.survey-screen textarea:focus {
+    outline: none;
+    border-color: var(--rlm-accent);
+}
+
+/* Submit is a button, wherever the surrounding text happens to be aligned */
+.survey-screen input[type="submit"].jspsych-btn {
+    display: block;
+    margin: var(--rlm-space-5) auto 0;
+}
+
+/* ------------------------------------------------------------------ *
  * Inline widgets shared across tasks
  * ------------------------------------------------------------------ */
 
