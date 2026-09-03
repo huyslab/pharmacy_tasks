@@ -629,7 +629,9 @@ export function createControlInstructionsTimeline(settings) {
     var controlInstructionTrial = [];
     controlInstructionTrial = {
         type: jsPsychInstructions,
-        css_classes: ['instructions'],
+        // instructions-wide: these pages are a fixed-size stage rather than a page of prose,
+        // so they opt out of the shared reading column (core/styles/theme.css)
+        css_classes: ['instructions', 'instructions-wide'],
         pages: controlInstructionPages.map(page => page.content),
         allow_keys: false,
         simulation_options: {
@@ -779,7 +781,8 @@ export function createControlInstructionsTimeline(settings) {
 
     const controlInstructionLastPage = {
         type: jsPsychInstructions,
-        css_classes: ['instructions'],
+        // The stage again - see the note on controlInstructionTrial above
+        css_classes: ['instructions', 'instructions-wide'],
         pages: [
                 `
                 <div class="instruction-stage">
@@ -807,7 +810,8 @@ export function createControlInstructionsTimeline(settings) {
             newButton.id = 'jspsych-instructions-restart';
             newButton.textContent = 'Restart';
             newButton.className = 'jspsych-btn';
-            newButton.style.backgroundColor = '#ff7875';
+            newButton.style.backgroundColor = '#d9534f';
+            newButton.style.borderColor = '#d9534f';
             newButton.addEventListener('click', () => {
                 jsPsych.finishTrial({restart: true});
             });
@@ -991,8 +995,8 @@ export function createControlInstructionsTimeline(settings) {
                 {
                     pages: [
                     `
-                    <p style="font-size: 1.4em;">Press <span style="font-weight: bold; color: #2f6cac;">Next</span> to <strong>re-take the quiz questions</strong></p>
-                    <p style="font-size: 1.4em;">or <span style="font-weight: bold; color: #ff7875;">Restart</span> to <strong>review the full instructions again.</strong></p>
+                    <p style="font-size: 1.4em;">Press <span style="font-weight: bold; color: #4a6fa5;">Next</span> to <strong>re-take the quiz questions</strong></p>
+                    <p style="font-size: 1.4em;">or <span style="font-weight: bold; color: #d9534f;">Restart</span> to <strong>review the full instructions again.</strong></p>
                     `
                     ]
                 }
@@ -1004,7 +1008,8 @@ export function createControlInstructionsTimeline(settings) {
                 newButton.id = 'jspsych-instructions-restart';
                 newButton.textContent = 'Restart';
                 newButton.className = 'jspsych-btn';
-                newButton.style.backgroundColor = '#ff7875';
+                newButton.style.backgroundColor = '#d9534f';
+                newButton.style.borderColor = '#d9534f';
                 newButton.addEventListener('click', () => {
                     jsPsych.finishTrial({restart: true});
                 });

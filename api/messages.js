@@ -14,19 +14,11 @@
 
 import { endExperiment } from '@utils/index.js';
 
+// The example of the "we didn't catch that" message, shown in the opening instructions so
+// the real one is recognised when it appears mid-task. Same class as the live toast the
+// tasks raise (core/styles/theme.css), so the example cannot drift from the real thing.
 const formatted_warning_msg = `
-    <div id='vigour-warning-temp' style="
-    background-color: rgba(244, 206, 92, 0.9);
-    padding: 15px 25px;
-    border-radius: 8px;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    font-size: 24px;
-    font-weight: 500;
-    color: #182b4b;
-    transition: opacity 0.2s ease;
-    text-align: center;
-    letter-spacing: 0.0px;
-    ">Didn't catch a response - moving on</div>
+    <div id='vigour-warning-temp' class='rlm-toast rlm-toast-inline'>Didn't catch a response - moving on</div>
 `;
 
 

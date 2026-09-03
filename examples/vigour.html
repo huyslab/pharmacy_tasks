@@ -34,6 +34,7 @@
     
     <!-- CSS Styles -->
     <link href="./core/jspsych/jspsych.css" rel="stylesheet" type="text/css" />
+    <link href="./core/styles/theme.css" rel="stylesheet" type="text/css" />
 
     <style>
         html, body {
@@ -43,7 +44,7 @@
         body {
             margin: 0;
             padding: 0;
-            font-family: Arial, sans-serif;
+            font-family: var(--rlm-font);
         }
         
         #display_element {
@@ -53,12 +54,6 @@
             display: flex;
             justify-content: center;
             align-items: center;
-        }
-
-        .instructions p {
-            max-width: min(700px, 92vw);
-            text-align: left;
-            margin: 1em 0;
         }
 
         /* Orientation gate: on phones, block the wrong orientation for the active task; tablets/
@@ -74,7 +69,7 @@
             bottom: 0;
             left: 0;
             z-index: 100000;
-            background: #ffffff;
+            background: var(--rlm-surface);
             align-items: center;
             justify-content: center;
             text-align: center;
@@ -83,7 +78,7 @@
         }
         #rotate-overlay p {
             font-size: clamp(18px, 5vw, 24px);
-            color: #182b4b;
+            color: var(--rlm-ink);
             line-height: 1.4;
             max-width: 90vw;
             margin: 0;
@@ -182,7 +177,6 @@
                 console.log('Experiment data:', data.values());
             }
         });
-
 
         // Function to run the experiment
         async function runExperiment() {

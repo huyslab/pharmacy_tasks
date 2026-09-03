@@ -19,6 +19,7 @@
     max-width: min(700px, 100%);
     box-sizing: border-box;
     padding: 0 16px;
+    color: var(--rlm-ink);
 }
 
 /* The plugin gives each point an equal share of the row as an inline width, so all this
@@ -37,6 +38,7 @@
     width: 24px;
     height: 24px;
     margin-left: -12px;
+    accent-color: var(--rlm-accent);
     cursor: pointer;
 }
 
@@ -73,4 +75,14 @@
 .session-feedback textarea {
     max-width: 100%;
     box-sizing: border-box;
+    padding: 12px 14px;
+    border: 2px solid var(--rlm-line);
+    border-radius: var(--rlm-radius);
+    color: var(--rlm-ink);
+    line-height: 1.5;
+}
+
+.session-feedback textarea:focus {
+    outline: none;
+    border-color: var(--rlm-accent);
 }

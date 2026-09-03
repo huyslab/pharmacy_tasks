@@ -36,6 +36,7 @@
 
     <!-- CSS Styles -->
     <link href="./core/jspsych/jspsych.css" rel="stylesheet" type="text/css" />
+    <link href="./core/styles/theme.css" rel="stylesheet" type="text/css" />
 
     <style>
         html, body {
@@ -47,7 +48,7 @@
         body {
             margin: 0;
             padding: 0;
-            font-family: Arial, sans-serif;
+            font-family: var(--rlm-font);
         }
 
         #display_element {
@@ -62,11 +63,6 @@
         /* The intro screen carries css_classes: ['instructions'], which experiment.html
            styles for the real runs. Repeated here, as the other example pages do, so a
            preview shows the same measure rather than one line across a laptop screen. */
-        .instructions p {
-            max-width: min(700px, 92vw);
-            text-align: left;
-            margin: 1em 0;
-        }
     </style>
 </head>
 <body>
