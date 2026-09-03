@@ -71,7 +71,12 @@
             height: 100vh;
             height: 100dvh;
             display: flex;
-            justify-content: center;
+            /* flex-start, not center: a centred flex line that overflows hangs off BOTH ends,
+               and the overflow above the top is unreachable by scrolling - which is what cut
+               the first line off an instruction screen read in landscape. The centring that
+               matters is jspsych.css's `margin: auto` on .jspsych-content, which gives way
+               when the content is taller than the screen instead of clipping it. */
+            justify-content: flex-start;
             align-items: center;
         }
 

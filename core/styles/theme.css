@@ -124,6 +124,10 @@
        the column is set once, here, for everything the screen contains. */
     max-width: var(--rlm-measure);
     text-align: left;
+    /* A phone in landscape is around 390px tall, so a page of instructions has to scroll.
+       This is the room that keeps the first line and the buttons off the screen edges when
+       it does; when the page fits, it just sits inside the centred block. */
+    padding: var(--rlm-space-5) 0;
     /* No margin here: jspsych.css centres .jspsych-content with `margin: auto`, which is
        also what centres it vertically. */
 }
@@ -474,7 +478,9 @@
 .survey-screen {
     max-width: min(700px, 100%);
     box-sizing: border-box;
-    padding: 0 var(--rlm-space-4);
+    /* Side room for the scale, top and bottom room for the landscape phone this has to
+       scroll on */
+    padding: var(--rlm-space-5) var(--rlm-space-4);
     color: var(--rlm-ink);
 }
 

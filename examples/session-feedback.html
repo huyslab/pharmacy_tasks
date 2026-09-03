@@ -56,7 +56,10 @@
             height: 100vh;
             height: 100dvh;
             display: flex;
-            justify-content: center;
+            /* flex-start, not center - see experiment.html: a centred flex line clips the
+               overflow above its top, which lost the first line of a landscape instruction
+               screen. .jspsych-content's own `margin: auto` still centres what fits. */
+            justify-content: flex-start;
             align-items: center;
         }
 
