@@ -173,7 +173,7 @@ function reversalInstructions(settings) {
     // The ready screen ignores taps for this long, so a tap carried over from the
     // preceding instructions page can't start the task before the participant has read it.
     // Kept short enough to stay out of the way of a deliberate tap.
-    var TAP_LOCKOUT_MS = 200;
+    var START_TAP_LOCKOUT_MS = 200;
 
     var sessionPrefix = settings.sessionInfo.variant !== 'screening' ? "<p>Let's start with the first game!</p>" : "";
     var duration = settings.n_trials == 50 ? "three" : "five";
@@ -240,7 +240,7 @@ function reversalInstructions(settings) {
         data: { trialphase: "reversal_instruction" },
         on_load: function () {
             var finished = false;
-            var tapLockoutUntil = performance.now() + TAP_LOCKOUT_MS;
+            var tapLockoutUntil = performance.now() + START_TAP_LOCKOUT_MS;
             var finishOnce = function () {
                 if (finished) return;
                 finished = true;
@@ -280,7 +280,7 @@ function reversalInstructions(settings) {
                         target.dispatchEvent(new PointerEvent('pointerdown', {
                             bubbles: true, isPrimary: true, pointerType: 'touch', button: 0
                         }));
-                    }, TAP_LOCKOUT_MS + 100);
+                    }, START_TAP_LOCKOUT_MS + 100);
                 }
             }
         },
