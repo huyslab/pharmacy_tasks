@@ -18,6 +18,16 @@ function pressVerb(capitalized = false) {
 }
 
 /**
+ * How long the "tap the piggy bank to begin" screen ignores taps on the piggy bank, so a
+ * tap carried over from the preceding instructions page can't start the task before the
+ * participant has read it. Kept short enough to stay out of the way of a deliberate tap.
+ * The re-read button is deliberately left unguarded - it sits at the bottom of the screen,
+ * away from the piggy bank, so a carried-over tap is unlikely to land on it. Touch devices
+ * only (same device test as pressVerb) - a mouse click is deliberate.
+ */
+const START_TAP_LOCKOUT_MS = 200;
+
+/**
  * Interactive instruction page that demonstrates the piggy bank shaking mechanism
  * Allows users to practice the task with immediate feedback
  */
@@ -217,6 +227,8 @@ const startConfirmation = {
   },
   on_load: function () {
     let confirmed = false;
+    const lockoutMs = navigator.maxTouchPoints > 0 ? START_TAP_LOCKOUT_MS : 0;
+    const tapLockoutUntil = performance.now() + lockoutMs;
 
     const finishOnce = function (response) {
       if (confirmed) return;
@@ -230,6 +242,7 @@ const startConfirmation = {
       piggyContainer.addEventListener('pointerdown', function handler(event) {
         if (!event.isPrimary || event.button !== 0) return;
         event.preventDefault();
+        if (performance.now() < tapLockoutUntil) return; // too early to count as a deliberate tap
         finishOnce('b');
         piggyContainer.removeEventListener('pointerdown', handler);
       });
@@ -246,7 +259,7 @@ const startConfirmation = {
     // Auto-advance in simulation mode: this trial has no timeout and ends only on a
     // real tap/click, so dispatch a simulated tap on the piggy bank to begin the task.
     if (window.simulating) {
-      simulatePointerTap(piggyContainer, 100);
+      simulatePointerTap(piggyContainer, lockoutMs + 100);
     }
   },
   on_finish: function (data) {

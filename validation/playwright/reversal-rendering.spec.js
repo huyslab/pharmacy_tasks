@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { defineTaskRenderingTest } from './support/render-check.js';
 import { patchWebkitTouchPoints } from './support/helpers.js';
-import { TASKS } from './support/task-config.js';
+import { READY_TAP_LOCKOUT_MS, TASKS } from './support/task-config.js';
 
 async function advanceToReversalTrial(page, participantId, useExperimentEntry = false) {
   const entryUrl = useExperimentEntry
@@ -11,6 +11,7 @@ async function advanceToReversalTrial(page, participantId, useExperimentEntry = 
   await page.getByRole('button', { name: 'Got it' }).click();
   await page.locator('#jspsych-instructions-next').click();
   await page.locator('#jspsych-instructions-next').click();
+  await page.waitForTimeout(READY_TAP_LOCKOUT_MS); // taps before this are ignored
   await page.locator('#rev-tap-left').tap();
 
   const stimulus = page.locator('.reversal-stimuli:has(#rev-coin-left)');

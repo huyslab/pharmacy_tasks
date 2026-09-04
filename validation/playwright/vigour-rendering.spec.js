@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { defineTaskRenderingTest } from './support/render-check.js';
-import { TASKS } from './support/task-config.js';
+import { READY_TAP_LOCKOUT_MS, TASKS } from './support/task-config.js';
 
 async function advanceToVigourTrial(page, participantId, checkSecondaryButtons = false) {
   await page.goto(`/examples/vigour.html?participant_id=${participantId}`);
@@ -26,6 +26,7 @@ async function advanceToVigourTrial(page, participantId, checkSecondaryButtons =
     await piggy.dispatchEvent('pointerdown', { pointerType: 'pen', isPrimary: true, button: 2 });
     await expect(page.getByText(/tap the piggy bank to begin/i)).toBeVisible();
   }
+  await page.waitForTimeout(READY_TAP_LOCKOUT_MS); // taps before this are ignored
   await piggy.tap();
 
   const trialPiggy = page.locator('.experiment-wrapper:not(:has(#instruction-container)) #piggy-container');
