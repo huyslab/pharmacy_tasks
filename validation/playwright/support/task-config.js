@@ -2,9 +2,9 @@
 // live orientation, but this threshold decides whether the body gate is enabled at all.
 export const GATE_MIN_DIMENSION_THRESHOLD = 500;
 
-// Mirrors tasks/reversal/task.js' TAP_LOCKOUT_MS and tasks/piggy-banks/vigour-instructions.js'
-// START_TAP_LOCKOUT_MS: on touch devices the "ready to begin" screens ignore taps for this
-// long, so a tap carried over from the preceding instructions page can't start the task.
+// Mirrors START_TAP_LOCKOUT_MS in tasks/reversal/task.js and tasks/piggy-banks/vigour-instructions.js:
+// on touch devices the "ready to begin" screens ignore taps for this long, so a tap carried
+// over from the preceding instructions page can't start the task.
 // Any test driving those screens with a real tap has to wait it out first.
 export const READY_TAP_LOCKOUT_MS = 200;
 
