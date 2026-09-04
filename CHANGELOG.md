@@ -1,3 +1,10 @@
+# [1.13.0](https://github.com/huyslab/pharmacy_tasks/compare/v1.12.0...v1.13.0) (2026-09-04)
+
+
+### Features
+
+* **pilot:** move session feedback into its own pilot_3 module ([12b0cb8](https://github.com/huyslab/pharmacy_tasks/commit/12b0cb8c9613eda9d1892a03fdd96dd5fa82b755)), closes [#32](https://github.com/huyslab/pharmacy_tasks/issues/32)
+
 # [1.12.0](https://github.com/huyslab/pharmacy_tasks/compare/v1.11.4...v1.12.0) (2026-09-04)
 
 
