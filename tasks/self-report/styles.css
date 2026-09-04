@@ -1,15 +1,22 @@
 /* Self-report questionnaires - one item per screen, sized for fingers rather than mice.
-   Deliberately shares the look of the medication questionnaire (tasks/medication-questionnaire/
-   styles.css): both are question screens a participant meets in the same session, and they
-   should feel like one questionnaire. Everything is scoped under .srq-* so the two stylesheets
-   can be loaded side by side. */
+   Deliberately shares the look of the medication questionnaire
+   (tasks/question-screen/styles.css): both are question screens a participant meets in the
+   same session, and they should feel like one questionnaire. Everything is scoped under
+   .srq-* so the two stylesheets can be loaded side by side.
+
+   The palette and font come from the shared tokens in core/styles/theme.css, each written
+   with the literal it used to be as a fallback: this stylesheet is appended at runtime into
+   whatever page hosts the battery, and without the fallback a missing theme.css would leave
+   a primary button with no background at all rather than merely an unthemed one. The --srq-*
+   variables below are the local names the rest of this file reads the tokens through, and
+   are what a screen sets per trial (the transition duration, for one). */
 
 .srq-screen {
-    --srq-navy: #182b4b;
-    --srq-blue: #4a6fa5;
-    --srq-blue-dark: #3a5a8a;
-    --srq-line: #d3dbe8;
-    --srq-muted: #5b6b83;
+    --srq-navy: var(--rlm-ink, #182b4b);
+    --srq-blue: var(--rlm-accent, #4a6fa5);
+    --srq-blue-dark: var(--rlm-accent-dark, #3a5a8a);
+    --srq-line: var(--rlm-line, #d3dbe8);
+    --srq-muted: var(--rlm-ink-muted, #5b6b83);
     --srq-transition: 350ms;
     --srq-focus-ring: 3px;
     --srq-focus-offset: 2px;
@@ -25,7 +32,7 @@
        the ring on a full-width option is cut off at both edges. Keep it at or above the
        ring's reach (--srq-focus-ring + --srq-focus-offset). */
     padding: 16px var(--srq-gutter) 24px;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-family: var(--rlm-font, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif);
     color: var(--srq-navy);
     text-align: left;
 
@@ -139,7 +146,7 @@
     padding: 14px 20px;
     border-radius: 14px;
     border: 2px solid var(--srq-line);
-    background-color: #fff;
+    background-color: var(--rlm-surface, #ffffff);
     color: var(--srq-navy);
     font-family: inherit;
     font-size: clamp(17px, 4.2vw, 20px);
@@ -158,7 +165,7 @@
 .srq-btn-primary {
     background-color: var(--srq-blue);
     border-color: var(--srq-blue);
-    color: #fff;
+    color: var(--rlm-surface, #ffffff);
     text-align: center;
 }
 
@@ -173,7 +180,7 @@
 }
 
 .srq-option:active {
-    background-color: #eef2f8;
+    background-color: var(--rlm-accent-soft, #eef2f8);
     border-color: var(--srq-blue);
 }
 
@@ -185,7 +192,7 @@
 .srq-option-chosen:active {
     background-color: var(--srq-blue);
     border-color: var(--srq-blue);
-    color: #fff;
+    color: var(--rlm-surface, #ffffff);
     transition: none;
 }
 
@@ -204,7 +211,7 @@
 
 @media (hover: hover) and (pointer: fine) {
     .srq-btn:hover:not(:disabled) {
-        background-color: #eef2f8;
+        background-color: var(--rlm-accent-soft, #eef2f8);
         border-color: var(--srq-blue);
     }
 
