@@ -239,8 +239,9 @@ export const TaskRegistry = {
     requirements: {
       css: ['@tasks/piggy-banks/styles.css'],
     },
+    // The task reads no state and rebuilds every trial, so a resumed run replays it in full
     resumptionRules: {
-        enabled: true,
+        enabled: false,
     }
   },
   PIT: {
