@@ -34,7 +34,7 @@ Both difficulty questions share a scale so a participant reads the same anchors 
 
 | Field | Question |
 | --- | --- |
-| `difficulties` | What difficulties did you encounter completing the session today? |
+| `difficulties` | What difficulties did you encounter completing this session? |
 | `strategy` | Did you have any strategy that helped you complete the session? |
 | `message_to_researchers` | Is there anything you would like to tell the researchers? |
 
@@ -73,5 +73,6 @@ The task is built from stock jsPsych survey plugins, so the experiment page must
 An end-to-end example is in `examples/session-feedback.html`.
 
 ## Notes
-- In `api/module-registry.js` the questionnaire runs at the end of `pilot_2`, after the self-report questionnaires and **before** the bonus reveal: once the payment is on screen there is little reason left to answer them.
+- In `api/module-registry.js` the questionnaire is the whole of `pilot_3`, the last leg of the pilot visit. It sits on its own so the ratings are about the visit as a whole rather than about the game just played, and so they are not competing with `pilot_2`'s bonus reveal for attention.
+- `pilot_3` runs it with `include_intro: false`. Where the questionnaire is the whole module, its intro screen would be the second page of an opening it has nothing to follow on from, so the module's start message introduces the questions instead.
 - Resumption is disabled. A resumed run would skip whichever questions were already passed, and the ratings are about the session as a whole, so it is asked once or not at all.

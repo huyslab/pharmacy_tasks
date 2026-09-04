@@ -22,11 +22,11 @@ const formatted_warning_msg = `
 `;
 
 
-// The pilot runs as two modules in one visit (see api/module-registry.js), which meet the
+// The pilot runs as three modules in one visit (see api/module-registry.js), which meet the
 // same participant on the same device. The pages that aren't about a specific module's
-// contents are written once here so the two can't drift apart.
+// contents are written once here so the three can't drift apart.
 
-/** Second page of both pilot modules' opening instructions: what a missed response looks like */
+/** Second page of the opening instructions of each pilot module with a game in it: what a missed response looks like */
 const pilot_warning_page = `
     <p>If at some point you are taking too long to respond, you might see a message like this:</p><br>
     ${formatted_warning_msg}
@@ -74,7 +74,7 @@ export const messages = {
         start_message: [
             `<p><b>Thank you for taking part in this session!</b></p>
             <p>We are studying how people learn from rewards, and how medication affects that.</p>
-            <p>The session comes in two parts, and this is the first one. You will start with a few short questions about your medicine. After that you will play a simple game. Your goal is to win as many coins as possible, and you will earn a bonus payment based on the coins you collect.</p>
+            <p>The session comes in three parts, and this is the first one. You will start with a few short questions about your medicine. After that you will play a simple game. Your goal is to win as many coins as possible, and you will earn a bonus payment based on the coins you collect.</p>
             <p>The game may feel a bit fast-paced because we're interested in your quick, intuitive decisions. Since it's designed around learning from experience, making mistakes is completely expected. Over time, you'll figure out better choices and improve your performance.</p>`,
             pilot_warning_page
         ],
@@ -82,7 +82,7 @@ export const messages = {
         end_message: {
             message:
                 `<p>Thank you for completing the first part of this session!</p>
-                <p>There is one more part to go: another game, a few questions about how you have been feeling, and a few about how the session went for you. Please start it when you are ready - you can take a short break first if you would like one.</p>
+                <p>There are two more parts to go: another game and a few questions about how you have been feeling, and then a few questions about how the session went for you. Please start the next part when you are ready - you can take a short break first if you would like one.</p>
                 <p>When you click next, your data will be uploaded to the secure server. This may take up to two minutes. Please don't close or refresh your browser at this time.</p>`,
             on_finish: endExperiment
         }
@@ -90,9 +90,31 @@ export const messages = {
     pilot_2: {
         start_message: [
             `<p><b>Welcome back!</b></p>
-            <p>This is the second and last part of the session. You will play one more game, then answer a few short questions about how you have been feeling, and finally tell us how the session went for you.</p>
+            <p>This is the second part of the session. You will play one more game, then answer a few short questions about how you have been feeling.</p>
             <p>As before, your goal in the game is to win as many coins as possible, and you will earn a bonus payment based on the coins you collect.</p>`,
             pilot_warning_page
+        ],
+        signposting_message: pilot_signposting_message,
+        end_message: {
+            message:
+                `<p>Thank you for completing the second part of this session!</p>
+                <p>There is one short part left: a few questions about how the session went for you. Please start it when you are ready.</p>
+                <p>When you click next, your data will be uploaded to the secure server. This may take up to two minutes. Please don't close or refresh your browser at this time.</p>`,
+            on_finish: endExperiment
+        }
+    },
+    // The last part is the session feedback on its own, so it opens on a single page: no
+    // games to warn about taking too long over, and no bonus to promise. It also does the
+    // job the questionnaire's own intro screen does elsewhere, saying what the questions are
+    // and why we ask them - there is nothing before it here for that screen to follow on
+    // from, so the module turns it off (see include_intro in api/module-registry.js) and
+    // says it here instead, one screen rather than two.
+    pilot_3: {
+        start_message: [
+            `<p><b>Welcome back!</b></p>
+            <p>This is the third and last part of the session. There are no more games - we would just like to hear how the session went for you.</p>
+            <p>There are three quick ratings and three questions you can answer in your own words.
+            Your answers help us improve the study for the people who take part after you.</p>`
         ],
         signposting_message: pilot_signposting_message,
         end_message: {

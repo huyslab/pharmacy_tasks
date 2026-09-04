@@ -24,7 +24,7 @@ const CLARITY_LABELS = ["1<br>Not clear at all", "2", "3", "4", "5<br>Very clear
 const OPEN_QUESTIONS = [
     {
         name: 'difficulties',
-        prompt: 'What difficulties did you encounter completing the session today?'
+        prompt: 'What difficulties did you encounter completing this session?'
     },
     {
         name: 'strategy',
@@ -70,7 +70,7 @@ export function createSessionFeedbackTimeline(settings) {
         // and radios big enough to hit. The acceptability judgment's screens carry the same
         // class, so the two feel like one questionnaire.
         css_classes: ['survey-screen'],
-        preamble: `<p>Please answer these questions about today's session:</p>`,
+        preamble: `<p>Please answer these questions about this session:</p>`,
         questions: [
             {
                 prompt: 'How difficult was it to complete the tasks in this session?',
