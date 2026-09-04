@@ -513,6 +513,7 @@ export const TaskRegistry = {
 
 // Global settings that apply to all tasks unless overridden
 export const globalConfig = {
+    in_module: false,
     max_warnings_per_task: 3, 
     warning_expected_n_back: 1,
     default_response_deadline: 4000,
@@ -522,6 +523,7 @@ export const globalConfig = {
 }
 
 export const globalConfigOptions = {
+    in_module: "Whether the task is running as part of a module rather than on its own. Set by createModuleTimeline, not by hand; tasks that describe what comes after them read it. Default is false.",
     max_warnings_per_task: "Maximum number of deadline warnings allowed per task. Default is 3.",
     warning_expected_n_back: "How many jsPsych trials back to check for the previous deadline warning. Default is 1.",
     default_response_deadline: "Default response deadline in milliseconds. Default is 4000.",

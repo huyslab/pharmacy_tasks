@@ -368,7 +368,10 @@ export async function createModuleTimeline(moduleName, config) {
     // Create timeline for each element in the module
     const timelines = module.elements.map(element => {
         if (element.type === "task") {
-            return createTaskTimeline(element.name, { ...module.moduleConfig, ...element.config, ...config });
+            // in_module last: it describes how the task is being run, so a module definition
+            // must not be able to unset it. Tasks that say what comes after them read it -
+            // a single-task launch has no other element to follow it.
+            return createTaskTimeline(element.name, { ...module.moduleConfig, ...element.config, ...config, in_module: true });
         }
         if (element.type === "instructions") {
             return getMessage(moduleName, element.config.text, { ...module.moduleConfig, ...element.config, ...config });

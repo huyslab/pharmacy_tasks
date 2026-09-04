@@ -17,6 +17,10 @@ import { createPreloadTrial, updateState } from '../../core/utils/index.js';
  * @returns {Object} jsPsych instructions trial closing the task
  */
 function vigourEnding(settings) {
+    // Only a module follows the game with rating questions and a later bonus reveal. A
+    // single-task launch (experiment.html?task=vigour) goes straight to its bonus trial and
+    // the standalone example simply ends, so neither can be promised what comes next.
+    const inModule = settings.in_module === true;
     // See reversalEnding: the screening module has no bonus element, so nothing is ever
     // revealed there (api/module-registry.js)
     const paysBonus = settings.sessionInfo?.variant !== 'screening';
@@ -28,11 +32,13 @@ function vigourEnding(settings) {
         data: { trialphase: 'vigour_ending' },
         pages: [
             `<p><strong>Congratulations! You have completed the piggy-bank game.</strong></p>` +
-            (paysBonus
-                ? `<p>You will be paid a bonus based on the coins you collected.
-                    Your total bonus payment will be revealed at the end of this module.</p>
-                <p>Before that, we will ask you a few short questions and for your feedback.</p>`
-                : `<p>Next, we will ask you a few short questions and for your feedback.</p>`)
+            (!inModule
+                ? ``
+                : paysBonus
+                    ? `<p>You will be paid a bonus based on the coins you collected.
+                        Your total bonus payment will be revealed at the end of this module.</p>
+                    <p>Before that, we will ask you a few short questions and for your feedback.</p>`
+                    : `<p>Next, we will ask you a few short questions and for your feedback.</p>`)
         ],
         // The last trial of the task has just saved, so this only reports the state
         on_start: () => { updateState(`vigour_task_end`, false) }

@@ -148,10 +148,37 @@ test('reversal ends on its closing page, before whatever follows the task', asyn
     // timeline (the orientation gate), so the task's own last trial is one level down there.
     const tail = timeline.at(-1);
     const last = tail.timeline ? tail.timeline.at(-1) : tail;
-    return { type: last.type.info.name, trialphase: last.data?.trialphase };
+    return { type: last.type.info.name, trialphase: last.data?.trialphase, pages: last.pages };
   });
 
-  expect(lastTrial).toEqual({ type: 'instructions', trialphase: 'reversal_ending' });
+  expect(lastTrial).toMatchObject({ type: 'instructions', trialphase: 'reversal_ending' });
+  expect(lastTrial.pages[0]).toContain('You have completed the squirrel game');
+  // A single-task launch goes straight to its bonus trial, so this route must not promise
+  // the questions a module asks first.
+  expect(lastTrial.pages[0], 'a single-task launch has no questions to promise').not.toContain('questions');
+});
+
+test('reversal promises the questions that follow it inside a module', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'Pixel 7 landscape', 'one touch project is sufficient for timeline ordering');
+
+  await page.goto('/experiment.html?participant_id=timeline-order-check&context=relmed&module=pilot_1&session=Session%201');
+
+  const closingPage = await page.evaluate(async () => {
+    const { createModuleTimeline } = await import('/api/index.js');
+    const timeline = await createModuleTimeline('pilot_1', { session: 'wk0' });
+    // Touch devices nest each task's trials inside its orientation-gate wrapper, so the
+    // closing page is not reachable by flattening arrays alone.
+    const find = (node) => {
+      if (Array.isArray(node)) return node.map(find).find(Boolean);
+      if (!node || typeof node !== 'object') return undefined;
+      if (node.data?.trialphase === 'reversal_ending') return node;
+      return node.timeline ? find(node.timeline) : undefined;
+    };
+    return find(timeline)?.pages?.[0];
+  });
+
+  expect(closingPage).toContain('revealed at the end of this module');
+  expect(closingPage).toContain('a few short questions and for your feedback');
 });
 
 test('a narrow tablet pane is not treated as a phone rotation gate', async ({ page }, testInfo) => {
