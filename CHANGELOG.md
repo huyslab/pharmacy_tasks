@@ -1,3 +1,16 @@
+# [1.12.0](https://github.com/huyslab/pharmacy_tasks/compare/v1.11.4...v1.12.0) (2026-09-04)
+
+
+### Bug Fixes
+
+* **endings:** only promise the questions a module actually asks ([4b3849e](https://github.com/huyslab/pharmacy_tasks/commit/4b3849e3248975318fb58f8ad63d2ee0a09ecf4c))
+
+
+### Features
+
+* **reversal:** close the squirrel game the same way as vigour ([ccd2221](https://github.com/huyslab/pharmacy_tasks/commit/ccd2221222199bf755239879c997b153f5751c0f))
+* **vigour:** add a closing page before the rating questions ([4dcedc4](https://github.com/huyslab/pharmacy_tasks/commit/4dcedc4a8c8742f0e6b453a678a4318f9e882dc2)), closes [#33](https://github.com/huyslab/pharmacy_tasks/issues/33)
+
 ## [1.11.4](https://github.com/huyslab/pharmacy_tasks/compare/v1.11.3...v1.11.4) (2026-09-04)
 
 
