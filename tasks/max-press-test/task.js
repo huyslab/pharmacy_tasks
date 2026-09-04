@@ -16,7 +16,7 @@ const maxPressRateTrial = (settings) => {
             return `
             <div id="instruction-container">
                 <div id="instruction-text" class="max-press-live">
-                    <h3><div id="countdown">Place your finger on the <span class="spacebar-icon">J</span> key.<br>When you are ready, start pressing it repeatedly as fast as you can!</div></h3>
+                    <h3 id="countdown">Place your finger on the <span class="spacebar-icon">J</span> key.<br>When you are ready, start pressing it repeatedly as fast as you can!</h3>
                     <div id="press-counter">Presses: 0</div>
                     <div id="speed-display">Speed: 0.00 presses/sec</div>
                     <div id="speed-track">
@@ -157,7 +157,7 @@ const maxPressRetakeMessage = (settings) => {
             <div id="instruction-container">
                 <div id="instruction-text">
                     <p>On average, you pressed <strong>${avgSpeed.toFixed(2)} times per second</strong> during the keyboard test.</p>
-                    <p>To ensure the accuracy of the test,</br>we kindly ask you to retake it <span class="highlight-txt">with your best effort as much as possible</span>.</p>
+                    <p>To ensure the accuracy of the test,<br>we kindly ask you to retake it <span class="highlight-txt">with your best effort as much as possible</span>.</p>
                     <p>Press <strong>Continue</strong> to retake the test.</p>
                 </div>
             </div>
