@@ -27,7 +27,7 @@ The PIT task examines how Pavlovian cues influence instrumental behavior. Partic
 
 **Main Export Functions**:
 - **`createVigourTimeline(settings)`**: Creates the complete timeline for the vigour task
-  - Handles asset preloading, instructions, and core task trials
+  - Handles asset preloading, instructions, core task trials, and the closing message
   - Returns array of jsPsych trial objects for the full task sequence
 
 ##### `vigour-utils.js`

@@ -118,6 +118,26 @@ test('vigour preloads stimuli before showing the orientation hint', async ({ pag
   ]);
 });
 
+test('vigour ends on its closing page, before whatever follows the task', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'Pixel 7 landscape', 'one touch project is sufficient for timeline ordering');
+
+  await page.goto('/experiment.html?participant_id=timeline-order-check&context=relmed&task=vigour&session=Session%201');
+
+  // Every module runs rating questions straight after the vigour task (api/module-registry.js),
+  // so the last trial the task itself contributes has to be the "you have finished" page.
+  const lastTrial = await page.evaluate(async () => {
+    const { createTaskTimeline } = await import('/api/index.js');
+    const timeline = await createTaskTimeline('vigour');
+    // On touch devices createTaskTimeline wraps everything after the preload in a nested
+    // timeline (the orientation gate), so the task's own last trial is one level down there.
+    const tail = timeline.at(-1);
+    const last = tail.timeline ? tail.timeline.at(-1) : tail;
+    return { type: last.type.info.name, trialphase: last.data?.trialphase };
+  });
+
+  expect(lastTrial).toEqual({ type: 'instructions', trialphase: 'vigour_ending' });
+});
+
 test('vigour keeps running while the phone is being rotated', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'Pixel 7', 'one phone project is sufficient for timer coverage');
 
