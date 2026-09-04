@@ -239,8 +239,9 @@ export const TaskRegistry = {
     requirements: {
       css: ['@tasks/piggy-banks/styles.css'],
     },
+    // The task reads no state and rebuilds every trial, so a resumed run replays it in full
     resumptionRules: {
-        enabled: true,
+        enabled: false,
     }
   },
   PIT: {
@@ -500,9 +501,8 @@ export const TaskRegistry = {
       require_text: "Whether the three open questions must be answered before moving on. Default is false, so a participant with nothing to add is not made to invent something.",
       text_rows: "Height of each open answer box, in rows. Default is 5."
     },
-    requirements: {
-      css: ['@tasks/session-feedback/styles.css'],
-    },
+    // No stylesheet of its own: the screens carry the shared `survey-screen` class, whose
+    // look lives in core/styles/theme.css alongside every other questionnaire screen
     resumptionRules: {
         // A resumed run would skip whichever questions were already passed, and the ratings
         // are about the session as a whole, so it is asked once or not at all
@@ -513,6 +513,7 @@ export const TaskRegistry = {
 
 // Global settings that apply to all tasks unless overridden
 export const globalConfig = {
+    in_module: false,
     max_warnings_per_task: 3, 
     warning_expected_n_back: 1,
     default_response_deadline: 4000,
@@ -522,6 +523,7 @@ export const globalConfig = {
 }
 
 export const globalConfigOptions = {
+    in_module: "Whether the task is running as part of a module rather than on its own. Set by createModuleTimeline, not by hand; tasks that describe what comes after them read it. Default is false.",
     max_warnings_per_task: "Maximum number of deadline warnings allowed per task. Default is 3.",
     warning_expected_n_back: "How many jsPsych trials back to check for the previous deadline warning. Default is 1.",
     default_response_deadline: "Default response deadline in milliseconds. Default is 4000.",

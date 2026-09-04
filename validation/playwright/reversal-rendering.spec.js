@@ -1,9 +1,14 @@
 import { expect, test } from '@playwright/test';
 import { defineTaskRenderingTest } from './support/render-check.js';
-import { patchWebkitTouchPoints } from './support/helpers.js';
-import { TASKS } from './support/task-config.js';
+import { armTapAfterAppearing, patchWebkitTouchPoints } from './support/helpers.js';
+import { READY_TAP_LOCKOUT_MS, TASKS } from './support/task-config.js';
 
-async function advanceToReversalTrial(page, participantId, useExperimentEntry = false) {
+// tasks/reversal/task.js touchReadyTrial sets post_trial_gap: 300, so a trial started by a tap
+// does not render immediately. Any "the tap was ignored" assertion has to outlast that gap, or
+// it passes simply by looking too early.
+const IGNORED_TAP_SETTLE_MS = 500;
+
+async function advanceToReversalReadyScreen(page, participantId, useExperimentEntry = false) {
   const entryUrl = useExperimentEntry
     ? `/experiment.html?participant_id=${participantId}&context=relmed&task=reversal&session=Session%201`
     : `/examples/reversal.html?participant_id=${participantId}`;
@@ -11,7 +16,15 @@ async function advanceToReversalTrial(page, participantId, useExperimentEntry = 
   await page.getByRole('button', { name: 'Got it' }).click();
   await page.locator('#jspsych-instructions-next').click();
   await page.locator('#jspsych-instructions-next').click();
-  await page.locator('#rev-tap-left').tap();
+  const tapZone = page.locator('#rev-tap-left');
+  await expect(tapZone, 'the touch ready screen should appear').toBeVisible({ timeout: 15000 });
+  return tapZone;
+}
+
+async function advanceToReversalTrial(page, participantId, useExperimentEntry = false) {
+  const tapZone = await advanceToReversalReadyScreen(page, participantId, useExperimentEntry);
+  await page.waitForTimeout(READY_TAP_LOCKOUT_MS); // taps before this are ignored
+  await tapZone.tap();
 
   const stimulus = page.locator('.reversal-stimuli:has(#rev-coin-left)');
   await expect(stimulus, 'a real reversal trial should begin').toBeVisible({ timeout: 15000 });
@@ -40,6 +53,41 @@ defineTaskRenderingTest('reversal', {
       expect(tapZoneCount, 'non-touch (desktop) devices should not render tap zones').toBe(0);
     }
   },
+});
+
+test('the reversal ready screen ignores a tap inside the lockout', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'Pixel 7 landscape', 'one touch project is sufficient for the tap lockout');
+
+  // Fired from inside the page halfway into the lockout, so the tap's timing doesn't depend
+  // on how fast this machine can drive the browser - see armTapAfterAppearing.
+  await armTapAfterAppearing(page, {
+    appearsSelector: '#rev-tap-left',
+    tapSelector: '#rev-tap-left',
+    delayMs: READY_TAP_LOCKOUT_MS / 2,
+  });
+
+  const tapZone = await advanceToReversalReadyScreen(page, 'reversal-tap-lockout-check');
+  await expect
+    .poll(() => page.evaluate(() => window.__lockoutTapFired === true), {
+      message: 'the early tap should have been dispatched',
+      timeout: 5000,
+    })
+    .toBe(true);
+
+  await page.waitForTimeout(IGNORED_TAP_SETTLE_MS);
+  // #rev-tap-left exists on the real trial too, so only the coin markup proves a trial began.
+  await expect(
+    page.locator(TASKS.reversal.readySelector),
+    'a tap inside the lockout should not start the task'
+  ).toHaveCount(0);
+
+  // The very same tap zone starts the task once the lockout has passed.
+  await page.waitForTimeout(READY_TAP_LOCKOUT_MS);
+  await tapZone.tap();
+  await expect(
+    page.locator(TASKS.reversal.readySelector),
+    'a tap after the lockout should start the task'
+  ).toBeVisible({ timeout: 15000 });
 });
 
 test('website Session 2 selects the wk2 reversal sequence', async ({ page }, testInfo) => {
@@ -84,6 +132,53 @@ test('reversal preloads stimuli before showing the orientation hint', async ({ p
     { type: 'preload', trialphase: 'reversal_preload' },
     { type: 'html-button-response', trialphase: 'orientation_hint' },
   ]);
+});
+
+test('reversal ends on its closing page, before whatever follows the task', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'Pixel 7 landscape', 'one touch project is sufficient for timeline ordering');
+
+  await page.goto('/experiment.html?participant_id=timeline-order-check&context=relmed&task=reversal&session=Session%201');
+
+  // Every module runs rating questions straight after the reversal task (api/module-registry.js),
+  // so the last trial the task itself contributes has to be the "you have finished" page.
+  const lastTrial = await page.evaluate(async () => {
+    const { createTaskTimeline } = await import('/api/index.js');
+    const timeline = await createTaskTimeline('reversal', { sequence: 'wk0' });
+    // On touch devices createTaskTimeline wraps everything after the preload in a nested
+    // timeline (the orientation gate), so the task's own last trial is one level down there.
+    const tail = timeline.at(-1);
+    const last = tail.timeline ? tail.timeline.at(-1) : tail;
+    return { type: last.type.info.name, trialphase: last.data?.trialphase, pages: last.pages };
+  });
+
+  expect(lastTrial).toMatchObject({ type: 'instructions', trialphase: 'reversal_ending' });
+  expect(lastTrial.pages[0]).toContain('You have completed the squirrel game');
+  // A single-task launch goes straight to its bonus trial, so this route must not promise
+  // the questions a module asks first.
+  expect(lastTrial.pages[0], 'a single-task launch has no questions to promise').not.toContain('questions');
+});
+
+test('reversal promises the questions that follow it inside a module', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'Pixel 7 landscape', 'one touch project is sufficient for timeline ordering');
+
+  await page.goto('/experiment.html?participant_id=timeline-order-check&context=relmed&module=pilot_1&session=Session%201');
+
+  const closingPage = await page.evaluate(async () => {
+    const { createModuleTimeline } = await import('/api/index.js');
+    const timeline = await createModuleTimeline('pilot_1', { session: 'wk0' });
+    // Touch devices nest each task's trials inside its orientation-gate wrapper, so the
+    // closing page is not reachable by flattening arrays alone.
+    const find = (node) => {
+      if (Array.isArray(node)) return node.map(find).find(Boolean);
+      if (!node || typeof node !== 'object') return undefined;
+      if (node.data?.trialphase === 'reversal_ending') return node;
+      return node.timeline ? find(node.timeline) : undefined;
+    };
+    return find(timeline)?.pages?.[0];
+  });
+
+  expect(closingPage).toContain('revealed at the end of this module');
+  expect(closingPage).toContain('a few short questions and for your feedback');
 });
 
 test('a narrow tablet pane is not treated as a phone rotation gate', async ({ page }, testInfo) => {

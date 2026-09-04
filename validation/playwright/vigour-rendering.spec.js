@@ -1,8 +1,14 @@
 import { expect, test } from '@playwright/test';
 import { defineTaskRenderingTest } from './support/render-check.js';
-import { TASKS } from './support/task-config.js';
+import { armTapAfterAppearing } from './support/helpers.js';
+import { READY_TAP_LOCKOUT_MS, TASKS } from './support/task-config.js';
 
-async function advanceToVigourTrial(page, participantId, checkSecondaryButtons = false) {
+// tasks/piggy-banks/vigour-instructions.js startConfirmation sets post_trial_gap: 300, so a
+// trial started by a tap does not render immediately. Any "the tap was ignored" assertion has
+// to outlast that gap, or it passes simply by looking too early.
+const IGNORED_TAP_SETTLE_MS = 500;
+
+async function advanceToVigourStartConfirmation(page, participantId, checkSecondaryButtons = false) {
   await page.goto(`/examples/vigour.html?participant_id=${participantId}`);
   await page.getByRole('button', { name: 'Got it' }).click();
 
@@ -22,6 +28,15 @@ async function advanceToVigourTrial(page, participantId, checkSecondaryButtons =
   await page.locator('#jspsych-instructions-next').click();
   await page.locator('#jspsych-instructions-next').click();
   await expect(piggy, 'the start-confirmation piggy should appear').toBeVisible({ timeout: 15000 });
+  return piggy;
+}
+
+async function advanceToVigourTrial(page, participantId, checkSecondaryButtons = false) {
+  const piggy = await advanceToVigourStartConfirmation(page, participantId, checkSecondaryButtons);
+
+  await page.waitForTimeout(READY_TAP_LOCKOUT_MS); // taps before this are ignored
+  // Deliberately after the lockout: inside it every tap is ignored, so a secondary-button
+  // check there would pass even if the button filter itself were broken.
   if (checkSecondaryButtons) {
     await piggy.dispatchEvent('pointerdown', { pointerType: 'pen', isPrimary: true, button: 2 });
     await expect(page.getByText(/tap the piggy bank to begin/i)).toBeVisible();
@@ -43,6 +58,46 @@ defineTaskRenderingTest('vigour', {
   },
 });
 
+test('the vigour start confirmation ignores a tap inside the lockout', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'Pixel 7', 'one touch project is sufficient for the tap lockout');
+
+  // Fired from inside the page halfway into the lockout, so the tap's timing doesn't depend
+  // on how fast this machine can drive the browser - see armTapAfterAppearing. #reread-button
+  // is rendered by the start confirmation only; the demo screen has restart/continue instead.
+  await armTapAfterAppearing(page, {
+    appearsSelector: '#reread-button',
+    tapSelector: '#piggy-container',
+    delayMs: READY_TAP_LOCKOUT_MS / 2,
+  });
+
+  const piggy = await advanceToVigourStartConfirmation(page, 'vigour-tap-lockout-check');
+  await expect
+    .poll(() => page.evaluate(() => window.__lockoutTapFired === true), {
+      message: 'the early tap should have been dispatched',
+      timeout: 5000,
+    })
+    .toBe(true);
+
+  await page.waitForTimeout(IGNORED_TAP_SETTLE_MS);
+  // #piggy-container is on this screen too, so only the trial-only wrapper proves a trial began.
+  await expect(
+    page.locator(TASKS.vigour.readySelector),
+    'a tap inside the lockout should not start the task'
+  ).toHaveCount(0);
+  await expect(
+    page.locator('#reread-button'),
+    'the start confirmation should still be the screen on show'
+  ).toBeVisible();
+
+  // The very same piggy bank starts the task once the lockout has passed.
+  await page.waitForTimeout(READY_TAP_LOCKOUT_MS);
+  await piggy.tap();
+  await expect(
+    page.locator(TASKS.vigour.readySelector),
+    'a tap after the lockout should start the task'
+  ).toBeVisible({ timeout: 15000 });
+});
+
 test('vigour preloads stimuli before showing the orientation hint', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'Pixel 7 landscape', 'one touch project is sufficient for timeline ordering');
 
@@ -61,6 +116,53 @@ test('vigour preloads stimuli before showing the orientation hint', async ({ pag
     { type: 'preload', trialphase: 'vigour_preload' },
     { type: 'html-button-response', trialphase: 'orientation_hint' },
   ]);
+});
+
+test('vigour ends on its closing page, before whatever follows the task', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'Pixel 7 landscape', 'one touch project is sufficient for timeline ordering');
+
+  await page.goto('/experiment.html?participant_id=timeline-order-check&context=relmed&task=vigour&session=Session%201');
+
+  // Every module runs rating questions straight after the vigour task (api/module-registry.js),
+  // so the last trial the task itself contributes has to be the "you have finished" page.
+  const lastTrial = await page.evaluate(async () => {
+    const { createTaskTimeline } = await import('/api/index.js');
+    const timeline = await createTaskTimeline('vigour');
+    // On touch devices createTaskTimeline wraps everything after the preload in a nested
+    // timeline (the orientation gate), so the task's own last trial is one level down there.
+    const tail = timeline.at(-1);
+    const last = tail.timeline ? tail.timeline.at(-1) : tail;
+    return { type: last.type.info.name, trialphase: last.data?.trialphase, pages: last.pages };
+  });
+
+  expect(lastTrial).toMatchObject({ type: 'instructions', trialphase: 'vigour_ending' });
+  expect(lastTrial.pages[0]).toContain('You have completed the piggy-bank game');
+  // A single-task launch goes straight to its bonus trial, so this route must not promise
+  // the questions a module asks first.
+  expect(lastTrial.pages[0], 'a single-task launch has no questions to promise').not.toContain('questions');
+});
+
+test('vigour promises the questions that follow it inside a module', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'Pixel 7 landscape', 'one touch project is sufficient for timeline ordering');
+
+  await page.goto('/experiment.html?participant_id=timeline-order-check&context=relmed&module=pilot_2&session=Session%201');
+
+  const closingPage = await page.evaluate(async () => {
+    const { createModuleTimeline } = await import('/api/index.js');
+    const timeline = await createModuleTimeline('pilot_2', { session: 'wk0' });
+    // Touch devices nest each task's trials inside its orientation-gate wrapper, so the
+    // closing page is not reachable by flattening arrays alone.
+    const find = (node) => {
+      if (Array.isArray(node)) return node.map(find).find(Boolean);
+      if (!node || typeof node !== 'object') return undefined;
+      if (node.data?.trialphase === 'vigour_ending') return node;
+      return node.timeline ? find(node.timeline) : undefined;
+    };
+    return find(timeline)?.pages?.[0];
+  });
+
+  expect(closingPage).toContain('revealed at the end of this module');
+  expect(closingPage).toContain('a few short questions and for your feedback');
 });
 
 test('vigour keeps running while the phone is being rotated', async ({ page }, testInfo) => {

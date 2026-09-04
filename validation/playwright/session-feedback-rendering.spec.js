@@ -10,7 +10,7 @@ defineTaskRenderingTest('session-feedback', {
     // options size themselves to their labels, which on a phone makes the row wider than
     // the screen - and since the content is centred with `margin: auto`, an overflowing row
     // is clipped on the left, taking the question text off the edge with it
-    // (tasks/session-feedback/styles.css).
+    // (the shared `survey-screen` rules in core/styles/theme.css).
     const layout = await page.evaluate(() => {
       const doc = document.documentElement;
       const width = doc.clientWidth;

@@ -55,6 +55,7 @@ relmed_task_battery/
 │   └── session-feedback/        # End-of-session feedback questionnaire
 ├── core/                        # Shared utilities and jsPsych
 │   ├── utils/                   # Common utility functions
+│   ├── styles/                  # Shared visual theme (design tokens, buttons, prose)
 │   └── jspsych/                 # jsPsych library and plugins
 ├── assets/                      # Static resources
 │   ├── images/                  # Task images and stimuli
@@ -194,7 +195,13 @@ export const ModuleRegistry = {
 1. **jsPsych core files**: Always load `jspsych.js` and required plugins
 2. **Core utilities**: Load `/core/utils/index.js` as a module
 3. **Task-specific files**: Check each task's requirements in the task registry
-4. **CSS files**: Include `jspsych.css` and task-specific stylesheets
+4. **CSS files**: Include `jspsych.css`, then `core/styles/theme.css`, then task-specific
+   stylesheets. `theme.css` is what makes the tasks look like one study rather than a dozen:
+   it holds the design tokens (palette, type scale, spacing, radii), the shared button, the
+   instruction-page typography, and the small widgets tasks share (key caps, highlighted
+   phrases, the "didn't catch a response" toast). Load it after `jspsych.css`, so it
+   overrides the plugin defaults, and before the task stylesheets, which the task registry
+   appends at runtime and which can still override it for their own screens.
 
 **Task-specific requirements** (check `api/task-registry.js` for complete details):
 - **PILT/WM**: Requires `plugin-card-choosing.js` and `styles.css`

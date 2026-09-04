@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { captureShot, expectNoPageErrors, orientationOf, patchWebkitTouchPoints, sanitize, trackPageErrors } from './helpers.js';
+import { READY_TAP_LOCKOUT_MS } from './task-config.js';
 
 // tasks/piggy-banks/vigour-instructions.js: FR = 5, demo unlocks "Continue" at shakeCount === FR + 1.
 const DEMO_UNLOCK_TAPS = 6;
@@ -71,6 +72,9 @@ async function vigourJourney(page, testInfo, hasTouch) {
   await expect(page.locator('#instruction-text'), 'confirmation wording should match the device').toContainText(
     `${verb.toLowerCase()} the piggy bank to begin`
   );
+  if (hasTouch) {
+    await page.waitForTimeout(READY_TAP_LOCKOUT_MS); // taps before this are ignored
+  }
   await tapOrClick(demoPiggy, hasTouch);
 
   // Real trial: tap enough times to guarantee a reward regardless of this trial's ratio.
@@ -106,6 +110,7 @@ async function reversalJourney(page, testInfo, hasTouch) {
     await expect(page.locator('#rev-tap-left'), 'touch ready screen tap zone should appear').toBeVisible({
       timeout: 15000,
     });
+    await page.waitForTimeout(READY_TAP_LOCKOUT_MS); // taps before this are ignored
     await page.locator('#rev-tap-left').tap();
   } else {
     await expect(page.locator('img[src*="2_finger_keys"]'), 'keyboard ready screen should appear').toBeVisible({

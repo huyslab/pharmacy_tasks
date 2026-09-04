@@ -170,6 +170,10 @@ function generateReversalBlocks(settings) {
 function reversalInstructions(settings) {
     var _revReadyCleanup = null;
     var touchCapable = navigator.maxTouchPoints > 0;
+    // The ready screen ignores taps for this long, so a tap carried over from the
+    // preceding instructions page can't start the task before the participant has read it.
+    // Kept short enough to stay out of the way of a deliberate tap.
+    var START_TAP_LOCKOUT_MS = 200;
 
     var sessionPrefix = settings.sessionInfo.variant !== 'screening' ? "<p>Let's start with the first game!</p>" : "";
     var duration = settings.n_trials == 50 ? "three" : "five";
@@ -232,9 +236,11 @@ function reversalInstructions(settings) {
             <p style="text-align:center;max-width:600px;margin-left:auto;margin-right:auto;">
                 When you're ready, <strong>tap either squirrel</strong> to begin.
             </p>`,
+        post_trial_gap: 300,
         data: { trialphase: "reversal_instruction" },
         on_load: function () {
             var finished = false;
+            var tapLockoutUntil = performance.now() + START_TAP_LOCKOUT_MS;
             var finishOnce = function () {
                 if (finished) return;
                 finished = true;
@@ -243,6 +249,7 @@ function reversalInstructions(settings) {
             var tapHandler = function (event) {
                 if (!event.isPrimary || event.button !== 0) return;
                 event.preventDefault();
+                if (performance.now() < tapLockoutUntil) return; // too early to count as a deliberate tap
                 finishOnce();
             };
             var suppressContext = function (e) { e.preventDefault(); };
@@ -273,7 +280,7 @@ function reversalInstructions(settings) {
                         target.dispatchEvent(new PointerEvent('pointerdown', {
                             bubbles: true, isPrimary: true, pointerType: 'touch', button: 0
                         }));
-                    }, 100);
+                    }, START_TAP_LOCKOUT_MS + 100);
                 }
             }
         },
@@ -297,6 +304,47 @@ function reversalInstructions(settings) {
     );
 
     return [instructionTrial, touchCapable ? touchReadyTrial : keyboardReadyTrial];
+}
+
+/**
+ * Creates the closing screen shown after the last reversal trial
+ *
+ * Every module follows the task with rating questions (see api/module-registry.js), so
+ * without this the last trial ran straight into them and the participant had no way of
+ * knowing the game was over. Deliberately reports no state: resumption reads the last
+ * `reversal_block_*_trial_*` state to know which trials are already done (see
+ * generateReversalBlocks), and a later state would replay the whole task.
+ *
+ * @param {Object} settings - Task configuration settings
+ * @param {Object} settings.sessionInfo - Resolved session; the screening module reveals no bonus
+ * @returns {Object} jsPsych instructions trial closing the task
+ */
+function reversalEnding(settings) {
+    // Only a module follows the game with rating questions and a later bonus reveal. A
+    // single-task launch (experiment.html?task=reversal) goes straight to its bonus trial and
+    // the standalone example simply ends, so neither can be promised what comes next.
+    const inModule = settings.in_module === true;
+    // The screening module has no bonus element, so nothing is ever revealed there
+    // (api/module-registry.js). Same conditional the card choosing game uses to leave the
+    // bonus out of its screening instructions.
+    const paysBonus = settings.sessionInfo.variant !== 'screening';
+
+    return {
+        type: jsPsychInstructions,
+        css_classes: ['instructions'],
+        show_clickable_nav: true,
+        data: { trialphase: "reversal_ending" },
+        pages: [
+            `<p><strong>Congratulations! You have completed the squirrel game.</strong></p>` +
+            (!inModule
+                ? ``
+                : paysBonus
+                    ? `<p>You will be paid a bonus based on the coins you collected.
+                        Your total bonus payment will be revealed at the end of this module.</p>
+                    <p>Before that, we will ask you a few short questions and for your feedback.</p>`
+                    : `<p>Next, we will ask you a few short questions and for your feedback.</p>`)
+        ]
+    };
 }
 
 /**
@@ -350,6 +398,9 @@ function createReversalTimeline(settings) {
     // Add instruction screens and task blocks
     procedure = procedure.concat(reversalInstructions(settings));
     procedure = procedure.concat(generateReversalBlocks(settings));
+
+    // Tell the participant the game is over before the questions that follow
+    procedure.push(reversalEnding(settings));
     
     return procedure;
 }

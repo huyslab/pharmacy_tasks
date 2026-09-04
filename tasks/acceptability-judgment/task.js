@@ -41,7 +41,11 @@ export function createAcceptabilityTimeline(settings) {
         acceptability_intro,
         {
             type: jsPsychSurveyLikert,
-            preamble: `<p>Please answer these questions regarding the ${settings.game_description}:<p>`,
+            // Shared questionnaire styling (core/styles/theme.css). Without it the plugin's
+            // own layout makes the five-point scale wider than a phone screen, and jsPsych's
+            // centred content clips the overflow off both edges - question text included.
+            css_classes: ['survey-screen'],
+            preamble: `<p>Please answer these questions regarding the ${settings.game_description}:</p>`,
             questions: [
                 {
                     prompt: `How difficult was the ${settings.game_description}?`,

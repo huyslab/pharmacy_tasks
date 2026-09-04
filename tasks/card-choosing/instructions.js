@@ -301,7 +301,7 @@ function preparePILTInstructions(settings) {
                             <br>
                             <p style="max-width: 700px; text-align: left;"><strong>The correct answer:</strong> True</p>
                             <p style="max-width: 700px; text-align: left;"><strong>Explanation:</strong> ${item.explanation}</p>
-                            ${settings.sessionInfo.variant === 'screening' ? "<p>Press next to review the instructions again.<p>" : "<p>Press next to try the quiz again.</p>"}
+                            ${settings.sessionInfo.variant === 'screening' ? "<p>Press next to review the instructions again.</p>" : "<p>Press next to try the quiz again.</p>"}
                         `);
                     }
                 }
@@ -412,8 +412,8 @@ const LTM_instructions = [
         pages: [
             '<p>You will now play another round of the card choosing game.</p>\
                 <p>Your goal remains to add as much money as you can to your safe.</p>',
-            `<p>This time, you will choose between three cards on every turn.<p>
-            <p>In every triplet, one picture card will always have £1 and 50-pence coins behind it, while the other two cards will have only pennies.<p>
+            `<p>This time, you will choose between three cards on every turn.</p>
+            <p>In every triplet, one picture card will always have £1 and 50-pence coins behind it, while the other two cards will have only pennies.</p>
             <p>You can earn more by learning which is the better picture card in each triplet and choosing that card when you next see same triplet.</p>`,
             `<p>Use the right arrow key to choose the card on the right, the left arrow key to choose the card on the left, 
             and <b>use the upwards arrow key to choose the card in the middle.</b>
@@ -450,9 +450,9 @@ const WM_instructions = [
         pages: [
             '<p>You will now play another round of the card choosing game.</p>\
                 <p>Your goal remains to add as much money as you can to your safe.</p>',
-            `<p>This time, you will see only one card on each turn.<p>
+            `<p>This time, you will see only one card on each turn.</p>
             <p>You can flip this card by pressing either the left <span class="spacebar-icon">&nbsp;←&nbsp;</span>, up <span class="spacebar-icon">&nbsp;↑&nbsp;</span>, or right <span class="spacebar-icon">&nbsp;→&nbsp;</span> arrow keys on your keyboard.</p>
-            <p>For each card, pressing one of the keys will always reveal £1 and 50-pence coins, while the other two keys will reveal only pennies.<p>
+            <p>For each card, pressing one of the keys will always reveal £1 and 50-pence coins, while the other two keys will reveal only pennies.</p>
             <p>You can earn more by learning which is the better key to press for each card and pressing that key when you next see same card.</p>`
         ],
         show_clickable_nav: true,

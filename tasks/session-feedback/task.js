@@ -66,9 +66,10 @@ export function createSessionFeedbackTimeline(settings) {
 
     screens.push({
         type: jsPsychSurveyLikert,
-        // Scopes styles.css to this questionnaire's screens; the plugins are shared with
-        // the acceptability judgment, whose own screens are left alone
-        css_classes: ['session-feedback'],
+        // The shared questionnaire look (core/styles/theme.css): a scale that fits a phone,
+        // and radios big enough to hit. The acceptability judgment's screens carry the same
+        // class, so the two feel like one questionnaire.
+        css_classes: ['survey-screen'],
         preamble: `<p>Please answer these questions about this session:</p>`,
         questions: [
             {
@@ -99,7 +100,7 @@ export function createSessionFeedbackTimeline(settings) {
     OPEN_QUESTIONS.forEach(question => {
         screens.push({
             type: jsPsychSurveyText,
-            css_classes: ['session-feedback'],
+            css_classes: ['survey-screen'],
             questions: [{
                 prompt: `<p>${question.prompt}</p>`,
                 name: question.name,

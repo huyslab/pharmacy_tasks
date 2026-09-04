@@ -4,6 +4,49 @@ import { GATE_MIN_DIMENSION_THRESHOLD } from './task-config.js';
 
 export const SCREENSHOT_DIR = path.join(process.cwd(), 'validation', 'playwright', 'screenshots');
 
+/**
+ * Arms the page, before it loads, to dispatch one primary pointerdown on `tapSelector`
+ * exactly `delayMs` after `appearsSelector` first enters the DOM. Sets window.__lockoutTapFired
+ * only once a pointerdown has actually been dispatched, so a test that polls that flag is
+ * waiting for the tap itself rather than for the attempt - if the target is missing the flag
+ * stays unset and the poll fails loudly instead of passing on a tap that never happened.
+ *
+ * The tap-lockout screens (tasks/reversal/task.js, tasks/piggy-banks/vigour-instructions.js)
+ * open their window in the trial's on_load, so a tap driven from the test side would race CDP
+ * round-trip latency against a 200ms window - fine on a fast machine, flaky on a loaded CI box.
+ * Scheduling the tap from inside the page instead pins it to a fixed offset from the screen
+ * appearing, whatever the machine is doing.
+ *
+ * Fires once: both trigger selectors below also appear later in their task's real trials.
+ */
+export async function armTapAfterAppearing(page, { appearsSelector, tapSelector, delayMs }) {
+  await page.addInitScript((args) => {
+    const armed = () => {
+      if (!document.querySelector(args.appearsSelector)) return false;
+      setTimeout(() => {
+        const target = document.querySelector(args.tapSelector);
+        if (!target) return; // leave __lockoutTapFired unset: no tap happened, so say so
+        target.dispatchEvent(new PointerEvent('pointerdown', {
+          bubbles: true,
+          isPrimary: true,
+          pointerType: 'touch',
+          button: 0,
+        }));
+        window.__lockoutTapFired = true;
+      }, args.delayMs);
+      return true;
+    };
+
+    // The init script runs before the page's own scripts, so the screen is normally not up
+    // yet and the observer is what catches it - but check first in case it already is.
+    if (armed()) return;
+    const observer = new MutationObserver(() => {
+      if (armed()) observer.disconnect();
+    });
+    observer.observe(document, { childList: true, subtree: true });
+  }, { appearsSelector, tapSelector, delayMs });
+}
+
 export function orientationOf({ width, height }) {
   return width >= height ? 'landscape' : 'portrait';
 }
