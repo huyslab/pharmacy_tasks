@@ -134,6 +134,26 @@ test('reversal preloads stimuli before showing the orientation hint', async ({ p
   ]);
 });
 
+test('reversal ends on its closing page, before whatever follows the task', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'Pixel 7 landscape', 'one touch project is sufficient for timeline ordering');
+
+  await page.goto('/experiment.html?participant_id=timeline-order-check&context=relmed&task=reversal&session=Session%201');
+
+  // Every module runs rating questions straight after the reversal task (api/module-registry.js),
+  // so the last trial the task itself contributes has to be the "you have finished" page.
+  const lastTrial = await page.evaluate(async () => {
+    const { createTaskTimeline } = await import('/api/index.js');
+    const timeline = await createTaskTimeline('reversal', { sequence: 'wk0' });
+    // On touch devices createTaskTimeline wraps everything after the preload in a nested
+    // timeline (the orientation gate), so the task's own last trial is one level down there.
+    const tail = timeline.at(-1);
+    const last = tail.timeline ? tail.timeline.at(-1) : tail;
+    return { type: last.type.info.name, trialphase: last.data?.trialphase };
+  });
+
+  expect(lastTrial).toEqual({ type: 'instructions', trialphase: 'reversal_ending' });
+});
+
 test('a narrow tablet pane is not treated as a phone rotation gate', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'iPad Pro 11', 'one tablet project is sufficient for split-view coverage');
 
