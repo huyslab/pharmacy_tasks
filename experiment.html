@@ -46,8 +46,11 @@
     <!-- Core utilities -->
     <script type="module" src="core/utils/index.js"></script>
 
-    <!-- CSS Styles -->
+    <!-- CSS Styles. theme.css carries the shared look (type, buttons, instruction pages)
+         and comes after jspsych.css so it overrides the plugin defaults; task stylesheets
+         are appended at runtime and can still override it for their own screens. -->
     <link href="core/jspsych/jspsych.css" rel="stylesheet" type="text/css" />
+    <link href="core/styles/theme.css" rel="stylesheet" type="text/css" />
 
     <style>
         html, body {
@@ -60,7 +63,7 @@
         body {
             margin: 0;
             padding: 0;
-            font-family: Arial, sans-serif;
+            font-family: var(--rlm-font);
         }
         
         #display_element {
@@ -68,38 +71,18 @@
             height: 100vh;
             height: 100dvh;
             display: flex;
-            justify-content: center;
+            /* flex-start, not center: a centred flex line that overflows hangs off BOTH ends,
+               and the overflow above the top is unreachable by scrolling - which is what cut
+               the first line off an instruction screen read in landscape. The centring that
+               matters is jspsych.css's `margin: auto` on .jspsych-content, which gives way
+               when the content is taller than the screen instead of clipping it. */
+            justify-content: flex-start;
             align-items: center;
         }
 
-        .instructions p {
-            max-width: min(700px, 92vw);
-            text-align: left;
-            margin: 1em 0;
-        }
-
-        .instructions td {
-            padding-left: 20px;
-            padding-right: 20px
-        }
-
-        /* Lists sit in the same column as the paragraphs around them, rather than stretching
-           across the centred instructions container */
-        .instructions ul {
-            max-width: min(700px, 92vw);
-            text-align: left;
-            margin: 1em 0;
-            padding-left: 1.4em;
-        }
-
-        .instructions li {
-            margin: 0.4em 0;
-        }
-
-        /* A full URL is longer than a phone is wide */
-        .instructions a {
-            word-break: break-word;
-        }
+        /* Instruction-page typography (the reading column, lists, links) now lives in
+           core/styles/theme.css, shared with the screens that don't use jsPsych's
+           instructions plugin. */
 
         /* Orientation gate: on phones, block the wrong orientation for the active task; tablets/
            desktop are exempt (larger min dimension). Driven by
@@ -114,7 +97,7 @@
             bottom: 0;
             left: 0;
             z-index: 100000;
-            background: #ffffff;
+            background: var(--rlm-surface);
             align-items: center;
             justify-content: center;
             text-align: center;
@@ -123,7 +106,7 @@
         }
         #rotate-overlay p {
             font-size: clamp(18px, 5vw, 24px);
-            color: #182b4b;
+            color: var(--rlm-ink);
             line-height: 1.4;
             max-width: 90vw;
             margin: 0;
@@ -377,7 +360,7 @@
                 // guard above, or createTaskTimeline for an unknown task) need the raw container.
                 const errorContainer = jsPsych.getDisplayElement() || document.getElementById('display_element');
                 errorContainer.innerHTML = `
-                    <div style="text-align: center; padding: 50px;">
+                    <div class="instructions" style="padding: 50px;">
                         <h2>Error Loading Experiment</h2>
                         <p>There was an error loading the ${runningModule ? `${moduleName} module` : `${taskName || 'requested'} task`}:</p>
                         <p><strong>${error.message}</strong></p>

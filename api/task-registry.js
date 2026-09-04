@@ -500,9 +500,8 @@ export const TaskRegistry = {
       require_text: "Whether the three open questions must be answered before moving on. Default is false, so a participant with nothing to add is not made to invent something.",
       text_rows: "Height of each open answer box, in rows. Default is 5."
     },
-    requirements: {
-      css: ['@tasks/session-feedback/styles.css'],
-    },
+    // No stylesheet of its own: the screens carry the shared `survey-screen` class, whose
+    // look lives in core/styles/theme.css alongside every other questionnaire screen
     resumptionRules: {
         // A resumed run would skip whichever questions were already passed, and the ratings
         // are about the session as a whole, so it is asked once or not at all
