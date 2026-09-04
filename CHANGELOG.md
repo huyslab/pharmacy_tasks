@@ -1,3 +1,14 @@
+## [1.11.4](https://github.com/huyslab/pharmacy_tasks/compare/v1.11.3...v1.11.4) (2026-09-04)
+
+
+### Bug Fixes
+
+* address code review on the shared theme ([34dfaef](https://github.com/huyslab/pharmacy_tasks/commit/34dfaefb67f405e272e7fb2b3c56f1d651b2056a))
+* blank the screen for 300ms after the reversal ready screen ([fcbac2f](https://github.com/huyslab/pharmacy_tasks/commit/fcbac2f0bdb2828c59e4f8c95aed586507e05295))
+* don't clip instruction screens that are taller than the screen ([eb6d073](https://github.com/huyslab/pharmacy_tasks/commit/eb6d073ffadc4cb30dc610cbf424cab9b057d665))
+* ignore taps for 200ms on reversal and vigour ready screens ([74d9d10](https://github.com/huyslab/pharmacy_tasks/commit/74d9d10e7974da16ecdd2647c0f62da64248f295))
+* valid markup on the max-press screens ([2b08789](https://github.com/huyslab/pharmacy_tasks/commit/2b0878908ef1d9ae2841e063cbdda1072c6e877b))
+
 ## [1.11.3](https://github.com/huyslab/pharmacy_tasks/compare/v1.11.2...v1.11.3) (2026-08-31)
 
 
