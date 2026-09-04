@@ -38,9 +38,10 @@ export const ModuleRegistry = {
         max_bonus: 5.0,
         min_prop_bonus: 0.6
     },
-    // The pilot runs as two modules, sat one after the other in a single visit. They are
+    // The pilot runs as three modules, sat one after the other in a single visit. They are
     // separate so a participant can stop between them, and so the site can report progress
-    // through the visit - each ends with its own bonus reveal and data upload.
+    // through the visit - each ends with its own data upload, and the two that contain a
+    // game with its own bonus reveal.
     pilot_1: {
         name: "Pilot Module 1",
         elements: [
@@ -53,9 +54,9 @@ export const ModuleRegistry = {
             { type: "instructions", config: { text: "signposting_message" } },
             { type: "instructions", config: { text: "end_message" } }
         ],
-        // The game promises a bonus in its instructions, so the module reveals one. Half of
-        // what the single pilot module paid across both games, so a participant who completes
-        // both modules earns the same £3-£5 as before.
+        // The game promises a bonus in its instructions, so the module reveals one. Pays
+        // £1.80-£3.00, matching the participant information sheet, so a participant who
+        // completes both games earns £3.60-£6.00.
         max_bonus: 3.0,
         min_prop_bonus: 0.6
     },
@@ -66,9 +67,6 @@ export const ModuleRegistry = {
             { type: "task", name: "vigour" },
             { type: "task", name: "acceptability_judgment", config: { task_name: "vigour", game_description: "piggy-bank game" } },
             { type: "task", name: "self_report", config: { questionnaires: ["PHQ9", "GAD7"] } },
-            // Last of the questions, and before the bonus reveal: once the payment is on
-            // screen there is little reason left to answer them
-            { type: "task", name: "session_feedback" },
             { type: "bonus" },
             { type: "instructions", config: { text: "signposting_message" } },
             { type: "instructions", config: { text: "end_message" } }
@@ -76,6 +74,22 @@ export const ModuleRegistry = {
         // See pilot_1: one game, half the pilot's total bonus
         max_bonus: 3.0,
         min_prop_bonus: 0.6
+    },
+    // The last leg of the visit: how the session went for the participant, asked on its own
+    // so the ratings are about the visit as a whole rather than about the game just played,
+    // and so they are not competing with the bonus reveal of pilot_2 for attention. No games,
+    // so nothing to earn: no max_bonus and no bonus element.
+    pilot_3: {
+        name: "Pilot Module 3",
+        elements: [
+            { type: "instructions", config: { text: "start_message" } },
+            // The questionnaire is the whole module, so its own intro screen would be the
+            // second page of an opening it has nothing to follow on from. The start message
+            // introduces the questions instead (see pilot_3 in api/messages.js)
+            { type: "task", name: "session_feedback", config: { include_intro: false } },
+            { type: "instructions", config: { text: "signposting_message" } },
+            { type: "instructions", config: { text: "end_message" } }
+        ]
     },
     // Sat on its own at a later visit, to follow up on how a participant has been since the
     // pilot. No games, so nothing to earn: it declares no max_bonus and has no bonus element,

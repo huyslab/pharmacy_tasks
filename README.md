@@ -110,7 +110,7 @@ Modules are predefined collections of tasks designed to be completed in a single
 #### Available Modules
 
 - **`full_battery`**: Complete RELMED task battery with all tasks and questionnaires
-- **`pilot_1`** and **`pilot_2`**: The mymeds pilot, run as two modules in one visit
+- **`pilot_1`**, **`pilot_2`** and **`pilot_3`**: The mymeds pilot, run as three modules in one visit
 - **`pilot_followup`**: A later, questions-only follow-up to the pilot - the PHQ-9 and GAD-7, no games and no bonus
 - **`screening`**: Shortened version for participant screening with key tasks
 
@@ -121,7 +121,7 @@ Modules are predefined collections of tasks designed to be completed in a single
 import { createModuleTimeline, getModuleInfo, listModules } from '/api/index.js';
 
 // Get information about available modules
-console.log(listModules()); // ['full_battery', 'pilot_1', 'pilot_2', 'pilot_followup', 'screening']
+console.log(listModules()); // ['full_battery', 'pilot_1', 'pilot_2', 'pilot_3', 'pilot_followup', 'screening']
 console.log(getModuleInfo('screening')); // Detailed module information
 
 // Create timeline for a module
@@ -280,14 +280,16 @@ Use these exact strings when calling `createTaskTimeline()`:
 Use these exact strings when calling `createModuleTimeline()`:
 - `'full_battery'` - Complete RELMED task battery 
 - `'pilot_1'` - Medication questionnaire and demographics, then reversal and its acceptability rating
-- `'pilot_2'` - Vigour and its acceptability rating, the PHQ-9 and GAD-7 questionnaires, then end-of-session feedback
+- `'pilot_2'` - Vigour and its acceptability rating, then the PHQ-9 and GAD-7 questionnaires
+- `'pilot_3'` - End-of-session feedback on its own, with no game and no bonus
 - `'pilot_followup'` - The PHQ-9 and GAD-7 on their own, for a later follow-up visit
 - `'screening'` - Shortened screening version
 
-`pilot_1` and `pilot_2` are the two halves of one mymeds pilot visit, sat one after the other.
-They are separate modules so a participant can stop between them, and so each ends with its own
-bonus reveal and data upload. Each pays up to £2.50 (`max_bonus`), half of what the single
-pilot module paid across both games, so completing both earns the same £3-£5 as before.
+`pilot_1`, `pilot_2` and `pilot_3` are the three legs of one mymeds pilot visit, sat one after
+the other. They are separate modules so a participant can stop between them, and so each ends
+with its own data upload. The two that contain a game each pay £1.80-£3.00 (`max_bonus` and
+`min_prop_bonus`), so a participant who completes both games earns £3.60-£6.00; `pilot_3` is
+questions only, so it declares no bonus.
 
 ### Launching a Session
 
