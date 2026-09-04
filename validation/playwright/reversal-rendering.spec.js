@@ -3,9 +3,9 @@ import { defineTaskRenderingTest } from './support/render-check.js';
 import { armTapAfterAppearing, patchWebkitTouchPoints } from './support/helpers.js';
 import { READY_TAP_LOCKOUT_MS, TASKS } from './support/task-config.js';
 
-// tasks/piggy-banks/vigour-instructions.js startConfirmation sets post_trial_gap: 300, so a
-// trial started by a tap does not render immediately. Any "the tap was ignored" assertion has
-// to outlast that gap, or it passes simply by looking too early.
+// tasks/reversal/task.js touchReadyTrial sets post_trial_gap: 300, so a trial started by a tap
+// does not render immediately. Any "the tap was ignored" assertion has to outlast that gap, or
+// it passes simply by looking too early.
 const IGNORED_TAP_SETTLE_MS = 500;
 
 async function advanceToReversalReadyScreen(page, participantId, useExperimentEntry = false) {

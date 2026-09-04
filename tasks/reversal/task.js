@@ -236,6 +236,7 @@ function reversalInstructions(settings) {
             <p style="text-align:center;max-width:600px;margin-left:auto;margin-right:auto;">
                 When you're ready, <strong>tap either squirrel</strong> to begin.
             </p>`,
+        post_trial_gap: 300,
         data: { trialphase: "reversal_instruction" },
         on_load: function () {
             var finished = false;
