@@ -170,6 +170,10 @@ function generateReversalBlocks(settings) {
 function reversalInstructions(settings) {
     var _revReadyCleanup = null;
     var touchCapable = navigator.maxTouchPoints > 0;
+    // The ready screen ignores taps for this long, so a tap carried over from the
+    // preceding instructions page can't start the task before the participant has read it.
+    // Kept short enough to stay out of the way of a deliberate tap.
+    var START_TAP_LOCKOUT_MS = 200;
 
     var sessionPrefix = settings.sessionInfo.variant !== 'screening' ? "<p>Let's start with the first game!</p>" : "";
     var duration = settings.n_trials == 50 ? "three" : "five";
@@ -232,9 +236,11 @@ function reversalInstructions(settings) {
             <p style="text-align:center;max-width:600px;margin-left:auto;margin-right:auto;">
                 When you're ready, <strong>tap either squirrel</strong> to begin.
             </p>`,
+        post_trial_gap: 300,
         data: { trialphase: "reversal_instruction" },
         on_load: function () {
             var finished = false;
+            var tapLockoutUntil = performance.now() + START_TAP_LOCKOUT_MS;
             var finishOnce = function () {
                 if (finished) return;
                 finished = true;
@@ -243,6 +249,7 @@ function reversalInstructions(settings) {
             var tapHandler = function (event) {
                 if (!event.isPrimary || event.button !== 0) return;
                 event.preventDefault();
+                if (performance.now() < tapLockoutUntil) return; // too early to count as a deliberate tap
                 finishOnce();
             };
             var suppressContext = function (e) { e.preventDefault(); };
@@ -273,7 +280,7 @@ function reversalInstructions(settings) {
                         target.dispatchEvent(new PointerEvent('pointerdown', {
                             bubbles: true, isPrimary: true, pointerType: 'touch', button: 0
                         }));
-                    }, 100);
+                    }, START_TAP_LOCKOUT_MS + 100);
                 }
             }
         },
