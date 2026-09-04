@@ -4,6 +4,41 @@ import { GATE_MIN_DIMENSION_THRESHOLD } from './task-config.js';
 
 export const SCREENSHOT_DIR = path.join(process.cwd(), 'validation', 'playwright', 'screenshots');
 
+/**
+ * Arms the page, before it loads, to dispatch one primary pointerdown on `tapSelector`
+ * exactly `delayMs` after `appearsSelector` first enters the DOM. Sets window.__lockoutTapFired
+ * once it has fired, so a test can wait for the tap instead of guessing when it happened.
+ *
+ * The tap-lockout screens (tasks/reversal/task.js, tasks/piggy-banks/vigour-instructions.js)
+ * open their window in the trial's on_load, so a tap driven from the test side would race CDP
+ * round-trip latency against a 200ms window - fine on a fast machine, flaky on a loaded CI box.
+ * Scheduling the tap from inside the page instead pins it to a fixed offset from the screen
+ * appearing, whatever the machine is doing.
+ *
+ * Fires once: both trigger selectors below also appear later in their task's real trials.
+ */
+export async function armTapAfterAppearing(page, { appearsSelector, tapSelector, delayMs }) {
+  await page.addInitScript((args) => {
+    const observer = new MutationObserver(() => {
+      if (!document.querySelector(args.appearsSelector)) return;
+      observer.disconnect();
+      setTimeout(() => {
+        const target = document.querySelector(args.tapSelector);
+        if (target) {
+          target.dispatchEvent(new PointerEvent('pointerdown', {
+            bubbles: true,
+            isPrimary: true,
+            pointerType: 'touch',
+            button: 0,
+          }));
+        }
+        window.__lockoutTapFired = true;
+      }, args.delayMs);
+    });
+    observer.observe(document, { childList: true, subtree: true });
+  }, { appearsSelector, tapSelector, delayMs });
+}
+
 export function orientationOf({ width, height }) {
   return width >= height ? 'landscape' : 'portrait';
 }
