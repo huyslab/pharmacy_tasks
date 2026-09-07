@@ -100,3 +100,60 @@ test('trial resumption uses standard checkpoints without questionnaire fields', 
   });
   expect(remaining).toEqual([{ name: 'third' }]);
 });
+
+for (const moduleName of ['pilot_1', 'full_battery']) {
+  for (const state of ['bonus_trial', 'bonus_trial_end']) {
+    test(`${moduleName} skips completed questionnaires at ${state}`, async ({ page }) => {
+      await page.goto(`/experiment.html?module_state=${state}`);
+      const questionnaires = await page.evaluate(async moduleName => {
+        const { createModuleTimeline } = await import('/api/index.js');
+        const timeline = await createModuleTimeline(moduleName, { session: 'wk0' });
+        const flatten = nodes => nodes.flatMap(node => Array.isArray(node) ? flatten(node) : node.timeline ? flatten(node.timeline) : [node]);
+        return flatten(timeline).filter(trial =>
+          /^(medication_questionnaire|demographics)_/.test(trial.data?.trialphase || '')
+        ).length;
+      }, moduleName);
+      expect(questionnaires).toBe(0);
+    });
+  }
+}
+
+for (const task of ['medication_questionnaire', 'demographics']) {
+  test(`${task} saves the current answer before its checkpoint`, async ({ page }) => {
+    await page.goto('/experiment.html?parent_origin=http%3A%2F%2Flocalhost%3A3000');
+    await page.evaluate(async task => {
+      const { createTaskTimeline } = await import('/api/index.js');
+      window.jsPsych = initJsPsych({ display_element: 'display_element' });
+      const timeline = await createTaskTimeline(task, { include_intro: false, transition_duration: 0 });
+      window.context = 'prolific';
+      window.savedEvents = [];
+      // Exercise the actual save serialization; local relmed launches bypass uploads.
+      window.fetch = async (url, options) => {
+        const record = JSON.parse(options.body)[0];
+        const payload = JSON.parse(record.data)[0];
+        window.savedEvents.push({ rows: JSON.parse(payload.jspsych_data) });
+        return { status: 200, json: async () => ({}) };
+      };
+      window.postMessage = message => {
+        if (message.state) window.savedEvents.push({ state: message.state });
+      };
+      void window.jsPsych.run(timeline);
+    }, task);
+    if (task === 'medication_questionnaire') {
+      await page.locator('#qsc-text').fill('Example medicine');
+    } else {
+      await page.locator('#qsc-number').fill('34');
+    }
+    await page.locator('#qsc-continue').click();
+    const checkpoint = `${task}_trial_1_finish`;
+    await expect.poll(() => page.evaluate(checkpoint =>
+      window.savedEvents.some(event => event.state === checkpoint), checkpoint
+    )).toBe(true);
+    const savedRows = await page.evaluate(checkpoint => {
+      const index = window.savedEvents.findIndex(event => event.state === checkpoint);
+      return window.savedEvents.slice(0, index).filter(event => event.rows).at(-1).rows;
+    }, checkpoint);
+    expect(savedRows).toHaveLength(1);
+    expect(savedRows[0].response).toEqual(task === 'medication_questionnaire' ? 'Example medicine' : 34);
+  });
+}

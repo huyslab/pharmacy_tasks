@@ -371,9 +371,14 @@ export async function createModuleTimeline(moduleName, config) {
         module.moduleConfig?.task_name ?? element.__task.defaultConfig.task_name ?? element.name;
     const lastState = window.last_state;
     const checkpointIndex = typeof lastState === 'string'
-        ? module.elements.findIndex(element => element.type === 'task' &&
-            (element.__task.resumptionRules?.statePrefixes ?? [taskStateName(element)])
-                .some(prefix => lastState.startsWith(`${prefix}_`)))
+        ? module.elements.findIndex(element => {
+            if (element.type === 'bonus') {
+                return lastState === 'bonus_trial' || lastState === 'bonus_trial_end';
+            }
+            return element.type === 'task' &&
+                (element.__task.resumptionRules?.statePrefixes ?? [taskStateName(element)])
+                    .some(prefix => lastState.startsWith(`${prefix}_`));
+        })
         : -1;
 
     // Create timeline for each element in the module

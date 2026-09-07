@@ -397,7 +397,8 @@ shared helper. Only medication and demographics currently opt into
 
 ### Matching a checkpoint to a module task
 
-Module assembly finds the first task whose prefix matches the saved checkpoint.
+Module assembly finds the first task whose prefix matches the saved checkpoint,
+or the bonus element for `bonus_trial` and `bonus_trial_end`.
 It then skips preceding tasks that enable `skipCompleted`. An unmatched checkpoint
 does not cause earlier tasks to be skipped.
 
