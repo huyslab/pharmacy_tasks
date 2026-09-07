@@ -216,6 +216,7 @@ export const TaskRegistry = {
       css: ['@tasks/delay-discounting/styles.css'],
     },
     resumptionRules: {
+        statePrefixes: ['dd'], // Prefixes emitted by this task, including existing saved states.
         enabled: true,
     },
     configOptions: {
@@ -259,6 +260,7 @@ export const TaskRegistry = {
       css: ['@tasks/piggy-banks/styles.css'],
     },
     resumptionRules: {
+        statePrefixes: ['pit'], // Prefixes emitted by this task, including existing saved states.
         enabled: true,
     }
   },
@@ -309,6 +311,7 @@ export const TaskRegistry = {
       css: ['@tasks/max-press-test/styles.css'],
     },
     resumptionRules: {
+        statePrefixes: ['max_press_rate'], // Prefixes emitted by this task, including existing saved states.
         enabled: true,
     }
   },
@@ -337,6 +340,7 @@ export const TaskRegistry = {
       css: ['@tasks/pavlovian-lottery/styles.css'],
     },
     resumptionRules: {
+        statePrefixes: ['prepilt_conditioning', 'pavlovian_lottery'], // Prefixes emitted by this task, including existing saved states.
         enabled: true,
     }
   },

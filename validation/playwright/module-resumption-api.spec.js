@@ -69,3 +69,21 @@ for (const [task, count] of [['medication_questionnaire', 5], ['demographics', 3
     });
   }
 }
+
+for (const state of [
+  'max_press_rate_start', 'max_press_rate_end',
+  'pit_instructions_start', 'pit_task_start',
+  'dd_instructions_start', 'dd_task_start',
+  'prepilt_conditioning_start', 'pavlovian_lottery_last',
+]) {
+  test(`full battery skips medication after ${state}`, async ({ page }) => {
+    await page.goto(`/experiment.html?module_state=${state}`);
+    const hasMedication = await page.evaluate(async () => {
+      const { createModuleTimeline } = await import('/api/index.js');
+      const timeline = await createModuleTimeline('full_battery', { session: 'wk0' });
+      const flatten = nodes => nodes.flatMap(node => Array.isArray(node) ? flatten(node) : node.timeline ? flatten(node.timeline) : [node]);
+      return flatten(timeline).some(trial => trial.data?.trialphase === 'medication_questionnaire_intro');
+    });
+    expect(hasMedication).toBe(false);
+  });
+}
