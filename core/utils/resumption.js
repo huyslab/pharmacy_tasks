@@ -13,6 +13,17 @@ export function applyWithinTaskResumptionRules(structure, lastState, taskName, r
         return structure;
     }
 
+    if (resumptionRules.granularity === 'item') {
+        if (lastState === `${taskName}_finish`) return [];
+        const prefix = `${taskName}_item_`;
+        const match = lastState.startsWith(prefix)
+            ? lastState.slice(prefix.length).match(/^([1-9]\d*)_finish$/)
+            : null;
+        const completed = match ? Number(match[1]) : 0;
+        if (completed > structure.length) return structure;
+        return structure.filter(item => item.question_index >= completed);
+    }
+
     if (resumptionRules.granularity === 'block') {
         const lastBlock = resumptionRules.extractProgress(lastState, taskName);
         

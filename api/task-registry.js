@@ -405,7 +405,9 @@ export const TaskRegistry = {
       css: ['@tasks/question-screen/styles.css'],
     },
     resumptionRules: {
-        enabled: false,
+        enabled: true,
+        granularity: 'item',
+        skipCompleted: true, // Module checkpoints can prove the whole task is complete.
     }
   },
   demographics: {
@@ -432,9 +434,10 @@ export const TaskRegistry = {
     requirements: {
       css: ['@tasks/question-screen/styles.css'],
     },
-    // Short, and a resumed session would skip questions whose answers were never recorded
     resumptionRules: {
-        enabled: false,
+        enabled: true,
+        granularity: 'item',
+        skipCompleted: true, // Module checkpoints can prove the whole task is complete.
     }
   },
   self_report: {

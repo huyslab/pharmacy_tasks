@@ -12,7 +12,7 @@
  * misreport either one.
  */
 
-import { updateState, saveDataREDCap } from "@utils/index.js"
+import { updateState, saveDataREDCap, applyWithinTaskResumptionRules } from "@utils/index.js"
 
 /**
  * Builds the list of question screens.
@@ -95,7 +95,7 @@ function demographicQuestions(settings) {
 export function createDemographicsTimeline(settings) {
     const questions = demographicQuestions(settings);
 
-    const screens = questions.map((question, i) => ({
+    let screens = questions.map((question, i) => ({
         type: jsPsychQuestionScreen,
         question_index: i,
         n_questions: questions.length,
@@ -105,11 +105,17 @@ export function createDemographicsTimeline(settings) {
         data: {
             trialphase: `${settings.task_name}_${question.name}`
         },
-        // Save as we go, so a session interrupted part way still has the earlier answers
-        on_finish: () => { saveDataREDCap(); }
+        // Save the answer and report the last completed item (one-based).
+        on_finish: () => { updateState(`${settings.task_name}_item_${i + 1}_finish`); }
     }));
 
-    if (settings.include_intro) {
+    screens = applyWithinTaskResumptionRules(
+        screens, window.last_state, settings.task_name, settings.__task?.resumptionRules
+    );
+    if (screens.length === 0) return [];
+    const resuming = screens.length < questions.length;
+
+    if (settings.include_intro && !resuming) {
         screens.unshift({
             type: jsPsychQuestionScreen,
             question_type: 'message',
@@ -125,7 +131,10 @@ export function createDemographicsTimeline(settings) {
 
     return [{
         timeline: screens,
-        on_timeline_start: () => { updateState(`${settings.task_name}_start`); },
+        on_timeline_start: () => {
+            // Preserve the item checkpoint if the participant reloads before answering.
+            if (!resuming) updateState(`${settings.task_name}_start`);
+        },
         on_timeline_finish: () => {
             updateState(`${settings.task_name}_finish`, false);
             saveDataREDCap(3);
