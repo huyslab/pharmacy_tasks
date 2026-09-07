@@ -1,0 +1,32 @@
+version = 1
+name = "RELMED Task Battery"
+
+[setup]
+script = """
+set -eu
+node --version
+npm --version
+python3 --version
+npm ci --include=dev
+npx playwright install chromium firefox webkit
+"""
+
+[[actions]]
+name = "Preview"
+icon = "run"
+command = 'python3 -m http.server "${PORT:-8000}" --bind 127.0.0.1'
+
+[[actions]]
+name = "API tests"
+icon = "test"
+command = "npm run test:e2e -- --project=api"
+
+[[actions]]
+name = "All browser tests"
+icon = "test"
+command = "npm run test:e2e"
+
+[[actions]]
+name = "Test report"
+icon = "debug"
+command = "npm run test:e2e:report"

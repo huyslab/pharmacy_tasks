@@ -412,6 +412,38 @@ const fullTimeline = [
 ];
 ```
 
+## Local development and Codex worktrees
+
+This is a static HTML/JavaScript project with no build step. Have Node.js 18+
+(required by the locked Playwright dependency), npm, and Python 3 on your PATH.
+No Python packages or local secrets are needed for the browser test environment.
+
+The Codex environment is defined in
+[.codex/environments/environment.toml](.codex/environments/environment.toml).
+Select **RELMED Task Battery** in Codex's local environment settings. Setup runs
+`npm ci --include=dev` and `npx playwright install chromium firefox webkit` when
+Codex creates a new worktree. Initial downloads require network access. Each
+worktree gets its own dependencies; browser binaries use Playwright's shared
+cache. On Linux, use `npx playwright install-deps` if browser system libraries
+are missing (may require administrator privileges).
+
+Commit these changes so worktrees created from that commit include the setup.
+For worktrees created outside Codex, run the two setup commands manually.
+See the [official local environment documentation](https://learn.chatgpt.com/docs/environments/local-environment).
+
+The environment provides **Preview**, **API tests**, **All browser tests**, and
+**Test report** actions. Preview serves the repository root at
+<http://127.0.0.1:8000>; stop it with Ctrl+C. Tests manage their own server on port
+4173 and fail if it is occupied, avoiding tests against another checkout.
+For concurrent worktrees, choose distinct ports:
+
+```bash
+python3 -m http.server 8001 --bind 127.0.0.1
+PLAYWRIGHT_PORT=4174 npm run test:e2e -- --project=api
+```
+
+The Preview action also respects `PORT` if set in its terminal environment.
+
 ## Testing
 
 Cross-device checks for the vigour, reversal, medication questionnaire, demographics, self-report and session feedback tasks live under `validation/playwright/`, in two parts:

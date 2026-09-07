@@ -1,6 +1,12 @@
 // @ts-check
 import { defineConfig, devices } from '@playwright/test';
 
+const port = Number(process.env.PLAYWRIGHT_PORT || 4173);
+if (!Number.isInteger(port) || port < 1 || port > 65535) {
+  throw new Error('PLAYWRIGHT_PORT must be an integer between 1 and 65535');
+}
+const baseURL = `http://127.0.0.1:${port}`;
+
 /**
  * Devices under test, grouped by category. Names must match Playwright's built-in
  * device descriptors exactly (run `npx playwright list-devices` in doubt). Phones and
@@ -78,7 +84,7 @@ export default defineConfig({
   reporter: [['list'], ['html', { open: 'never' }]],
 
   use: {
-    baseURL: 'http://127.0.0.1:4173',
+    baseURL,
     trace: 'retain-on-failure',
   },
 
@@ -87,9 +93,10 @@ export default defineConfig({
   /* Serves the repo root statically - required since the app resolves absolute
      paths (/core, /tasks, /assets) and import maps against the server root. */
   webServer: {
-    command: 'python3 -m http.server 4173',
-    url: 'http://127.0.0.1:4173',
-    reuseExistingServer: !process.env.CI,
+    command: `python3 -m http.server ${port} --bind 127.0.0.1`,
+    url: baseURL,
+    // Never silently test a server belonging to another checkout or worktree.
+    reuseExistingServer: false,
     timeout: 120 * 1000,
     stdout: 'ignore',
     stderr: 'pipe',
