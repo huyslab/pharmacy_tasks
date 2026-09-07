@@ -15,9 +15,11 @@ export function applyWithinTaskResumptionRules(structure, lastState, taskName, r
 
     if (resumptionRules.granularity === 'trial') {
         if (lastState === `${taskName}_finish`) return [];
-        // The task parser returns a count of completed trials, independent of the
-        // checkpoint format or the fields stored on each trial.
-        const completed = resumptionRules.extractProgress(lastState, taskName);
+        const prefix = `${taskName}_trial_`;
+        const match = lastState.startsWith(prefix)
+            ? lastState.slice(prefix.length).match(/^([1-9]\d*)_finish$/)
+            : null;
+        const completed = match ? Number(match[1]) : 0;
         if (!Number.isInteger(completed) || completed < 0 || completed > structure.length) {
             return structure;
         }

@@ -45,7 +45,7 @@ test('completed-task skipping follows the registry rule', async ({ page }) => {
 for (const [task, count] of [['medication_questionnaire', 5], ['demographics', 3]]) {
   for (const completed of [1, count - 1, count]) {
     test(`${task} resumes after item ${completed}`, async ({ page }) => {
-      await page.goto(`/experiment.html?module_state=${task}_item_${completed}_finish&parent_origin=http%3A%2F%2Flocalhost%3A3000`);
+      await page.goto(`/experiment.html?module_state=${task}_trial_${completed}_finish&parent_origin=http%3A%2F%2Flocalhost%3A3000`);
       const result = await page.evaluate(async ({ task }) => {
         const { createTaskTimeline } = await import('/api/index.js');
         const timeline = await createTaskTimeline(task);
@@ -65,7 +65,7 @@ for (const [task, count] of [['medication_questionnaire', 5], ['demographics', 3
       expect(result.indices).toEqual(Array.from({ length: count - completed }, (_, i) => completed + i));
       expect(result.totals).toEqual(Array(count - completed).fill(count));
       expect(result.startStates).not.toContain(`${task}_start`);
-      if (completed < count) expect(result.states).toContain(`${task}_item_${completed + 1}_finish`);
+      if (completed < count) expect(result.states).toContain(`${task}_trial_${completed + 1}_finish`);
     });
   }
 }
@@ -88,15 +88,14 @@ for (const state of [
   });
 }
 
-test('trial resumption uses the task parser without questionnaire fields', async ({ page }) => {
+test('trial resumption uses standard checkpoints without questionnaire fields', async ({ page }) => {
   await page.goto('/experiment.html');
   const remaining = await page.evaluate(async () => {
     const { applyWithinTaskResumptionRules } = await import('/core/utils/resumption.js');
     const trials = [{ name: 'first' }, { name: 'second' }, { name: 'third' }];
-    return applyWithinTaskResumptionRules(trials, 'custom_trial_2', 'custom', {
+    return applyWithinTaskResumptionRules(trials, 'custom_trial_2_finish', 'custom', {
       enabled: true,
       granularity: 'trial',
-      extractProgress: state => Number(state.split('_').at(-1)),
     });
   });
   expect(remaining).toEqual([{ name: 'third' }]);

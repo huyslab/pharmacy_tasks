@@ -106,7 +106,7 @@ export function createDemographicsTimeline(settings) {
             trialphase: `${settings.task_name}_${question.name}`
         },
         // Save the answer and report the last completed item (one-based).
-        on_finish: () => { updateState(`${settings.task_name}_item_${i + 1}_finish`); }
+        on_finish: () => { updateState(`${settings.task_name}_trial_${i + 1}_finish`); }
     }));
 
     screens = applyWithinTaskResumptionRules(
