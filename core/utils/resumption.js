@@ -1,10 +1,10 @@
 /**
- * Determines which blocks to skip based on last state
- * @param {Array} structure - Task structure with blocks
+ * Determines which completed blocks or trials to skip based on the last state
+ * @param {Array} structure - Ordered task structure with blocks or trials
  * @param {string} lastState - Last recorded state
  * @param {string} taskName - Name of the task
  * @param {Object} resumptionRules - Resumption configuration from task registry
- * @returns {Array} Filtered structure with completed blocks removed
+ * @returns {Array} Filtered structure with completed blocks or trials removed
  */
 export function applyWithinTaskResumptionRules(structure, lastState, taskName, resumptionRules) {
     console.log(structure, lastState, taskName, resumptionRules);
@@ -13,15 +13,15 @@ export function applyWithinTaskResumptionRules(structure, lastState, taskName, r
         return structure;
     }
 
-    if (resumptionRules.granularity === 'item') {
+    if (resumptionRules.granularity === 'trial') {
         if (lastState === `${taskName}_finish`) return [];
-        const prefix = `${taskName}_item_`;
-        const match = lastState.startsWith(prefix)
-            ? lastState.slice(prefix.length).match(/^([1-9]\d*)_finish$/)
-            : null;
-        const completed = match ? Number(match[1]) : 0;
-        if (completed > structure.length) return structure;
-        return structure.filter(item => item.question_index >= completed);
+        // The task parser returns a count of completed trials, independent of the
+        // checkpoint format or the fields stored on each trial.
+        const completed = resumptionRules.extractProgress(lastState, taskName);
+        if (!Number.isInteger(completed) || completed < 0 || completed > structure.length) {
+            return structure;
+        }
+        return structure.slice(completed);
     }
 
     if (resumptionRules.granularity === 'block') {

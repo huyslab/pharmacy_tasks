@@ -65,4 +65,4 @@ An end-to-end example is in `examples/medication-questionnaire.html`.
 
 ## Notes
 - The questionnaire is deliberately not run in fullscreen in the example page: mobile browsers handle the on-screen keyboard better outside of fullscreen.
-- Each completed answer triggers a save and reports `<task_name>_item_<number>_finish` (one-based). Resumption starts at the first unfinished item, preserves the original progress numbering, and omits the introduction. A final-item or task-finish checkpoint skips the questionnaire. Older start-only checkpoints restart it. In a module, a later task checkpoint also skips completed questionnaires.
+- Resumption uses `granularity: 'trial'`: each questionnaire item is one trial, and the registry's `extractProgress` parses its checkpoint. Each completed answer triggers a save and reports `<task_name>_item_<number>_finish` (one-based). Resumption starts at the first unfinished item, preserves the original progress numbering, and omits the introduction. A final-item or task-finish checkpoint skips the questionnaire. Older start-only checkpoints restart it. In a module, a later task checkpoint also skips completed questionnaires.

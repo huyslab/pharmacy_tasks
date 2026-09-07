@@ -87,3 +87,17 @@ for (const state of [
     expect(hasMedication).toBe(false);
   });
 }
+
+test('trial resumption uses the task parser without questionnaire fields', async ({ page }) => {
+  await page.goto('/experiment.html');
+  const remaining = await page.evaluate(async () => {
+    const { applyWithinTaskResumptionRules } = await import('/core/utils/resumption.js');
+    const trials = [{ name: 'first' }, { name: 'second' }, { name: 'third' }];
+    return applyWithinTaskResumptionRules(trials, 'custom_trial_2', 'custom', {
+      enabled: true,
+      granularity: 'trial',
+      extractProgress: state => Number(state.split('_').at(-1)),
+    });
+  });
+  expect(remaining).toEqual([{ name: 'third' }]);
+});

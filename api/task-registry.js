@@ -15,6 +15,15 @@ import { createDemographicsTimeline } from '@tasks/demographics/index.js';
 import { createSelfReportTimeline } from '@tasks/self-report/index.js';
 import { createSessionFeedbackTimeline } from '@tasks/session-feedback/index.js';
 
+// Questionnaire checkpoints retain their existing item names; each item is one trial.
+function extractQuestionnaireProgress(lastState, taskName) {
+    const prefix = `${taskName}_item_`;
+    const match = lastState.startsWith(prefix)
+        ? lastState.slice(prefix.length).match(/^([1-9]\d*)_finish$/)
+        : null;
+    return match ? Number(match[1]) : 0;
+}
+
 export const TaskRegistry = {
   PILT: {
     name: 'PILT',
@@ -410,7 +419,8 @@ export const TaskRegistry = {
     },
     resumptionRules: {
         enabled: true,
-        granularity: 'item',
+        granularity: 'trial',
+        extractProgress: extractQuestionnaireProgress,
         skipCompleted: true, // Module checkpoints can prove the whole task is complete.
     }
   },
@@ -440,7 +450,8 @@ export const TaskRegistry = {
     },
     resumptionRules: {
         enabled: true,
-        granularity: 'item',
+        granularity: 'trial',
+        extractProgress: extractQuestionnaireProgress,
         skipCompleted: true, // Module checkpoints can prove the whole task is complete.
     }
   },
