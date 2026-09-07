@@ -42,7 +42,7 @@ export const TaskRegistry = {
     },
     resumptionRules: {
         enabled: true,
-        granularity: 'block', // or 'trial' for finer control
+        granularity: 'block',
         statePattern: (taskName) => `${taskName}_block_(\\d+)_start`,
         extractProgress: (lastState, taskName) => {
             const match = lastState.match(new RegExp(`${taskName}_block_(\\d+)_start`));
@@ -83,7 +83,7 @@ export const TaskRegistry = {
     },
     resumptionRules: {
         enabled: true,
-        granularity: 'block', // or 'trial' for finer control
+        granularity: 'block',
         statePattern: (taskName) => `${taskName}_block_(\\d+)_start`,
         extractProgress: (lastState, taskName) => {
             const match = lastState.match(new RegExp(`${taskName}_block_(\\d+)_start`));
@@ -216,7 +216,7 @@ export const TaskRegistry = {
       css: ['@tasks/delay-discounting/styles.css'],
     },
     resumptionRules: {
-        statePrefixes: ['dd'], // Prefixes emitted by this task, including existing saved states.
+        statePrefixes: ['dd'],
         enabled: true,
     },
     configOptions: {
@@ -260,7 +260,7 @@ export const TaskRegistry = {
       css: ['@tasks/piggy-banks/styles.css'],
     },
     resumptionRules: {
-        statePrefixes: ['pit'], // Prefixes emitted by this task, including existing saved states.
+        statePrefixes: ['pit'],
         enabled: true,
     }
   },
@@ -311,7 +311,7 @@ export const TaskRegistry = {
       css: ['@tasks/max-press-test/styles.css'],
     },
     resumptionRules: {
-        statePrefixes: ['max_press_rate'], // Prefixes emitted by this task, including existing saved states.
+        statePrefixes: ['max_press_rate'],
         enabled: true,
     }
   },
@@ -340,7 +340,7 @@ export const TaskRegistry = {
       css: ['@tasks/pavlovian-lottery/styles.css'],
     },
     resumptionRules: {
-        statePrefixes: ['prepilt_conditioning', 'pavlovian_lottery'], // Prefixes emitted by this task, including existing saved states.
+        statePrefixes: ['prepilt_conditioning', 'pavlovian_lottery'],
         enabled: true,
     }
   },
@@ -411,7 +411,7 @@ export const TaskRegistry = {
     resumptionRules: {
         enabled: true,
         granularity: 'trial',
-        skipCompleted: true, // Module checkpoints can prove the whole task is complete.
+        skipCompleted: true,
     }
   },
   demographics: {
@@ -441,7 +441,7 @@ export const TaskRegistry = {
     resumptionRules: {
         enabled: true,
         granularity: 'trial',
-        skipCompleted: true, // Module checkpoints can prove the whole task is complete.
+        skipCompleted: true,
     }
   },
   self_report: {

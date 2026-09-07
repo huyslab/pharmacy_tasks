@@ -374,6 +374,75 @@ it is enforced by the registry:
 - **Modules can't pin a session.** A module that must always run one specific session is not
   expressible - the launch URL decides. That would need a new mechanism.
 
+## Resumption
+
+The host passes the latest checkpoint in `module_state` (or the legacy `state`
+URL parameter). `experiment.html` reads it into `window.last_state`. A checkpoint
+belongs to the whole module: when a later task reports progress, it replaces the
+previous task's checkpoint.
+
+Tasks declare `resumptionRules` in `api/task-registry.js`:
+
+| Setting | Purpose | When omitted |
+|---|---|---|
+| `enabled` | Enables filtering by `applyWithinTaskResumptionRules` when the task calls it. | The shared helper leaves the sequence unchanged. |
+| `granularity` | `trial` removes completed trials from an ordered sequence; `block` filters blocks using the task's `extractProgress` function. | The shared helper leaves the sequence unchanged. |
+| `skipCompleted` | Allows module assembly to omit this task when the checkpoint belongs to a later task, or equals this task's `<task_name>_finish`. | Module assembly includes the task; its own resumption logic can still filter it. |
+| `statePrefixes` | Lists the prefixes module assembly uses to identify checkpoints belonging to this task. Prefixes exclude the trailing underscore; matching checks `prefix + "_"`. | Uses the resolved `task_name`, falling back to the task's registry key. |
+
+`skipCompleted` is independent of `enabled`: the former controls skipping a whole
+module element, while the latter controls filtering inside a task through the
+shared helper. Only medication and demographics currently opt into
+`skipCompleted`. Instruction and bonus elements are not skipped by this rule.
+
+### Matching a checkpoint to a module task
+
+Module assembly finds the first task whose prefix matches the saved checkpoint.
+It then skips preceding tasks that enable `skipCompleted`. An unmatched checkpoint
+does not cause earlier tasks to be skipped.
+
+The fallback state name follows configuration precedence: runtime `task_name`,
+element config, module config, task defaults, then the registry key.
+`statePrefixes`, when supplied, replaces that fallback for checkpoint matching;
+it does not change the checkpoints a task emits or its within-task parsing.
+An empty list matches no checkpoints.
+
+For example, `max_press_test` emits `max_press_rate_start` and
+`max_press_rate_end`, so it declares `statePrefixes: ['max_press_rate']`.
+Pavlovian lottery declares `['prepilt_conditioning', 'pavlovian_lottery']`
+because its introduction and trials use different prefixes. The explicit
+whole-task finish check still uses the resolved `<task_name>_finish`.
+
+### Resuming within a questionnaire
+
+Medication and demographics use:
+
+```javascript
+resumptionRules: {
+    enabled: true,
+    granularity: 'trial',
+    skipCompleted: true
+}
+```
+
+Each answered question triggers a save and emits
+`<task_name>_trial_<number>_finish`, where the number is one-based. The task
+passes its ordered question trials to `applyWithinTaskResumptionRules`, which
+removes that many trials. A final-trial or `<task_name>_finish` checkpoint removes
+the entire sequence. Unrecognized or out-of-range trial checkpoints leave it
+unchanged. The questionnaire omits its introduction on a partial resume and
+preserves the original question numbering.
+
+For example, `demographics_trial_2_finish` resumes at question 3. Once the
+checkpoint becomes `reversal_block_2_trial_3`, demographics can no longer infer
+its own progress from that string; module assembly uses task order and
+`skipCompleted` to omit it instead.
+
+Declaring `granularity` alone does not implement resumption: a task must emit
+checkpoints and call the shared helper. PILT and WM use the shared block filter.
+Reversal and control instead parse trial checkpoints in their own task code;
+their behavior is not implemented by the shared `trial` branch.
+
 ## Examples
 
 Complete working examples are available in the `examples/` folder:
