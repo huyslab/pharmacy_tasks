@@ -12,10 +12,20 @@ import { createReversalTimeline, computeRelativeReversalBonus } from '@tasks/rev
 import { createAcceptabilityTimeline } from '@tasks/acceptability-judgment/index.js';
 import { createMedicationQuestionnaireTimeline } from '@tasks/medication-questionnaire/index.js';
 import { createDemographicsTimeline } from '@tasks/demographics/index.js';
+import { createInstructionVideoTimeline } from '@tasks/instruction-video/index.js';
 import { createSelfReportTimeline } from '@tasks/self-report/index.js';
 import { createSessionFeedbackTimeline } from '@tasks/session-feedback/index.js';
 
 export const TaskRegistry = {
+  instruction_video: {
+    name: 'Instruction Video',
+    description: 'Introductory video explaining the games',
+    createTimeline: createInstructionVideoTimeline,
+    computeBonus: () => 0,
+    defaultConfig: { task_name: 'instruction_video' },
+    requirements: { css: ['@tasks/instruction-video/styles.css'] },
+    resumptionRules: { enabled: false }
+  },
   PILT: {
     name: 'PILT',
     description: 'A task measuring probabilistic instrumental learning in a card choosing scenario',
