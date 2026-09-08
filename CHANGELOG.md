@@ -1,3 +1,18 @@
+# [1.14.0](https://github.com/huyslab/pharmacy_tasks/compare/v1.13.0...v1.14.0) (2026-09-08)
+
+
+### Bug Fixes
+
+* **instruction-video:** allow continuing when video playback fails ([c59cedc](https://github.com/huyslab/pharmacy_tasks/commit/c59cedc4d59dfc99b7bf36027c8bc5ef875fdd49))
+* **questionnaires:** resume from the first unfinished item ([f7f8e58](https://github.com/huyslab/pharmacy_tasks/commit/f7f8e58ff657224722e44b5d2c9400371b31a0dd))
+* **resumption:** recognize module bonus checkpoints ([c99a27f](https://github.com/huyslab/pharmacy_tasks/commit/c99a27f84b5f15c162da1e65cb3dcb0714039bf1))
+* **resumption:** recognize task checkpoint prefixes ([fc3be78](https://github.com/huyslab/pharmacy_tasks/commit/fc3be7832dd75d40576795827a262f0e613791ec))
+
+
+### Features
+
+* **instruction-video:** add introductory video task to experiment flow ([8ef5b65](https://github.com/huyslab/pharmacy_tasks/commit/8ef5b656741a32f094b976e5c72f6f9488b88b4d))
+
 # [1.13.0](https://github.com/huyslab/pharmacy_tasks/compare/v1.12.0...v1.13.0) (2026-09-04)
 
 
