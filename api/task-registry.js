@@ -52,7 +52,7 @@ export const TaskRegistry = {
     },
     resumptionRules: {
         enabled: true,
-        granularity: 'block', // or 'trial' for finer control
+        granularity: 'block',
         statePattern: (taskName) => `${taskName}_block_(\\d+)_start`,
         extractProgress: (lastState, taskName) => {
             const match = lastState.match(new RegExp(`${taskName}_block_(\\d+)_start`));
@@ -93,7 +93,7 @@ export const TaskRegistry = {
     },
     resumptionRules: {
         enabled: true,
-        granularity: 'block', // or 'trial' for finer control
+        granularity: 'block',
         statePattern: (taskName) => `${taskName}_block_(\\d+)_start`,
         extractProgress: (lastState, taskName) => {
             const match = lastState.match(new RegExp(`${taskName}_block_(\\d+)_start`));
@@ -226,6 +226,7 @@ export const TaskRegistry = {
       css: ['@tasks/delay-discounting/styles.css'],
     },
     resumptionRules: {
+        statePrefixes: ['dd'],
         enabled: true,
     },
     configOptions: {
@@ -269,6 +270,7 @@ export const TaskRegistry = {
       css: ['@tasks/piggy-banks/styles.css'],
     },
     resumptionRules: {
+        statePrefixes: ['pit'],
         enabled: true,
     }
   },
@@ -319,6 +321,7 @@ export const TaskRegistry = {
       css: ['@tasks/max-press-test/styles.css'],
     },
     resumptionRules: {
+        statePrefixes: ['max_press_rate'],
         enabled: true,
     }
   },
@@ -347,6 +350,7 @@ export const TaskRegistry = {
       css: ['@tasks/pavlovian-lottery/styles.css'],
     },
     resumptionRules: {
+        statePrefixes: ['prepilt_conditioning', 'pavlovian_lottery'],
         enabled: true,
     }
   },
@@ -415,7 +419,9 @@ export const TaskRegistry = {
       css: ['@tasks/question-screen/styles.css'],
     },
     resumptionRules: {
-        enabled: false,
+        enabled: true,
+        granularity: 'trial',
+        skipCompleted: true,
     }
   },
   demographics: {
@@ -442,9 +448,10 @@ export const TaskRegistry = {
     requirements: {
       css: ['@tasks/question-screen/styles.css'],
     },
-    // Short, and a resumed session would skip questions whose answers were never recorded
     resumptionRules: {
-        enabled: false,
+        enabled: true,
+        granularity: 'trial',
+        skipCompleted: true,
     }
   },
   self_report: {

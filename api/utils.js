@@ -365,9 +365,29 @@ export async function createModuleTimeline(moduleName, config) {
         }
     });
 
+    // A later task's checkpoint proves the preceding questionnaires were completed.
+    // Within-task resumption separately trims items from the active questionnaire.
+    const taskStateName = element => config?.task_name ?? element.config?.task_name ??
+        module.moduleConfig?.task_name ?? element.__task.defaultConfig.task_name ?? element.name;
+    const lastState = window.last_state;
+    const checkpointIndex = typeof lastState === 'string'
+        ? module.elements.findIndex(element => {
+            if (element.type === 'bonus') {
+                return lastState === 'bonus_trial' || lastState === 'bonus_trial_end';
+            }
+            return element.type === 'task' &&
+                (element.__task.resumptionRules?.statePrefixes ?? [taskStateName(element)])
+                    .some(prefix => lastState.startsWith(`${prefix}_`));
+        })
+        : -1;
+
     // Create timeline for each element in the module
-    const timelines = module.elements.map(element => {
+    const timelines = module.elements.map((element, index) => {
         if (element.type === "task") {
+            if (element.__task.resumptionRules?.skipCompleted &&
+                (checkpointIndex > index || lastState === `${taskStateName(element)}_finish`)) {
+                return [];
+            }
             // in_module last: it describes how the task is being run, so a module definition
             // must not be able to unset it. Tasks that say what comes after them read it -
             // a single-task launch has no other element to follow it.
