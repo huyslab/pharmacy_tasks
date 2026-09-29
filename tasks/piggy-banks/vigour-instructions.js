@@ -1,6 +1,6 @@
-import { updatePersistentCoinContainer, observeResizing, dropCoin, setupPointerListener, cleanupPointerListener, simulatePointerTap } from './vigour-utils.js';
+import { updatePersistentCoinContainer, observeResizing, dropCoin, setupPointerListener, cleanupPointerListener, simulatePointerTap, STYLUS_WARNING } from './vigour-utils.js';
 import { shakePiggy } from './utils.js';
-import { updateState } from '@utils/index.js';
+import { showTemporaryWarning, updateState } from '@utils/index.js';
 
 let instructionPointerListener = null;
 let instructionResizeObserver = null;
@@ -56,7 +56,10 @@ const instructionPage = {
      * Handles spacebar presses during the instruction demo
      * Provides immediate feedback and coin rewards
      */
-    function handleSpacebar() {
+    function handleSpacebar(event) {
+      if (event.pointerType === 'pen' && !document.getElementById('vigour-warning-temp')) {
+        showTemporaryWarning(STYLUS_WARNING, 800);
+      }
       shakeCount++;
       shakePiggy();
       updateInstructionText(shakeCount);

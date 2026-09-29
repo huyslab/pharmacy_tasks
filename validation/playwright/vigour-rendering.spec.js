@@ -58,6 +58,21 @@ defineTaskRenderingTest('vigour', {
   },
 });
 
+test('vigour warns against stylus use during the interactive instructions', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'Pixel 7', 'one pointer-capable project is sufficient');
+
+  await page.goto('/examples/vigour.html?participant_id=instruction-stylus-warning-check');
+  await page.getByRole('button', { name: 'Got it' }).click();
+
+  const piggy = page.locator('#piggy-container');
+  await expect(piggy, 'the interactive instruction piggy should appear').toBeVisible({ timeout: 15000 });
+  await piggy.dispatchEvent('pointerdown', { pointerType: 'pen', isPrimary: true, button: 0 });
+
+  await expect(page.locator('#vigour-warning-temp')).toHaveText(
+    'Please tap with your finger, not a stylus (e.g., Apple Pencil)'
+  );
+});
+
 test('the vigour start confirmation ignores a tap inside the lockout', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'Pixel 7', 'one touch project is sufficient for the tap lockout');
 
