@@ -1,5 +1,45 @@
 import { expect, test } from '@playwright/test';
 
+async function inspectQuestionnaireLoop(page, task, navigations) {
+  return page.evaluate(async ({ task, navigations }) => {
+    const { createTaskTimeline } = await import('/api/index.js');
+    const timeline = await createTaskTimeline(task);
+    const flatten = nodes => nodes.flatMap(node =>
+      Array.isArray(node) ? flatten(node) : node.timeline ? [node, ...flatten(node.timeline)] : [node]
+    );
+    const isQuestionnaireLoop = node =>
+      node.loop_function && node.timeline?.[0]?.type?.info?.name === 'question-screen';
+    const screen = flatten(timeline).find(isQuestionnaireLoop)?.timeline[0];
+    const posted = [];
+    window.postMessage = message => {
+      if (message.state) posted.push(message.state);
+    };
+
+    timeline[0]?.on_timeline_start?.();
+    const startStates = [...posted];
+    const snapshots = [{
+      index: screen?.question_index(),
+      label: screen?.back_label(),
+      state: posted.at(-1),
+    }];
+    for (const navigation of navigations) {
+      screen?.on_finish?.({ navigation });
+      snapshots.push({
+        index: screen?.question_index(),
+        label: screen?.back_label(),
+        state: posted.at(-1),
+      });
+    }
+
+    return {
+      snapshots,
+      startStates,
+      states: posted,
+      total: screen?.n_questions,
+    };
+  }, { task, navigations });
+}
+
 for (const [state, expected] of [
   ['none', ['medication_questionnaire', 'demographics']],
   ['medication_questionnaire_start', ['medication_questionnaire', 'demographics']],
@@ -46,31 +86,9 @@ for (const [task, count] of [['medication_questionnaire', 5], ['demographics', 3
   for (const completed of [1, count - 1, count]) {
     test(`${task} resumes after item ${completed}`, async ({ page }) => {
       await page.goto(`/experiment.html?module_state=${task}_trial_${completed}_finish&parent_origin=http%3A%2F%2Flocalhost%3A3000`);
-      const result = await page.evaluate(async ({ task }) => {
-        const { createTaskTimeline } = await import('/api/index.js');
-        const timeline = await createTaskTimeline(task);
-        const flatten = nodes => nodes.flatMap(node => Array.isArray(node) ? flatten(node) : node.timeline ? [node, ...flatten(node.timeline)] : [node]);
-        const questionLoop = flatten(timeline).find(node =>
-          node.loop_function && node.timeline?.[0]?.type?.info?.name === 'question-screen'
-        );
-        const screen = questionLoop?.timeline[0];
-        const posted = [];
-        window.postMessage = message => posted.push(message.state);
-        timeline[0]?.on_timeline_start?.();
-        const startStates = [...posted];
-        const initialIndex = screen?.question_index();
-        const total = screen?.n_questions;
-        screen?.on_finish?.({ navigation: 'forward' });
-        return {
-          initialIndex,
-          nextIndex: screen?.question_index(),
-          total,
-          startStates,
-          states: posted,
-        };
-      }, { task });
-      expect(result.initialIndex).toBe(completed < count ? completed : undefined);
-      expect(result.nextIndex).toBe(completed < count ? completed + 1 : undefined);
+      const result = await inspectQuestionnaireLoop(page, task, ['forward']);
+      expect(result.snapshots[0].index).toBe(completed < count ? completed : undefined);
+      expect(result.snapshots[1].index).toBe(completed < count ? completed + 1 : undefined);
       expect(result.total).toBe(completed < count ? count : undefined);
       expect(result.startStates).not.toContain(`${task}_start`);
       if (completed < count) expect(result.states).toContain(`${task}_trial_${completed + 1}_finish`);
@@ -81,42 +99,14 @@ for (const [task, count] of [['medication_questionnaire', 5], ['demographics', 3
 for (const task of ['medication_questionnaire', 'demographics']) {
   test(`${task} moves its resumption checkpoint back with the participant`, async ({ page }) => {
     await page.goto(`/experiment.html?module_state=${task}_trial_2_finish&parent_origin=http%3A%2F%2Flocalhost%3A3000`);
-    const result = await page.evaluate(async task => {
-      const { createTaskTimeline } = await import('/api/index.js');
-      const timeline = await createTaskTimeline(task);
-      const flatten = nodes => nodes.flatMap(node => Array.isArray(node) ? flatten(node) : node.timeline ? [node, ...flatten(node.timeline)] : [node]);
-      const questionLoop = flatten(timeline).find(node =>
-        node.loop_function && node.timeline?.[0]?.type?.info?.name === 'question-screen'
-      );
-      const screen = questionLoop.timeline[0];
-      const posted = [];
-      window.postMessage = message => {
-        if (message.state) posted.push(message.state);
-      };
+    const result = await inspectQuestionnaireLoop(page, task, ['back', 'back']);
 
-      screen.on_finish({ navigation: 'back' });
-      const firstBack = {
-        index: screen.question_index(),
-        label: screen.back_label(),
-        state: posted.at(-1),
-      };
-      screen.on_finish({ navigation: 'back' });
-      return {
-        firstBack,
-        secondBack: {
-          index: screen.question_index(),
-          label: screen.back_label(),
-          state: posted.at(-1),
-        },
-      };
-    }, task);
-
-    expect(result.firstBack).toEqual({
+    expect(result.snapshots[1]).toEqual({
       index: 1,
       label: 'Back',
       state: `${task}_trial_1_finish`,
     });
-    expect(result.secondBack).toEqual({
+    expect(result.snapshots[2]).toEqual({
       index: 0,
       label: null,
       state: `${task}_start`,
