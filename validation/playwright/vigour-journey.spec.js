@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { defineTaskJourneyTest } from './support/journey-check.js';
-import { patchWebkitTouchPoints } from './support/helpers.js';
+import { captureShot, patchWebkitTouchPoints } from './support/helpers.js';
 import { TASKS } from './support/task-config.js';
 
 defineTaskJourneyTest('vigour', TASKS.vigour);
@@ -19,4 +19,5 @@ test('vigour warns against stylus use during the interactive instructions', asyn
   const warning = page.locator('#vigour-warning-temp');
   await expect(warning).toBeVisible();
   await expect(warning).toHaveText('Please tap with your finger, not a stylus (e.g., Apple Pencil)');
+  await captureShot(page, testInfo, 'vigour', 'stylus-warning');
 });
