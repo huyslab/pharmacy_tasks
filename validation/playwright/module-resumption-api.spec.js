@@ -49,25 +49,79 @@ for (const [task, count] of [['medication_questionnaire', 5], ['demographics', 3
       const result = await page.evaluate(async ({ task }) => {
         const { createTaskTimeline } = await import('/api/index.js');
         const timeline = await createTaskTimeline(task);
-        const screens = timeline.flatMap(node => node.timeline || [node]);
+        const flatten = nodes => nodes.flatMap(node => Array.isArray(node) ? flatten(node) : node.timeline ? [node, ...flatten(node.timeline)] : [node]);
+        const questionLoop = flatten(timeline).find(node =>
+          node.loop_function && node.timeline?.[0]?.type?.info?.name === 'question-screen'
+        );
+        const screen = questionLoop?.timeline[0];
         const posted = [];
         window.postMessage = message => posted.push(message.state);
         timeline[0]?.on_timeline_start?.();
         const startStates = [...posted];
-        screens[0]?.on_finish?.();
+        const initialIndex = screen?.question_index();
+        const total = screen?.n_questions;
+        screen?.on_finish?.({ navigation: 'forward' });
         return {
-          indices: screens.map(screen => screen.question_index),
-          totals: screens.map(screen => screen.n_questions),
+          initialIndex,
+          nextIndex: screen?.question_index(),
+          total,
           startStates,
           states: posted,
         };
       }, { task });
-      expect(result.indices).toEqual(Array.from({ length: count - completed }, (_, i) => completed + i));
-      expect(result.totals).toEqual(Array(count - completed).fill(count));
+      expect(result.initialIndex).toBe(completed < count ? completed : undefined);
+      expect(result.nextIndex).toBe(completed < count ? completed + 1 : undefined);
+      expect(result.total).toBe(completed < count ? count : undefined);
       expect(result.startStates).not.toContain(`${task}_start`);
       if (completed < count) expect(result.states).toContain(`${task}_trial_${completed + 1}_finish`);
     });
   }
+}
+
+for (const task of ['medication_questionnaire', 'demographics']) {
+  test(`${task} moves its resumption checkpoint back with the participant`, async ({ page }) => {
+    await page.goto(`/experiment.html?module_state=${task}_trial_2_finish&parent_origin=http%3A%2F%2Flocalhost%3A3000`);
+    const result = await page.evaluate(async task => {
+      const { createTaskTimeline } = await import('/api/index.js');
+      const timeline = await createTaskTimeline(task);
+      const flatten = nodes => nodes.flatMap(node => Array.isArray(node) ? flatten(node) : node.timeline ? [node, ...flatten(node.timeline)] : [node]);
+      const questionLoop = flatten(timeline).find(node =>
+        node.loop_function && node.timeline?.[0]?.type?.info?.name === 'question-screen'
+      );
+      const screen = questionLoop.timeline[0];
+      const posted = [];
+      window.postMessage = message => {
+        if (message.state) posted.push(message.state);
+      };
+
+      screen.on_finish({ navigation: 'back' });
+      const firstBack = {
+        index: screen.question_index(),
+        label: screen.back_label(),
+        state: posted.at(-1),
+      };
+      screen.on_finish({ navigation: 'back' });
+      return {
+        firstBack,
+        secondBack: {
+          index: screen.question_index(),
+          label: screen.back_label(),
+          state: posted.at(-1),
+        },
+      };
+    }, task);
+
+    expect(result.firstBack).toEqual({
+      index: 1,
+      label: 'Back',
+      state: `${task}_trial_1_finish`,
+    });
+    expect(result.secondBack).toEqual({
+      index: 0,
+      label: null,
+      state: `${task}_start`,
+    });
+  });
 }
 
 for (const state of [

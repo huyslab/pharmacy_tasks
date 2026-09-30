@@ -1,7 +1,7 @@
 # Medication Questionnaire
 
 ## Overview
-A short questionnaire, asked at the start of a session, about the medication the participant was invited to the study for. One question per screen, a slide transition between screens, and no way back to an earlier question - each screen is its own jsPsych trial, and the answer is committed as the screen slides away.
+A short questionnaire, asked at the start of a session, about the medication the participant was invited to the study for. One question appears per screen, and every screen after the first offers Back so an earlier answer can be corrected.
 
 The screens themselves, the controls they adapt to the device, and the data each records are the shared [question screen](../question-screen/README.md); this task supplies only the questions.
 
@@ -19,6 +19,7 @@ The screens themselves, the controls they adapt to the device, and the data each
 **Main Export Function**:
 - **`createMedicationQuestionnaireTimeline(settings)`**: Returns the full questionnaire as a single jsPsych timeline node
   - Optional intro screen, then the five question screens
+  - Allows moving back through earlier items without overwriting their recorded answers
   - Marks the questionnaire start and finish with `updateState()`
   - Saves to REDCap after every screen, so an interrupted session keeps the earlier answers
 
@@ -66,3 +67,4 @@ An end-to-end example is in `examples/medication-questionnaire.html`.
 ## Notes
 - The questionnaire is deliberately not run in fullscreen in the example page: mobile browsers handle the on-screen keyboard better outside of fullscreen.
 - Resumption uses `granularity: 'trial'`: each questionnaire item is one trial, and the shared resumption helper parses its checkpoint. Each completed answer triggers a save and reports `<task_name>_trial_<number>_finish` (one-based). Resumption starts at the first unfinished item, preserves the original progress numbering, and omits the introduction. A final-item or task-finish checkpoint skips the questionnaire. Older start-only checkpoints restart it. In a module, a later task checkpoint also skips completed questionnaires.
+- Every visit is append-only: an original answer, a `navigation: 'back'` row, and a replacement answer remain as separate chronological rows. Back also moves the resume checkpoint to the item being revised.

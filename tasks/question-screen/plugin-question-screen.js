@@ -116,6 +116,11 @@ var jsPsychQuestionScreen = (function (jspsych) {
                 type: jspsych.ParameterType.STRING,
                 default: "Continue"
             },
+            /** Label of the back button. Null hides it */
+            back_label: {
+                type: jspsych.ParameterType.STRING,
+                default: null
+            },
             /** Position of this question in the questionnaire, used for the progress dots */
             question_index: {
                 type: jspsych.ParameterType.INT,
@@ -174,6 +179,10 @@ var jsPsychQuestionScreen = (function (jspsych) {
             /** Time from screen onset to the response that ended the trial */
             rt: {
                 type: jspsych.ParameterType.INT
+            },
+            /** Whether this visit submitted an answer or navigated to the previous item */
+            navigation: {
+                type: jspsych.ParameterType.STRING
             }
         }
     };
@@ -182,8 +191,8 @@ var jsPsychQuestionScreen = (function (jspsych) {
      * **question-screen**
      *
      * jsPsych plugin presenting a single questionnaire screen: one question per screen, a
-     * slide-in / slide-out transition between screens, and no way back to a previous screen -
-     * each screen is its own trial and answers are committed when it slides away.
+     * slide-in / slide-out transition between screens. Each visit is its own trial, so going
+     * back keeps both the original answer and the navigation step in the data.
      *
      * The plugin knows nothing about any particular questionnaire; the questions live in the
      * timeline of whichever task uses it (the medication questionnaire, demographics).
@@ -234,12 +243,13 @@ var jsPsychQuestionScreen = (function (jspsych) {
                     unsure: response.unsure || false,
                     not_started: response.not_started || false,
                     declined: response.declined || false,
+                    navigation: response.navigation || 'forward',
                     input_mode: keyboardMode ? 'keyboard' : 'touch',
                     rt: Math.round(performance.now() - startTime)
                 };
 
                 screen.classList.remove('qsc-screen-in');
-                screen.classList.add('qsc-screen-out');
+                screen.classList.add(response.navigation === 'back' ? 'qsc-screen-back' : 'qsc-screen-out');
 
                 this.jsPsych.pluginAPI.setTimeout(
                     () => this.jsPsych.finishTrial(trial_data),
@@ -286,6 +296,8 @@ var jsPsychQuestionScreen = (function (jspsych) {
                 default:
                     throw new Error(`Unknown question_type "${trial.question_type}" in question-screen plugin.`);
             }
+
+            this.addBackButton(footer, trial, endTrial);
 
             // Put the caret where the answer goes, so a keyboard user can start typing or
             // tabbing straight away. Left alone on touchscreens, where focusing a text field
@@ -361,6 +373,17 @@ var jsPsychQuestionScreen = (function (jspsych) {
             const button = footer.querySelector(`#${id}`);
             button.addEventListener('click', onClick);
             return button;
+        }
+
+        /** Adds navigation to the previous questionnaire item without requiring an answer */
+        addBackButton(footer, trial, endTrial) {
+            return this.addQuietButton(footer, trial.back_label, 'qsc-back', () => {
+                endTrial({
+                    response: null,
+                    response_label: null,
+                    navigation: 'back'
+                });
+            });
         }
 
         /**
@@ -576,6 +599,7 @@ var jsPsychQuestionScreen = (function (jspsych) {
                         } else {
                             this.setupText(body, footer, revealed, endTrial, keyboardMode);
                         }
+                        this.addBackButton(footer, trial, endTrial);
 
                         if (keyboardMode) {
                             const field = body.querySelector('#qsc-number, #qsc-text');
@@ -731,6 +755,7 @@ var jsPsychQuestionScreen = (function (jspsych) {
                     response_label: items.join(', ') || `${labels.yes}, but none listed`
                 });
             });
+            this.addBackButton(footer, trial, endTrial);
 
             const renderChips = () => {
                 chips.replaceChildren();
@@ -818,6 +843,7 @@ var jsPsychQuestionScreen = (function (jspsych) {
                 unsure: false,
                 not_started: false,
                 declined: false,
+                navigation: 'forward',
                 input_mode: this.usesKeyboard(trial) ? 'keyboard' : 'touch',
                 rt: this.jsPsych.randomization.sampleExGaussian(2000, 400, 1 / 800, true),
                 ...responses[trial.question_type]

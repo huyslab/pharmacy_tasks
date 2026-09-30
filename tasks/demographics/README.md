@@ -1,7 +1,7 @@
 # Demographics
 
 ## Overview
-Three questions about the participant - age, sex registered at birth, and gender - one per screen, with a slide transition between them and no way back to an earlier question.
+Three questions about the participant - age, sex registered at birth, and gender - one per screen, with a slide transition between them and Back available after the first item.
 
 The screens themselves, the controls they adapt to the device, and the data each records are the shared [question screen](../question-screen/README.md); this task supplies only the questions.
 
@@ -21,6 +21,7 @@ Sex and gender are asked as two separate questions, in that order, following the
 **Main Export Function**:
 - **`createDemographicsTimeline(settings)`**: Returns the questionnaire as a single jsPsych timeline node
   - Optional intro screen, then the three question screens
+  - Allows moving back through earlier items without overwriting their recorded answers
   - Marks the questionnaire start and finish with `updateState()`
   - Saves to REDCap after every screen, so an interrupted session keeps the earlier answers
 
@@ -70,4 +71,5 @@ An end-to-end example is in `examples/demographics.html`.
 ## Notes
 - The questionnaire is deliberately not run in fullscreen in the example page: mobile browsers handle the on-screen keyboard better outside of fullscreen.
 - Resumption uses `granularity: 'trial'`: each questionnaire item is one trial, and the shared resumption helper parses its checkpoint. Each completed answer triggers a save and reports `<task_name>_trial_<number>_finish` (one-based). Resumption starts at the first unfinished item, preserves the original progress numbering, and omits the introduction. A final-item or task-finish checkpoint skips the questionnaire. Older start-only checkpoints restart it. In a module, a later task checkpoint also skips completed questionnaires.
+- Every visit is append-only: an original answer, a `navigation: 'back'` row, and a replacement answer remain as separate chronological rows. Back also moves the resume checkpoint to the item being revised.
 - In `api/module-registry.js` the questionnaire runs in `pilot_1`, straight after the medication questionnaire, so both sets of questions are asked together at the start of the visit rather than interrupting it later.

@@ -44,10 +44,15 @@
     transform: translateX(0);
 }
 
-/* Answers are committed as the screen leaves, so it always exits to the left */
+/* Forward answers exit left; Back exits right to match the direction of travel. */
 .qsc-screen-out {
     opacity: 0;
     transform: translateX(-8vw);
+}
+
+.qsc-screen-back {
+    opacity: 0;
+    transform: translateX(8vw);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -58,13 +63,16 @@
     .qsc-screen-out {
         transform: none;
     }
+    .qsc-screen-back {
+        transform: none;
+    }
 }
 
 .qsc-screen * {
     box-sizing: border-box;
 }
 
-/* Progress dots - shows how far along the questionnaire is, with no way back */
+/* Progress dots show the current position in the questionnaire. */
 .qsc-progress {
     display: flex;
     justify-content: center;

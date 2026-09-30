@@ -36,11 +36,5 @@ defineTaskRenderingTest('medication-questionnaire', {
       getComputedStyle(el).getPropertyValue('--qsc-transition').trim()
     );
     expect(transition, '--qsc-transition should be set on the screen').toMatch(/^\d+(\.\d+)?m?s$/);
-
-    // Answers are committed as a screen leaves, so there must be nothing to go back with.
-    await expect(
-      page.getByRole('button', { name: /back|previous/i }),
-      'the questionnaire must not offer a way back to an answered question'
-    ).toHaveCount(0);
   },
 });

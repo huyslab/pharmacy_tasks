@@ -1,9 +1,9 @@
 # Question Screen
 
 ## Overview
-The shared plugin and stylesheet behind the questionnaires that ask one question per screen: the [medication questionnaire](../medication-questionnaire/README.md) and [demographics](../demographics/README.md). This directory is not a task and has no timeline of its own - it holds only what those tasks render through, so a question asked in one of them looks and behaves the same as a question asked in the other.
+The shared plugin, navigation loop, and stylesheet behind the questionnaires that ask one question per screen: the [medication questionnaire](../medication-questionnaire/README.md) and [demographics](../demographics/README.md). This directory is not a standalone task; it holds the common pieces those tasks render through, so a question asked in one looks and behaves the same as a question asked in the other.
 
-A screen is a card with progress dots, the question, an optional supporting line, a body determined by `question_type`, and a footer holding the forward button. The card slides in from the right on trial start and out to the left when answered; `transition_duration` controls both, and the transitions are skipped in simulation mode and for users who ask for reduced motion. There is no way back: each screen is its own jsPsych trial, and the answer is committed as the screen slides away.
+A screen is a card with progress dots, the question, an optional supporting line, a body determined by `question_type`, and a footer holding the navigation controls. The card slides in from the right on trial start, out to the left when answered, and out to the right when Back is used; `transition_duration` controls the transitions, which are skipped in simulation mode and for users who ask for reduced motion. Each visit is its own jsPsych trial, so going back never overwrites an earlier answer.
 
 The controls adapt to the device (`input_mode`, `'auto'` by default):
 
@@ -33,7 +33,9 @@ Which set of controls a participant saw is recorded per screen as `input_mode`.
 | `decline_label` | `declined` | The participant could answer but would rather not |
 | `not_started_label` | `not_started` | On a `date` screen, there is no date yet to give |
 
-**Data recorded per screen**: `question_name`, `question_type`, `response`, `response_label` (a readable version of the answer), `unsure`, `declined`, `not_started`, `input_mode`, and `rt`. `response` is a string for `text`, a number for `number`, the chosen option's value for `choice` (or the typed answer, where the option revealed an entry control), a `{day, month, year}` object for `date` (with `null` for anything left blank), and an array of strings for `list` (empty when the answer was "no").
+**Data recorded per screen**: `question_name`, `question_type`, `response`, `response_label` (a readable version of the answer), `unsure`, `declined`, `not_started`, `navigation`, `input_mode`, and `rt`. `navigation` is `'forward'` for a submitted answer and `'back'` for a Back action; a Back row has a `null` response. `response` is a string for `text`, a number for `number`, the chosen option's value for `choice` (or the typed answer, where the option revealed an entry control), a `{day, month, year}` object for `date` (with `null` for anything left blank), and an array of strings for `list` (empty when the answer was "no").
+
+The first question has no Back control. Every later question does, including entry editors revealed by a choice or list question. The shared timeline loop stores each original answer, Back action, and replacement as separate rows in chronological order.
 
 The plugin implements `simulate()` in both data-only and visual modes; visual mode drives the real controls.
 
@@ -43,6 +45,9 @@ The plugin implements `simulate()` in both data-only and visual modes; visual mo
 - Text fields never drop below 16px, which stops iOS Safari zooming in on focus
 - `.qsc-keyboard` (set by the plugin on the screen) tightens the controls for a cursor, and a `(hover: hover) and (pointer: fine)` block adds hover states; `:focus-visible` rings apply everywhere
 - The slide transitions, and a `prefers-reduced-motion` fallback that removes them
+
+#### `timeline.js`
+**Purpose**: Shared append-only navigation and resumption loop for the medication and demographic questionnaires.
 
 ## Usage
 
