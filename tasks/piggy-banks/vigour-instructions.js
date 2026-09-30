@@ -50,13 +50,13 @@ const instructionPage = {
     const bottomContainer = document.getElementById('bottom-container');
     const experimentContainer = document.getElementById('experiment-container');
     const buttonInstruction = document.getElementById('button-instruction');
-    instructionPointerListener = setupPointerListener(handleSpacebar);
+    instructionPointerListener = setupPointerListener(handleInstructionPress);
 
     /**
-     * Handles spacebar presses during the instruction demo
+     * Handles piggy-bank presses during the instruction demo
      * Provides immediate feedback and coin rewards
      */
-    function handleSpacebar(event) {
+    function handleInstructionPress(event) {
       if (event.pointerType === 'pen' && !document.getElementById('vigour-warning-temp')) {
         showTemporaryWarning(STYLUS_WARNING, 800);
       }
@@ -105,7 +105,7 @@ const instructionPage = {
       if (instructionPointerListener) {
         cleanupPointerListener(instructionPointerListener.handler, instructionPointerListener.element);
       }
-      instructionPointerListener = setupPointerListener(handleSpacebar);
+      instructionPointerListener = setupPointerListener(handleInstructionPress);
       const coinContainer = document.getElementById('coin-container');
       coinContainer.innerHTML = '';
     }
