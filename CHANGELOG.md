@@ -1,3 +1,10 @@
+## [1.14.1](https://github.com/huyslab/pharmacy_tasks/compare/v1.14.0...v1.14.1) (2026-10-01)
+
+
+### Bug Fixes
+
+* **vigour:** warn on stylus use during instructions ([5af912a](https://github.com/huyslab/pharmacy_tasks/commit/5af912a69f26a8dbc02f6a28992243d2d95ff0d1))
+
 # [1.14.0](https://github.com/huyslab/pharmacy_tasks/compare/v1.13.0...v1.14.0) (2026-09-08)
 
 
