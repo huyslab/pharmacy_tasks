@@ -172,6 +172,7 @@ async function medicationQuestionnaireJourney(page, testInfo, hasTouch) {
   // 1. Name of the medicine - typed on whichever keyboard the device has.
   const nameField = page.locator('#qsc-text');
   await expect(nameField, 'the medicine name field should appear').toBeVisible({ timeout: 15000 });
+  await expect(page.locator('#qsc-back'), 'the first question should not offer Back').toHaveCount(0);
   await expect(
     page.locator('#qsc-continue'),
     'continue should stay disabled until the name has been entered'
@@ -204,11 +205,23 @@ async function medicationQuestionnaireJourney(page, testInfo, hasTouch) {
   await captureShot(page, testInfo, 'medication-questionnaire', 'dose');
   await advance();
 
-  // 3. Pills per day - take the "5 or more" option, which swaps this same screen for a
-  // number entry rather than moving on.
+  // 3. Pills per day - first record the wrong answer, go Back from the date screen, then
+  // revise it through "5 or more", which swaps the screen for a number entry.
   const options = page.locator('.qsc-choice');
   await expect(options.first(), 'the pills-per-day options should appear').toBeVisible({ timeout: 15000 });
   await captureShot(page, testInfo, 'medication-questionnaire', 'options');
+  if (keyboardMode) {
+    await page.keyboard.press('1');
+  } else {
+    await options.first().tap();
+  }
+
+  await expect(page.locator('.qsc-date'), 'the date screen should appear after the original answer').toBeVisible({
+    timeout: 15000,
+  });
+  await tapOrClick(page.locator('#qsc-back'), hasTouch);
+
+  await expect(options, 'Back should return to all pills-per-day options').toHaveCount(5, { timeout: 15000 });
   if (keyboardMode) {
     await page.keyboard.press('5'); // number keys pick an option outright
     await expect(typedNumber, '"5 or more" should reveal a number entry').toBeVisible({ timeout: 5000 });
@@ -254,8 +267,8 @@ async function medicationQuestionnaireJourney(page, testInfo, hasTouch) {
   await captureShot(page, testInfo, 'medication-questionnaire', 'list');
   await tapOrClick(page.locator('#qsc-continue'), hasTouch);
 
-  // What the run actually recorded. Answers are committed as each screen leaves, so this is
-  // also where a screen that silently failed to record, or recorded twice, would show up.
+  // What the run actually recorded. The original answer, Back action and replacement must
+  // all remain in order so correcting an answer never overwrites research data.
   await expect(page.locator('#display_element'), 'the questionnaire should finish').toContainText(
     'Questionnaire complete',
     { timeout: 15000 }
@@ -267,23 +280,28 @@ async function medicationQuestionnaireJourney(page, testInfo, hasTouch) {
       .map((trial) => ({
         name: trial.question_name,
         response: trial.response,
+        navigation: trial.navigation,
         input_mode: trial.input_mode,
       }))
   );
 
-  expect(recorded, 'every question should be recorded exactly once, in order').toEqual([
-    { name: 'medication_questionnaire_intro', response: null, input_mode: keyboardMode ? 'keyboard' : 'touch' },
-    { name: 'medication_name', response: 'Sertraline', input_mode: keyboardMode ? 'keyboard' : 'touch' },
-    { name: 'medication_dose_mg', response: 125, input_mode: keyboardMode ? 'keyboard' : 'touch' },
-    { name: 'pills_per_day', response: 7, input_mode: keyboardMode ? 'keyboard' : 'touch' },
+  expect(recorded, 'the revision history should be append-only and ordered').toEqual([
+    { name: 'medication_questionnaire_intro', response: null, navigation: 'forward', input_mode: keyboardMode ? 'keyboard' : 'touch' },
+    { name: 'medication_name', response: 'Sertraline', navigation: 'forward', input_mode: keyboardMode ? 'keyboard' : 'touch' },
+    { name: 'medication_dose_mg', response: 125, navigation: 'forward', input_mode: keyboardMode ? 'keyboard' : 'touch' },
+    { name: 'pills_per_day', response: 1, navigation: 'forward', input_mode: keyboardMode ? 'keyboard' : 'touch' },
+    { name: 'medication_start_date', response: null, navigation: 'back', input_mode: keyboardMode ? 'keyboard' : 'touch' },
+    { name: 'pills_per_day', response: 7, navigation: 'forward', input_mode: keyboardMode ? 'keyboard' : 'touch' },
     {
       name: 'medication_start_date',
       response: { day: 3, month: 11, year: 2022 },
+      navigation: 'forward',
       input_mode: keyboardMode ? 'keyboard' : 'touch',
     },
     {
       name: 'other_medications',
       response: ['Ibuprofen', 'Metformin'],
+      navigation: 'forward',
       input_mode: keyboardMode ? 'keyboard' : 'touch',
     },
   ]);
@@ -332,6 +350,7 @@ async function demographicsJourney(page, testInfo, hasTouch) {
     await page.locator('.qsc-key[data-key="3"]').tap();
     await page.locator('.qsc-key[data-key="4"]').tap();
   }
+  await expect(page.locator('#qsc-back'), 'the first question should not offer Back').toHaveCount(0);
   await expect(
     page.locator('#qsc-decline'),
     'age should offer a way past without giving it'
@@ -339,21 +358,33 @@ async function demographicsJourney(page, testInfo, hasTouch) {
   await captureShot(page, testInfo, 'demographics', 'age');
   await advance();
 
-  // 2. Sex registered at birth - one tap per answer, so the option ends the screen itself.
+  // 2. Sex registered at birth - first submit the wrong option, then use Back from gender
+  // and replace it. Both submissions and the navigation step must remain in the data.
   const options = page.locator('.qsc-choice');
   await expect(options.first(), 'the sex options should appear').toBeVisible({ timeout: 15000 });
   await expect(options, 'female, male, and a way to decline').toHaveCount(3);
+  if (keyboardMode) {
+    await page.keyboard.press('2');
+  } else {
+    await options.nth(1).tap();
+  }
+
+  // 3. Gender - go back once the screen appears, correct sex, then self-describe here.
+  // Both screens are in the DOM while one slides out over the other, so waiting on the
+  // gender screen's own option count is what pins this to it - a key pressed a moment early
+  // would otherwise be handled by the sex options still on their way out.
+  await expect(options, 'the five gender options should appear').toHaveCount(5, { timeout: 15000 });
+  await tapOrClick(page.locator('#qsc-back'), hasTouch);
+  await expect(options, 'Back should return to the three sex options').toHaveCount(3, { timeout: 15000 });
   if (keyboardMode) {
     await page.keyboard.press('1');
   } else {
     await options.first().tap();
   }
 
-  // 3. Gender - self-describe, which swaps the options for a text field on the same screen.
-  // Both screens are in the DOM while one slides out over the other, so waiting on the
-  // gender screen's own option count is what pins this to it - a key pressed a moment early
-  // would otherwise be handled by the sex options still on their way out.
-  await expect(options, 'the five gender options should appear').toHaveCount(5, { timeout: 15000 });
+  await expect(options, 'the five gender options should reappear after the correction').toHaveCount(5, {
+    timeout: 15000,
+  });
   await captureShot(page, testInfo, 'demographics', 'gender');
   if (keyboardMode) {
     await page.keyboard.press('4'); // "I describe it another way"
@@ -372,8 +403,7 @@ async function demographicsJourney(page, testInfo, hasTouch) {
   await captureShot(page, testInfo, 'demographics', 'self-describe');
   await tapOrClick(page.locator('#qsc-continue'), hasTouch);
 
-  // What the run actually recorded. Answers are committed as each screen leaves, so this is
-  // also where a screen that silently failed to record, or recorded twice, would show up.
+  // What the run actually recorded. Revisions are append-only rather than replacements.
   await expect(page.locator('#display_element'), 'the questionnaire should finish').toContainText(
     'Questionnaire complete',
     { timeout: 15000 }
@@ -385,15 +415,18 @@ async function demographicsJourney(page, testInfo, hasTouch) {
       .map((trial) => ({
         name: trial.question_name,
         response: trial.response,
+        navigation: trial.navigation,
         input_mode: trial.input_mode,
       }))
   );
 
-  expect(recorded, 'every question should be recorded exactly once, in order').toEqual([
-    { name: 'demographics_intro', response: null, input_mode: keyboardMode ? 'keyboard' : 'touch' },
-    { name: 'age', response: 34, input_mode: keyboardMode ? 'keyboard' : 'touch' },
-    { name: 'sex_at_birth', response: 'female', input_mode: keyboardMode ? 'keyboard' : 'touch' },
-    { name: 'gender', response: 'Genderfluid', input_mode: keyboardMode ? 'keyboard' : 'touch' },
+  expect(recorded, 'the revision history should be append-only and ordered').toEqual([
+    { name: 'demographics_intro', response: null, navigation: 'forward', input_mode: keyboardMode ? 'keyboard' : 'touch' },
+    { name: 'age', response: 34, navigation: 'forward', input_mode: keyboardMode ? 'keyboard' : 'touch' },
+    { name: 'sex_at_birth', response: 'male', navigation: 'forward', input_mode: keyboardMode ? 'keyboard' : 'touch' },
+    { name: 'gender', response: null, navigation: 'back', input_mode: keyboardMode ? 'keyboard' : 'touch' },
+    { name: 'sex_at_birth', response: 'female', navigation: 'forward', input_mode: keyboardMode ? 'keyboard' : 'touch' },
+    { name: 'gender', response: 'Genderfluid', navigation: 'forward', input_mode: keyboardMode ? 'keyboard' : 'touch' },
   ]);
 }
 

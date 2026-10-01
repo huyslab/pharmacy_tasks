@@ -428,11 +428,16 @@ resumptionRules: {
 
 Each answered question triggers a save and emits
 `<task_name>_trial_<number>_finish`, where the number is one-based. The task
-passes its ordered question trials to `applyWithinTaskResumptionRules`, which
-removes that many trials. A final-trial or `<task_name>_finish` checkpoint removes
-the entire sequence. Unrecognized or out-of-range trial checkpoints leave it
-unchanged. The questionnaire omits its introduction on a partial resume and
-preserves the original question numbering.
+passes its ordered questions to `applyWithinTaskResumptionRules`, which removes
+that many questions before the shared navigation loop begins. A final-trial or
+`<task_name>_finish` checkpoint removes the entire sequence. Unrecognized or
+out-of-range trial checkpoints leave it unchanged. The questionnaire omits its
+introduction on a partial resume and preserves the original question numbering.
+
+After the first item, participants can go Back to revise an answer. Every answer
+and navigation action remains a separate chronological data row; no existing row
+is overwritten. Going back also rewinds the saved checkpoint to the last item
+before the one being revisited, so a reload resumes at that item.
 
 For example, `demographics_trial_2_finish` resumes at question 3. Once the
 checkpoint becomes `reversal_block_2_trial_3`, demographics can no longer infer

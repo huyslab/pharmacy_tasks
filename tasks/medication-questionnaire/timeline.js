@@ -2,12 +2,12 @@
  * Medication Questionnaire Timeline
  *
  * A short questionnaire about the medication a participant was invited to the study for,
- * asked at the start of a session. One question per screen, finger-sized controls, and no
- * way back to an earlier question - each screen is a separate trial and its answer is
- * committed when it slides away.
+ * asked at the start of a session. One question per screen, finger-sized controls, and a
+ * way to revisit the previous item without overwriting the original recorded answer.
  */
 
-import { updateState, saveDataREDCap, applyWithinTaskResumptionRules } from "@utils/index.js"
+import { updateState, saveDataREDCap } from "@utils/index.js"
+import { createQuestionnaireLoop } from "@tasks/question-screen/timeline.js"
 
 /**
  * Builds the list of question screens.
@@ -99,26 +99,11 @@ function medicationQuestions(settings) {
  */
 export function createMedicationQuestionnaireTimeline(settings) {
     const questions = medicationQuestions(settings);
+    const questionnaire = createQuestionnaireLoop(questions, settings);
+    if (!questionnaire) return [];
 
-    let screens = questions.map((question, i) => ({
-        type: jsPsychQuestionScreen,
-        question_index: i,
-        n_questions: questions.length,
-        transition_duration: settings.transition_duration,
-        input_mode: settings.input_mode,
-        ...question,
-        data: {
-            trialphase: `${settings.task_name}_${question.name}`
-        },
-        // Save the answer and report the last completed item (one-based).
-        on_finish: () => { updateState(`${settings.task_name}_trial_${i + 1}_finish`); }
-    }));
-
-    screens = applyWithinTaskResumptionRules(
-        screens, window.last_state, settings.task_name, settings.__task?.resumptionRules
-    );
-    if (screens.length === 0) return [];
-    const resuming = screens.length < questions.length;
+    const screens = [questionnaire.timeline];
+    const { resuming } = questionnaire;
 
     if (settings.include_intro && !resuming) {
         screens.unshift({

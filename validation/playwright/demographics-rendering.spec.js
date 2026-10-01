@@ -11,11 +11,5 @@ defineTaskRenderingTest('demographics', {
     // which is what the progress dots promise a participant on the first screen.
     const dots = await page.locator('.qsc-progress .qsc-dot').count();
     expect(dots, 'the progress dots should count the three demographic questions').toBe(3);
-
-    // Answers are committed as a screen leaves, so there must be nothing to go back with.
-    await expect(
-      page.getByRole('button', { name: /back|previous/i }),
-      'the questionnaire must not offer a way back to an answered question'
-    ).toHaveCount(0);
   },
 });
