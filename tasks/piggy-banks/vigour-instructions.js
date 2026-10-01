@@ -1,6 +1,6 @@
-import { updatePersistentCoinContainer, observeResizing, dropCoin, setupPointerListener, cleanupPointerListener, simulatePointerTap } from './vigour-utils.js';
+import { updatePersistentCoinContainer, observeResizing, dropCoin, setupPointerListener, cleanupPointerListener, simulatePointerTap, STYLUS_WARNING } from './vigour-utils.js';
 import { shakePiggy } from './utils.js';
-import { updateState } from '@utils/index.js';
+import { showTemporaryWarning, updateState } from '@utils/index.js';
 
 let instructionPointerListener = null;
 let instructionResizeObserver = null;
@@ -50,13 +50,16 @@ const instructionPage = {
     const bottomContainer = document.getElementById('bottom-container');
     const experimentContainer = document.getElementById('experiment-container');
     const buttonInstruction = document.getElementById('button-instruction');
-    instructionPointerListener = setupPointerListener(handleSpacebar);
+    instructionPointerListener = setupPointerListener(handleInstructionPress);
 
     /**
-     * Handles spacebar presses during the instruction demo
+     * Handles piggy-bank presses during the instruction demo
      * Provides immediate feedback and coin rewards
      */
-    function handleSpacebar() {
+    function handleInstructionPress(event) {
+      if (event.pointerType === 'pen' && !document.getElementById('vigour-warning-temp')) {
+        showTemporaryWarning(STYLUS_WARNING, 800);
+      }
       shakeCount++;
       shakePiggy();
       updateInstructionText(shakeCount);
@@ -102,7 +105,7 @@ const instructionPage = {
       if (instructionPointerListener) {
         cleanupPointerListener(instructionPointerListener.handler, instructionPointerListener.element);
       }
-      instructionPointerListener = setupPointerListener(handleSpacebar);
+      instructionPointerListener = setupPointerListener(handleInstructionPress);
       const coinContainer = document.getElementById('coin-container');
       coinContainer.innerHTML = '';
     }
