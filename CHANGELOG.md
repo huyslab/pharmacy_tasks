@@ -1,3 +1,10 @@
+# [1.15.0](https://github.com/huyslab/pharmacy_tasks/compare/v1.14.1...v1.15.0) (2026-10-01)
+
+
+### Features
+
+* **questionnaires:** allow revising previous answers ([64424fb](https://github.com/huyslab/pharmacy_tasks/commit/64424fbbce1105a0e468ecd28fdd6d62052f2334))
+
 ## [1.14.1](https://github.com/huyslab/pharmacy_tasks/compare/v1.14.0...v1.14.1) (2026-10-01)
 
 
